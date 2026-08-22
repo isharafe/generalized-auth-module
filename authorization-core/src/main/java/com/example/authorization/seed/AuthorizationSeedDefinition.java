@@ -1,0 +1,97 @@
+package com.example.authorization.seed;
+
+import com.example.authorization.domain.AccessMode;
+import com.example.authorization.domain.AssignmentSource;
+import com.example.authorization.domain.ResourceType;
+import java.util.ArrayList;
+import java.util.List;
+import lombok.Getter;
+
+@Getter
+public class AuthorizationSeedDefinition {
+  private List<PermissionSeed> permissions = new ArrayList<>();
+  private List<PermissionGroupSeed> permissionGroups = new ArrayList<>();
+  private List<RoleSeed> roles = new ArrayList<>();
+  private List<ResourceRuleSeed> resourceRules = new ArrayList<>();
+  private List<UserSeed> users = new ArrayList<>();
+  private List<UserAssignmentSeed> userAssignments = new ArrayList<>();
+
+  public void setPermissions(List<PermissionSeed> value) {
+    permissions = list(value);
+  }
+
+  public void setPermissionGroups(List<PermissionGroupSeed> value) {
+    permissionGroups = list(value);
+  }
+
+  public void setRoles(List<RoleSeed> value) {
+    roles = list(value);
+  }
+
+  public void setResourceRules(List<ResourceRuleSeed> value) {
+    resourceRules = list(value);
+  }
+
+  public void setUsers(List<UserSeed> value) {
+    users = list(value);
+  }
+
+  public void setUserAssignments(List<UserAssignmentSeed> value) {
+    userAssignments = list(value);
+  }
+
+  public void merge(AuthorizationSeedDefinition other) {
+    permissions.addAll(other.permissions);
+    permissionGroups.addAll(other.permissionGroups);
+    roles.addAll(other.roles);
+    resourceRules.addAll(other.resourceRules);
+    users.addAll(other.users);
+    userAssignments.addAll(other.userAssignments);
+  }
+
+  private static <T> List<T> list(List<T> value) {
+    return value == null ? new ArrayList<>() : new ArrayList<>(value);
+  }
+
+  public record PermissionSeed(
+      String code,
+      String name,
+      String description,
+      ResourceType type,
+      String pattern,
+      Boolean enabled) {}
+
+  public record PermissionGroupSeed(
+      String code, String name, String description, List<String> permissions, Boolean enabled) {}
+
+  public record RoleSeed(
+      String code,
+      String name,
+      String description,
+      List<String> permissionGroups,
+      Boolean enabled) {}
+
+  public record ResourceRuleSeed(
+      String code,
+      ResourceType type,
+      String pattern,
+      AccessMode accessMode,
+      Integer priority,
+      Boolean enabled) {}
+
+  public record UserSeed(
+      String issuer,
+      String subject,
+      String username,
+      String email,
+      String firstName,
+      String lastName,
+      Boolean enabled) {}
+
+  public record UserAssignmentSeed(
+      String issuer,
+      String subject,
+      String targetType,
+      String targetCode,
+      AssignmentSource source) {}
+}
