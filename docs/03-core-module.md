@@ -65,6 +65,8 @@ UiResourcePatternMatcher
 IdentitySynchronizationProvider (unsupported default bean)
 DatabaseExternalAuthorityMapper
 DefaultAuthorizationCacheInvalidator
+AuthorizationAdminService
+AuthorizationAdminController
 ```
 
 ## Auto-configuration

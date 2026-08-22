@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import org.slf4j.MDC;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
@@ -16,6 +17,11 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice(basePackages = "com.example.authorization.admin.api")
+@ConditionalOnProperty(
+    prefix = "authorization",
+    name = {"enabled", "admin.api.enabled"},
+    havingValue = "true",
+    matchIfMissing = true)
 public class AdminApiExceptionHandler {
   public record ValidationError(String field, String message) {}
 

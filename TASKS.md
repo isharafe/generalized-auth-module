@@ -135,28 +135,28 @@ All tests pass and demo can start.
 
 Inside `authorization-core`:
 
-- [ ] capabilities
-- [ ] user query/assignments
-- [ ] role CRUD
-- [ ] permission-group CRUD
-- [ ] permission CRUD
-- [ ] resource-rule CRUD
-- [ ] role/group mappings
-- [ ] group/permission mappings
-- [ ] user/role mappings
-- [ ] user/group mappings
-- [ ] external authority mapping CRUD
-- [ ] effective permissions
-- [ ] authorization explain/test
-- [ ] sync status/action facade
-- [ ] audit query
-- [ ] pagination/search
-- [ ] validation
-- [ ] optimistic locking / 409
-- [ ] post-commit cache invalidation
-- [ ] admin write audit
-- [ ] API security with framework permissions
-- [ ] integration tests
+- [x] capabilities
+- [x] user query/assignments
+- [x] role CRUD
+- [x] permission-group CRUD
+- [x] permission CRUD
+- [x] resource-rule CRUD
+- [x] role/group mappings
+- [x] group/permission mappings
+- [x] user/role mappings
+- [x] user/group mappings
+- [x] external authority mapping CRUD
+- [x] effective permissions
+- [x] authorization explain/test
+- [x] sync status/action facade
+- [x] audit query
+- [x] pagination/search
+- [x] validation
+- [x] optimistic locking / 409
+- [x] post-commit cache invalidation
+- [x] admin write audit
+- [x] API security with framework permissions
+- [x] integration tests
 
 Exit: demo admin APIs are usable with curl/Postman and tests.
 

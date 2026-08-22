@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -26,6 +27,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 @Validated
 @RestController
+@ConditionalOnProperty(
+    prefix = "authorization",
+    name = {"enabled", "admin.api.enabled"},
+    havingValue = "true",
+    matchIfMissing = true)
 @RequiredArgsConstructor
 @RequestMapping("${authorization.admin.api.base-path:/authorization-admin/api}")
 public class AuthorizationAdminController {

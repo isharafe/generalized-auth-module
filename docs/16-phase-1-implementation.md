@@ -22,7 +22,7 @@ Consumers retain ownership of authentication and their `SecurityFilterChain`. Th
 
 ## Phase boundaries
 
-Phase 1 includes only the admin capabilities endpoint. Full admin REST CRUD belongs to Phase 2, the SPA to Phase 3, and Keycloak synchronization to Phase 4. The optional module JARs therefore contain build descriptors only at this phase.
+Phase 1 originally included only the admin capabilities endpoint. Phase 2 admin REST CRUD is now delivered and documented in `docs/17-phase-2-implementation.md`; the SPA remains Phase 3 and Keycloak synchronization remains Phase 4.
 
 ## Current operational limitation
 

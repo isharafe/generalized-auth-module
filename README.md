@@ -4,7 +4,7 @@ A reusable Spring Boot 4.1 authorization library with a functional DB-backed cor
 
 ## Modules
 
-- `authorization-core`: published DB-backed engine, Spring Security integration, JPA/Flyway, seeds, cache, audit, and capabilities API.
+- `authorization-core`: published DB-backed engine, Spring Security integration, JPA/Flyway, seeds, cache, audit, and functional admin REST API.
 - `authorization-keycloak`: published optional-module descriptor; implementation starts in Phase 4.
 - `authorization-admin-ui`: published optional-module descriptor; implementation starts in Phase 3.
 - `examples/authorization-demo`: non-published runnable verification application.
@@ -76,11 +76,11 @@ entitlement counters, and relationship collections where mutation must remain co
 
 ## Admin API
 
-Phase 1 exposes `GET /authorization-admin/api/capabilities`. Full CRUD, mapping, audit-query, and explain endpoints are Phase 2. The API path and enablement are configured under `authorization.admin.api`.
+Phase 2 provides the full admin REST API: capabilities; paginated CRUD and mappings; user assignments and effective permissions; authorization explain; sync facade; and audit queries. Writes use optimistic versions, post-commit cache invalidation, and admin audit events. The API path and enablement are configured under `authorization.admin.api`.
 
 ## Optional modules
 
-The Keycloak and admin UI modules intentionally contain Maven descriptors only in Phase 1. Selecting `authorization.source=keycloak` without a synchronization integration fails startup with an actionable error. Runtime authorization remains local even after Keycloak synchronization is implemented.
+The Keycloak and admin UI modules currently contain Maven descriptors only; their implementations begin in Phases 4 and 3 respectively. Selecting `authorization.source=keycloak` without a synchronization integration fails startup with an actionable error. Runtime authorization remains local even after Keycloak synchronization is implemented.
 
 ## Run and verify
 
@@ -103,4 +103,4 @@ Never copy the `X-Demo-User` authentication filter into production. A consuming 
 
 ## Current status
 
-Phase 1 is implemented. See [TASKS.md](TASKS.md) for the remaining phased work and [docs/16-phase-1-implementation.md](docs/16-phase-1-implementation.md) for implementation notes and limitations.
+Phases 1 and 2 are implemented. See [TASKS.md](TASKS.md) for the remaining phased work, [docs/16-phase-1-implementation.md](docs/16-phase-1-implementation.md) for the DB-backed core, and [docs/17-phase-2-implementation.md](docs/17-phase-2-implementation.md) for the admin API.

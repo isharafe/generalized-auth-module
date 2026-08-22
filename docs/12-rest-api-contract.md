@@ -50,7 +50,19 @@ sort
 search
 ```
 
-Use bounded default/max page size.
+Use bounded default/max page size. The implemented maximum is 100.
+
+Page response:
+
+```json
+{
+  "content": [],
+  "page": 0,
+  "size": 20,
+  "totalElements": 0,
+  "totalPages": 0
+}
+```
 
 ## Role DTO
 
@@ -84,7 +96,7 @@ Always expose source:
 
 ```json
 {
-  "role": "FINANCE_MANAGER",
+  "code": "FINANCE_MANAGER",
   "source": "IDENTITY_SYNC",
   "sourceReference": "/AD/Finance-Managers"
 }
@@ -94,4 +106,6 @@ Do not silently allow deleting an `IDENTITY_SYNC` assignment as if it were manua
 
 ## Deletion
 
-Prefer soft disable for referenced authorization configuration. Hard delete only when safe and explicitly supported.
+Prefer soft disable for referenced authorization configuration. Roles, permission groups,
+permissions, and resource rules are soft-disabled. External-authority mappings support explicit hard
+delete. DELETE requests carry the current optimistic `version` as a query parameter.

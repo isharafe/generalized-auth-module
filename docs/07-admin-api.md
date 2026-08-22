@@ -120,13 +120,14 @@ DB-local user creation/edit can be supported when configured, but do not turn th
 ```text
 GET    /external-mappings
 POST   /external-mappings
+GET    /external-mappings/{id}
 PUT    /external-mappings/{id}
 DELETE /external-mappings/{id}
 ```
 
 ## Sync endpoints
 
-Expose only when provider capability supports them:
+The status endpoint is always available for capability-driven clients. Action endpoints execute only when the selected provider reports synchronization support; otherwise they return HTTP 501:
 
 ```text
 GET  /sync/status
@@ -180,8 +181,22 @@ Support pagination/filtering.
 
 ## Optimistic locking
 
-Mutable DTOs include `version`. Stale update -> HTTP 409.
+Mutable DTOs include `version`. PUT request bodies and DELETE requests (through a `version` query parameter) provide the current version. Stale update -> HTTP 409.
 
 ## Admin authorization
 
 Protect each API with framework permissions, not hardcoded `hasRole("ADMIN")`.
+
+
+## Implemented behavior
+
+Collection endpoints accept `page`, `size`, `sort`, and `search`; audit additionally accepts
+`eventType`, `actor`, and `target`. Page sizes are bounded to 1-100.
+
+Configuration DELETE operations soft-disable roles, permission groups, permissions, and resource
+rules. External mappings are explicitly deleted. User assignment endpoints create `MANUAL`
+assignments and reject removal of `SEED` or `IDENTITY_SYNC` assignments.
+
+All successful writes commit before cache invalidation and admin audit publication. The admin API is
+registered by `AuthorizationAdminAutoConfiguration`, so consumers do not need to scan framework
+packages.

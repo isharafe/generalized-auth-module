@@ -112,8 +112,9 @@ public class AuthorizationAutoConfiguration {
   }
 
   @Bean
-  FrameworkAdminSeedContributor frameworkAdminSeedContributor() {
-    return new FrameworkAdminSeedContributor();
+  FrameworkAdminSeedContributor frameworkAdminSeedContributor(
+      AuthorizationProperties properties) {
+    return new FrameworkAdminSeedContributor(properties.getAdmin().getApi().getBasePath());
   }
 
   @Bean

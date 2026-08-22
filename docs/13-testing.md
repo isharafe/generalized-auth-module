@@ -63,7 +63,7 @@ Test:
 
 ## Admin API
 
-Test CRUD, validation, permissions, 409, audit, and post-commit cache invalidation.
+Test CRUD, all mapping families, validation, permissions, 409, audit, authorization explain, sync capabilities, and post-commit cache invalidation. The demo `AdminApiIntegrationTest` provides this Phase 2 coverage.
 
 ## Keycloak integration
 

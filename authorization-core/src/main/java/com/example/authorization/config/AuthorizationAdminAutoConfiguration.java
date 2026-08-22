@@ -27,8 +27,8 @@ import org.springframework.context.annotation.Bean;
 
 @AutoConfiguration(after = AuthorizationAutoConfiguration.class)
 @ConditionalOnProperty(
-    prefix = "authorization.admin.api",
-    name = "enabled",
+    prefix = "authorization",
+    name = {"enabled", "admin.api.enabled"},
     havingValue = "true",
     matchIfMissing = true)
 public class AuthorizationAdminAutoConfiguration {
