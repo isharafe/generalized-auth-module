@@ -1,0 +1,16 @@
+{
+  "name": "Java + Codex Dev Environment",
+
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+
+  "workspaceFolder": "/workspace",
+
+  "remoteUser": "developer",
+
+  "mounts": [
+    "source=${localWorkspaceFolder},target=/workspace,type=bind",
+    "source=codex-home,target=/home/developer/.codex,type=volume"
+  ]
+}
