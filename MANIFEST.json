@@ -1,0 +1,32 @@
+{
+  "name": "Reusable Authorization Framework Codex Pack v2",
+  "published_modules": [
+    "authorization-core",
+    "authorization-keycloak",
+    "authorization-admin-ui"
+  ],
+  "example": "examples/authorization-demo",
+  "markdown_file_count": 20,
+  "files": [
+    "AGENTS.md",
+    "CODEX_START.md",
+    "README.md",
+    "TASKS.md",
+    "docs/00-product-scope.md",
+    "docs/01-domain-model.md",
+    "docs/02-runtime-architecture.md",
+    "docs/03-core-module.md",
+    "docs/04-database-and-flyway.md",
+    "docs/05-seeding.md",
+    "docs/06-spring-security.md",
+    "docs/07-admin-api.md",
+    "docs/08-admin-ui.md",
+    "docs/09-keycloak-integration.md",
+    "docs/10-caching-audit-events.md",
+    "docs/11-configuration.md",
+    "docs/12-rest-api-contract.md",
+    "docs/13-testing.md",
+    "docs/14-demo-application.md",
+    "docs/15-acceptance-criteria.md"
+  ]
+}
