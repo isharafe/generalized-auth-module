@@ -66,6 +66,7 @@ public class AuthorizationProperties {
   @Getter
   public static class Admin {
     private final Api api = new Api();
+    private final Ui ui = new Ui();
   }
 
   @Getter
@@ -73,5 +74,12 @@ public class AuthorizationProperties {
   public static class Api {
     private boolean enabled = true;
     private String basePath = "/authorization-admin/api";
+  }
+
+  @Getter
+  @Setter
+  public static class Ui {
+    private boolean enabled = true;
+    private String basePath = "/authorization-admin";
   }
 }

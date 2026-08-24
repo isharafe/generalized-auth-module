@@ -5,11 +5,17 @@ import java.util.Arrays;
 
 public final class FrameworkAdminSeedContributor implements AuthorizationSeedContributor {
   private static final String DEFAULT_BASE_PATH = "/authorization-admin/api";
+  private static final String DEFAULT_UI_BASE_PATH = "/authorization-admin";
   private static final String[][] PERMISSIONS = {
     {
       "AUTHZ_ADMIN_VIEW",
       "View authorization administration",
       "GET:/authorization-admin/api/capabilities"
+    },
+    {
+      "AUTHZ_ADMIN_UI",
+      "Use authorization administration UI",
+      "GET:/authorization-admin/**"
     },
     {"AUTHZ_USER_VIEW", "View users", "GET:/authorization-admin/api/users/**"},
     {"AUTHZ_USER_MANAGE", "Manage users", "*:/authorization-admin/api/users/**"},
@@ -66,18 +72,27 @@ public final class FrameworkAdminSeedContributor implements AuthorizationSeedCon
   };
 
   private final String basePath;
+  private final String uiBasePath;
 
   public FrameworkAdminSeedContributor() {
-    this(DEFAULT_BASE_PATH);
+    this(DEFAULT_BASE_PATH, DEFAULT_UI_BASE_PATH);
   }
 
   public FrameworkAdminSeedContributor(String basePath) {
-    if (basePath == null || basePath.isBlank() || !basePath.startsWith("/"))
-      throw new IllegalArgumentException("Admin API base path must start with /");
-    this.basePath =
-        basePath.length() > 1 && basePath.endsWith("/")
-            ? basePath.substring(0, basePath.length() - 1)
-            : basePath;
+    this(basePath, DEFAULT_UI_BASE_PATH);
+  }
+
+  public FrameworkAdminSeedContributor(String basePath, String uiBasePath) {
+    this.basePath = normalized(basePath, "Admin API");
+    this.uiBasePath = normalized(uiBasePath, "Admin UI");
+  }
+
+  private String normalized(String value, String name) {
+    if (value == null || value.isBlank() || !value.startsWith("/"))
+      throw new IllegalArgumentException(name + " base path must start with /");
+    return value.length() > 1 && value.endsWith("/")
+        ? value.substring(0, value.length() - 1)
+        : value;
   }
 
   @Override
@@ -87,12 +102,15 @@ public final class FrameworkAdminSeedContributor implements AuthorizationSeedCon
           permission[0],
           permission[1],
           ResourceType.URL,
-          permission[2].replace(DEFAULT_BASE_PATH, basePath));
+          "AUTHZ_ADMIN_UI".equals(permission[0])
+              ? permission[2].replace(DEFAULT_UI_BASE_PATH, uiBasePath)
+              : permission[2].replace(DEFAULT_BASE_PATH, basePath));
     String[] codes = Arrays.stream(PERMISSIONS).map(value -> value[0]).toArray(String[]::new);
     seed.permissionGroup(
         "AUTHZ_SYSTEM_VIEWER",
         "Authorization system viewer",
         "AUTHZ_ADMIN_VIEW",
+        "AUTHZ_ADMIN_UI",
         "AUTHZ_USER_VIEW",
         "AUTHZ_ROLE_VIEW",
         "AUTHZ_PERMISSION_VIEW",

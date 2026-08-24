@@ -130,7 +130,13 @@ Manager/admin can manage data through admin REST APIs according to seeded framew
 
 ## Admin UI
 
-When `authorization-admin-ui` is included in the demo, serve it and make it functional against the same backend.
+The demo includes `authorization-admin-ui` and serves it from `/authorization-admin/`. Open:
+
+```text
+http://localhost:8080/authorization-admin?demo-user=manager
+```
+
+The demo-only authentication filter converts that query parameter into a one-hour HttpOnly cookie and redirects to the clean UI URL, allowing same-origin API requests to remain authenticated. Header authentication remains available for curl and tests. Neither demo mechanism is suitable for production.
 
 ## Keycloak profile
 

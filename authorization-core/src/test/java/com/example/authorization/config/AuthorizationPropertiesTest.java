@@ -39,6 +39,14 @@ class AuthorizationPropertiesTest {
   }
 
   @Test
+  void providesAdminUiDefaults() {
+    AuthorizationProperties properties = new AuthorizationProperties();
+
+    assertThat(properties.getAdmin().getUi().isEnabled()).isTrue();
+    assertThat(properties.getAdmin().getUi().getBasePath()).isEqualTo("/authorization-admin");
+  }
+
+  @Test
   void disablesTheEntitlementCacheWhenConfigured() {
     AuthorizationProperties properties = new AuthorizationProperties();
     properties.getCache().getEntitlements().setEnabled(false);

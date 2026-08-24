@@ -79,6 +79,8 @@ authorization:
       base-path: /authorization-admin
 ```
 
+The UI base path is normalized without a trailing slash. The packaged SPA loads relative assets and obtains the configured API/UI paths from `<ui-base-path>/config`, so the API and UI paths may be changed independently. The framework seed uses the configured paths when contributing admin permissions.
+
 ## Authentication remains separate
 
 Example consuming application JWT authentication:

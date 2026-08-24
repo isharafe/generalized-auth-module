@@ -6,13 +6,12 @@ Module:
 authorization-admin-ui
 ```
 
-Preferred implementation:
+Implementation:
 
 ```text
 React + TypeScript
 ```
 
-Use another modern SPA stack only if repository constraints require it.
 
 ## Packaging
 
@@ -134,3 +133,11 @@ Hide provider-specific screens when not supported.
 ## UI security
 
 Protect both UI entry path and admin APIs using authorization framework permissions. Do not introduce a second hardcoded admin authorization scheme.
+
+## Implemented deployment behavior
+
+The Vite bundle uses relative assets and hash routes, so it can be served below the configured path without rebuilding. On startup it calls the protected `./config` endpoint to discover the independently configured API and UI base paths.
+
+The Maven lifecycle installs pinned local Node/npm versions, restores dependencies with `npm ci`, runs frontend tests, builds the production bundle, and packages it in the module JAR. Consumers do not need a global frontend toolchain.
+
+The server redirects `/authorization-admin` to `/authorization-admin/`, serves the packaged index explicitly, and serves fingerprinted assets through Spring MVC's resource chain. Setting `authorization.admin.ui.enabled=false` disables the module's server integration.

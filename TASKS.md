@@ -166,26 +166,26 @@ Exit: demo admin APIs are usable with curl/Postman and tests.
 
 Inside `authorization-admin-ui`:
 
-- [ ] React + TypeScript project
-- [ ] Maven-integrated frontend build
-- [ ] package static assets in JAR
-- [ ] configurable base path
-- [ ] API client
-- [ ] capabilities handling
-- [ ] dashboard
-- [ ] users
-- [ ] roles
-- [ ] permission groups
-- [ ] permissions
-- [ ] resource rules
-- [ ] external mappings
-- [ ] effective permissions
-- [ ] authorization test/explain
-- [ ] sync screen when supported
-- [ ] audit
-- [ ] source badges/read-only sync fields
-- [ ] component/smoke tests
-- [ ] demo includes UI and is usable
+- [x] React + TypeScript project
+- [x] Maven-integrated frontend build
+- [x] package static assets in JAR
+- [x] configurable base path
+- [x] API client
+- [x] capabilities handling
+- [x] dashboard
+- [x] users
+- [x] roles
+- [x] permission groups
+- [x] permissions
+- [x] resource rules
+- [x] external mappings
+- [x] effective permissions
+- [x] authorization test/explain
+- [x] sync screen when supported
+- [x] audit
+- [x] source badges/read-only sync fields
+- [x] component/smoke tests
+- [x] demo includes UI and is usable
 
 ---
 

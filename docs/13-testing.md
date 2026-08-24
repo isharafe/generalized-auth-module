@@ -83,15 +83,9 @@ Test:
 
 ## UI
 
-At minimum:
+The Maven lifecycle runs the frontend production build and Vitest suite. Tests cover critical component/form behavior, capability-driven navigation, API client query/error handling, and route/dashboard smoke rendering.
 
-- frontend build succeeds
-- critical component/form tests
-- capability handling
-- API client tests
-- route/smoke test
-
-Optional browser E2E is encouraged.
+The demo integration suite also verifies packaged-index delivery, runtime path configuration, 401/403 protection, authorized access, and the demo browser-session bootstrap. Optional browser E2E remains encouraged.
 
 ## Release-blocking security tests
 
