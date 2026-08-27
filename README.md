@@ -103,12 +103,14 @@ The Keycloak module currently contains its Maven descriptor; implementation begi
 
 ## Run and verify
 
-Requires Java 21 and Maven.
+Requires Java 21. The repository-level Maven Wrapper pins Maven 3.9.11 for every module, so a separate Maven installation is not required.
 
 ```bash
-mvn clean verify
-mvn -pl examples/authorization-demo -am spring-boot:run
+./mvnw clean verify
+./mvnw -pl examples/authorization-demo -am spring-boot:run
 ```
+
+On Windows, use `mvnw.cmd` in place of `./mvnw`. Run the wrapper from the repository root so all modules use the same reactor and Maven version.
 
 The demo profile is active by default. Open the Phase 3 UI as the seeded demo manager:
 
