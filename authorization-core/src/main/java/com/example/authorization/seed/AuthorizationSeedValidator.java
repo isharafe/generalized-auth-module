@@ -33,6 +33,8 @@ public final class AuthorizationSeedValidator {
     for (PermissionSeed value : seed.getPermissions())
       validatePermission(value);
     for (ResourceRuleSeed value : seed.getResourceRules()) validateRule(value);
+    for (ExternalAuthorityMappingSeed value : seed.getExternalAuthorityMappings())
+      validateExternalAuthorityMapping(value, roles, groups);
     for (PermissionGroupSeed group : seed.getPermissionGroups())
       for (String code : safe(group.permissions()))
         if (!permissions.contains(code))
@@ -91,6 +93,29 @@ public final class AuthorizationSeedValidator {
 
   private void validateResource(ResourceType type, String pattern) {
     matcher.validate(type, pattern);
+  }
+
+  private void validateExternalAuthorityMapping(
+      ExternalAuthorityMappingSeed value, Set<String> roles, Set<String> groups) {
+    if (value.sourceSystem() == null || value.sourceSystem().isBlank())
+      fail("External authority mapping source-system is required");
+    if (value.authorityType() == null || value.authorityType().isBlank())
+      fail("External authority mapping authority-type is required");
+    if (value.authority() == null || value.authority().isBlank())
+      fail("External authority mapping authority is required");
+    if (value.target() == null || value.target().type() == null || value.target().code() == null)
+      fail("External authority mapping target is required");
+    boolean valid =
+        value.target().type().equals("ROLE")
+            ? roles.contains(value.target().code())
+            : value.target().type().equals("PERMISSION_GROUP")
+                && groups.contains(value.target().code());
+    if (!valid)
+      fail(
+          "External authority mapping references unknown target "
+              + value.target().type()
+              + ":"
+              + value.target().code());
   }
 
   private void checkRuleConflicts(List<ResourceRuleSeed> rules) {

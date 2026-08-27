@@ -549,24 +549,18 @@ public class AuthorizationAdminService {
   public AdminDtos.SyncStatus synchronizeAll() {
     requireSync();
     synchronization.synchronizeAll();
-    publishNow("IDENTITY_SYNC_STARTED", "SYNC:FULL", "RUN");
     return syncStatus();
   }
 
   public AdminDtos.SyncStatus synchronizeIncremental() {
     requireSync();
     synchronization.synchronizeIncremental();
-    publishNow("IDENTITY_SYNC_STARTED", "SYNC:INCREMENTAL", "RUN");
     return syncStatus();
   }
 
   public AdminDtos.SyncStatus synchronizeIdentity(AuthenticatedIdentity identity) {
     requireSync();
     synchronization.synchronize(identity);
-    publishNow(
-        "IDENTITY_SYNC_STARTED",
-        "IDENTITY:" + identity.issuer() + ":" + identity.subject(),
-        "RUN");
     return syncStatus();
   }
 
@@ -918,7 +912,4 @@ public class AuthorizationAdminService {
     } else callback.run();
   }
 
-  private void publishNow(String type, String target, String action) {
-    audit.publishChange(changeEvent(type, target, action));
-  }
 }

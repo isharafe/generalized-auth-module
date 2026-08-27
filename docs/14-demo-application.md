@@ -79,8 +79,8 @@ For demo administration, manager may also receive framework role `AUTHZ_SYSTEM_A
 ## Resource rules
 
 ```text
-/demo/public/**                PERMIT_ALL
-/demo/profile/**               AUTHENTICATED
+/demo/public                   PERMIT_ALL
+/demo/profile                  AUTHENTICATED
 /demo/employees/**             AUTHORIZED
 /authorization-admin/api/**    AUTHORIZED
 /authorization-admin/**        AUTHORIZED when UI enabled
@@ -136,13 +136,109 @@ The demo includes `authorization-admin` and serves it from `/authorization-admin
 http://localhost:8080/authorization-admin?demo-user=manager
 ```
 
-The demo-only authentication filter converts that query parameter into a one-hour HttpOnly cookie and redirects to the clean UI URL, allowing same-origin API requests to remain authenticated. Header authentication remains available for curl and tests. Neither demo mechanism is suitable for production.
+The demo-only authentication filter authenticates the request and converts that query parameter into a one-hour HttpOnly cookie. The admin UI controller then redirects the no-trailing-slash URL to the clean `/authorization-admin/` URL, allowing same-origin API requests to remain authenticated. Header authentication remains available for curl and tests. Neither demo mechanism is suitable for production.
 
 ## Keycloak profile
 
-Later add a `keycloak-demo` profile that:
+The `keycloak-demo` profile replaces demo header authentication with:
 
-- removes demo header auth
-- enables Spring Resource Server JWT
-- sets `authorization.source=keycloak`
-- documents required Keycloak client/realm setup
+- Spring Security OAuth2/OIDC browser login
+- JWT Resource Server support for bearer-token API calls
+- `authorization.source=keycloak`
+- targeted identity synchronization after successful browser login
+
+### Keycloak clients
+
+Create two confidential clients in realm `authorization-demo`.
+
+Synchronization client:
+
+```text
+Client ID: authorization-sync-service
+Client authentication: On
+Service accounts: Enabled
+```
+
+Grant its service account the narrow `realm-management` permissions needed to query users, groups,
+and realm-role mappings.
+
+Browser-login client:
+
+```text
+Client ID: authorization-demo-web
+Client authentication: On
+Standard flow: Enabled
+Valid redirect URI: http://localhost:8080/login/oauth2/code/keycloak
+Valid post logout redirect URI: http://localhost:8080/demo-ui/signed-out
+```
+
+Keeping login and synchronization clients separate prevents the browser-login client from receiving
+administrative service-account privileges.
+
+### Demo permissions
+
+The seed defines two opaque UI resources:
+
+```text
+UI:seePage1
+UI:seePage2
+```
+
+`EMPLOYEE_VIEWER` contains `UI:seePage1`. `EMPLOYEE_MANAGER` contains both permissions. Existing
+Keycloak group/realm-role mappings therefore produce this browser behavior:
+
+```text
+viewer  -> page 1 only
+manager -> page 1 and page 2
+```
+
+Assign a test user to `/authorization-demo/viewers` (or realm role
+`authorization-demo-viewer`) for page 1 only. Assign another user to
+`/authorization-demo/employee-managers` (or realm role `authorization-demo-manager`) for both
+pages. The login-time synchronization converts those external authorities into the local seeded
+roles; Keycloak does not define the UI permissions directly.
+
+The landing page hides unavailable links, and each page checks its UI permission again on direct
+navigation. The containing `/demo-ui/**` URL resource remains `AUTHENTICATED`, demonstrating that
+URL access and UI-component authorization are independent concerns.
+
+### Run
+
+Build/install the reactor dependencies first:
+
+```bash
+./mvnw -pl examples/authorization-demo -am install -DskipTests
+```
+
+Then run only the application module so Maven does not try to execute the parent POM:
+
+```bash
+SPRING_PROFILES_ACTIVE=keycloak-demo \
+AUTHORIZATION_KEYCLOAK_CLIENT_SECRET='<synchronization-client-secret>' \
+AUTHORIZATION_KEYCLOAK_LOGIN_CLIENT_SECRET='<browser-login-client-secret>' \
+./mvnw -pl examples/authorization-demo spring-boot:run
+```
+
+Defaults expect Keycloak at `http://localhost:8081`, realm `authorization-demo`, synchronization
+client `authorization-sync-service`, browser client `authorization-demo-web`, and issuer
+`http://localhost:8081/realms/authorization-demo`. Override these with
+`AUTHORIZATION_KEYCLOAK_BASE_URL`, `AUTHORIZATION_KEYCLOAK_REALM`,
+`AUTHORIZATION_KEYCLOAK_CLIENT_ID`, `AUTHORIZATION_KEYCLOAK_LOGIN_CLIENT_ID`, and
+`AUTHORIZATION_KEYCLOAK_ISSUER_URI`.
+
+Open:
+
+```text
+http://localhost:8080/demo-ui/
+```
+
+An unauthenticated HTML request redirects to Keycloak. After login, the success handler synchronizes
+that exact `(issuer, subject)` before redirecting to the demo landing page, so no curl/bootstrap sync
+is required. A synchronization failure returns HTTP 503 instead of treating the user as having no
+permissions.
+
+The Sign out link performs OIDC RP-initiated logout, ending both the local application session and
+the Keycloak SSO session before returning to the public `/demo-ui/signed-out` page.
+
+The default demo query/header authentication is unavailable in this profile. Bearer-token curl or
+Postman calls remain supported for API testing, but are not required for the sample pages.

@@ -49,12 +49,12 @@ authorization:
     resource-rules:
       - code: DEMO_PUBLIC
         type: URL
-        pattern: "*:/demo/public/**"
+        pattern: "*:/demo/public"
         access-mode: PERMIT_ALL
 
       - code: DEMO_PROFILE
         type: URL
-        pattern: "*:/demo/profile/**"
+        pattern: "*:/demo/profile"
         access-mode: AUTHENTICATED
 
       - code: DEMO_API
@@ -73,7 +73,11 @@ public interface AuthorizationSeedContributor {
 }
 ```
 
-The fluent API should let applications express permissions, groups, roles, rules, mappings, and initial user assignments only through logical codes. URL permission patterns use the canonical `METHOD:/path` form.
+The fluent API expresses permissions, permission groups, roles, resource rules, external-authority
+mappings, users, and initial role/group assignments through logical codes. Permissions accept a
+`ResourceType`, so Java contributors can define URL or UI permissions. Use
+`externalAuthorityMapping(...)` for the same mapping contract available under
+`external-authority-mappings` in YAML. URL patterns use the canonical `METHOD:/path` form.
 
 ## Merge process
 
@@ -98,9 +102,12 @@ Default:
 
 - create missing objects
 - update safe descriptive fields
-- create missing mappings
+- replace permission membership for each supplied permission group
+- replace permission-group membership for each supplied role
+- create missing user assignments without removing existing assignments
+- merge external-authority mappings by their source/authority/target natural key
 - never duplicate rows
-- do not delete configuration merely because it is absent from a seed file
+- do not delete top-level configuration merely because it is absent from a seed file
 
 A future authoritative RECONCILE seed mode can be added later, but is not MVP default.
 
@@ -114,17 +121,19 @@ Fail startup by default on:
 - invalid resource type
 - malformed path pattern
 - invalid access mode
-- conflicting resource rules with equal specificity/priority
-- invalid external authority target
+- missing or unknown external-authority mapping targets
+- identical resource-rule type/pattern pairs with equal priority but conflicting access modes
 
-Validate before any mutation.
+Validate before any mutation. More general runtime ambiguities that cannot be detected by the seed
+validator produce an `INDETERMINATE` authorization decision rather than an unsafe grant.
 
 ## Framework-owned admin seed
 
-Core contributes built-in permissions such as:
+When `authorization-admin` is present, that module contributes built-in permissions such as:
 
 ```text
 AUTHZ_ADMIN_VIEW
+AUTHZ_ADMIN_UI
 AUTHZ_USER_VIEW
 AUTHZ_USER_MANAGE
 AUTHZ_ROLE_VIEW
@@ -140,6 +149,7 @@ AUTHZ_EXTERNAL_MAPPING_MANAGE
 AUTHZ_SYNC_VIEW
 AUTHZ_SYNC_RUN
 AUTHZ_AUDIT_VIEW
+AUTHZ_AUTHORIZATION_TEST
 ```
 
 Create framework groups/roles:
@@ -165,9 +175,11 @@ Unchanged seed can be skipped where safe.
 
 ## Multi-pod safety
 
-Several pods may seed simultaneously. Use:
+The current implementation relies on:
 
 - unique constraints
 - transactions
 - idempotent operations
-- database/distributed initialization lock
+
+A dedicated database/distributed initialization lock and explicit concurrent-startup verification
+remain Phase 6 hardening work.

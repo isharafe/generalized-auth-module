@@ -21,8 +21,9 @@ The API includes:
 
 Admin controllers delegate to `AuthorizationAdminService`; controllers never access repositories
 directly. Configuration codes are immutable. DELETE soft-disables coded configuration, while
-external mappings are deleted explicitly. Updates and deletes require the current version, and stale
-versions return HTTP 409.
+external mappings are deleted explicitly. Configuration-object PUT and DELETE operations require
+the current version, and stale versions return HTTP 409. Relationship and user-assignment mapping
+operations do not take a client version; assignment removal still enforces source ownership.
 
 User assignment writes create only `MANUAL` assignments. The API refuses to remove `SEED` or
 `IDENTITY_SYNC` assignments.

@@ -34,7 +34,9 @@ loadedAt
 
 Increment a user's authorization version when role/group assignments change.
 
-This enables stale cache detection and targeted multi-pod invalidation later.
+The version is returned with entitlements and incremented when assignments change. The current
+in-process cache is invalidated directly after commit; version-based stale-cache detection and
+multi-pod invalidation remain future hardening work.
 
 ## Invalidation
 
@@ -66,7 +68,7 @@ Decision events describe runtime authorization outcomes. Change events describe 
 
 Every `AUTH_AUDIT_EVENT` row stores a non-null `EVENT_KIND` discriminator with `DECISION` or `CHANGE`. `EVENT_TYPE` remains the detailed subtype, such as `AUTHORIZATION_DENIED` or `ROLE_UPDATED`. The consolidated baseline migration `V1` creates this discriminator as non-null; no upgrade backfill is needed because the schema has not yet been released.
 
-Record at least:
+Current runtime/admin event names include:
 
 ```text
 AUTHORIZATION_GRANTED
@@ -81,6 +83,9 @@ IDENTITY_SYNC_STARTED
 IDENTITY_SYNC_COMPLETED
 IDENTITY_SYNC_FAILED
 ```
+
+The Keycloak synchronization provider emits started/completed/failed change events without storing
+service-account credentials, access tokens, or authorization headers.
 
 ## Audit fields
 

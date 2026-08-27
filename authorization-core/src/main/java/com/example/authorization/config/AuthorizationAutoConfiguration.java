@@ -79,6 +79,11 @@ public class AuthorizationAutoConfiguration {
 
   @Bean
   @ConditionalOnMissingBean(IdentitySynchronizationProvider.class)
+  @ConditionalOnProperty(
+      prefix = "authorization",
+      name = "source",
+      havingValue = "database",
+      matchIfMissing = true)
   IdentitySynchronizationProvider identitySynchronizationProvider() {
     return new IdentitySynchronizationProvider() {};
   }
@@ -122,6 +127,7 @@ public class AuthorizationAutoConfiguration {
       PermissionGroupRepository groups,
       RoleRepository roles,
       ResourceRuleRepository rules,
+      ExternalAuthorityMappingRepository externalMappings,
       UserRepository users,
       UserRoleRepository userRoles,
       UserPermissionGroupRepository userGroups,
@@ -135,6 +141,7 @@ public class AuthorizationAutoConfiguration {
         groups,
         roles,
         rules,
+        externalMappings,
         users,
         userRoles,
         userGroups,
@@ -166,18 +173,21 @@ public class AuthorizationAutoConfiguration {
 
   @Bean
   ApplicationRunner authorizationSourceGuard(
-      AuthorizationProperties properties, IdentitySynchronizationProvider synchronizationProvider) {
+      AuthorizationProperties properties,
+      ObjectProvider<IdentitySynchronizationProvider> synchronizationProviders) {
     return args -> {
       if (!"DENY".equalsIgnoreCase(properties.getDefaultDecision()))
         throw new IllegalStateException(
             "authorization.default-decision must be DENY to preserve fail-closed behavior");
+      IdentitySynchronizationProvider synchronizationProvider =
+          synchronizationProviders.getIfAvailable();
       if (!properties.getSource().equalsIgnoreCase("database")
-          && !synchronizationProvider.supported())
+          && (synchronizationProvider == null || !synchronizationProvider.supported()))
         throw new IllegalStateException(
             "authorization.source="
                 + properties.getSource()
-                + " requires its optional integration module; authorization-core supports database"
-                + " by default");
+                + " requires its optional integration module and valid configuration;"
+                + " authorization-core supports database by default");
     };
   }
 }

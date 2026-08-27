@@ -95,7 +95,9 @@ URL:PUT:/api/employees/**
 
 ### Resource Rules
 
-Structured editor with conflict warnings.
+Structured editor for resource type, URL method/path or UI identifier, access mode, priority, and
+enabled state. Conflicts are validated by the server and displayed through the common API error
+handling; the UI does not perform an independent client-side conflict analysis.
 
 ### External Authority Mappings
 
@@ -128,7 +130,8 @@ Call:
 GET /authorization-admin/api/capabilities
 ```
 
-Hide provider-specific screens when not supported.
+Hide external-mapping and synchronization navigation when their corresponding capability is not
+supported.
 
 ## UI security
 
@@ -140,4 +143,4 @@ The Vite bundle uses relative assets and hash routes, so it can be served below 
 
 The Maven lifecycle installs pinned local Node/npm versions, restores dependencies with `npm ci`, runs frontend tests, builds the production bundle, and packages it in the module JAR. Consumers do not need a global frontend toolchain.
 
-The server redirects `/authorization-admin` to `/authorization-admin/`, serves the packaged index explicitly, and serves fingerprinted assets through Spring MVC's resource chain. Setting `authorization.admin.ui.enabled=false` disables the module's server integration.
+The server redirects `/authorization-admin` to `/authorization-admin/`, serves the packaged index explicitly, and serves fingerprinted assets through Spring MVC's resource chain. Setting `authorization.admin.ui.enabled=false` disables the module's server integration. The API can run without the UI; a usable UI requires the admin API to remain enabled because startup loads `/capabilities` and every screen uses that API.

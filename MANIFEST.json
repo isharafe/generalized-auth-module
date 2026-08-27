@@ -6,11 +6,10 @@
     "authorization-admin"
   ],
   "example": "examples/authorization-demo",
-  "markdown_file_count": 20,
+  "markdown_file_count": 24,
   "files": [
     "AGENTS.md",
-    "CODEX_START.md",
-    "README.md",
+    "CODEX_START.md",    "README.md",
     "TASKS.md",
     "docs/00-product-scope.md",
     "docs/01-domain-model.md",
@@ -27,6 +26,10 @@
     "docs/12-rest-api-contract.md",
     "docs/13-testing.md",
     "docs/14-demo-application.md",
-    "docs/15-acceptance-criteria.md"
+    "docs/15-acceptance-criteria.md",
+    "docs/16-phase-1-implementation.md",
+    "docs/17-phase-2-implementation.md",
+    "docs/18-phase-3-implementation.md",
+    "docs/19-phase-4-implementation.md"
   ]
 }

@@ -133,8 +133,10 @@ The status endpoint is always available for capability-driven clients. Action en
 GET  /sync/status
 POST /sync/full
 POST /sync/incremental
-POST /sync/users/{identityReference}
+POST /sync/users/{subject}?issuer={issuer}
 ```
+
+The `issuer` query parameter defaults to `external` when omitted.
 
 Protect execution with `AUTHZ_SYNC_RUN`.
 
@@ -153,6 +155,10 @@ Request:
   "path": "/demo/employees/1"
 }
 ```
+
+`resourceType` defaults to `URL`. For a UI resource, send `resourceType: "UI"` and the opaque
+identifier in `pattern` instead of `method` and `path`. The current SPA exposes the URL form; the
+backend contract supports both built-in resource types.
 
 Response should show safe explanation:
 
@@ -181,7 +187,10 @@ Support pagination and filtering by `eventKind`, `eventType`, actor, and target.
 
 ## Optimistic locking
 
-Mutable DTOs include `version`. PUT request bodies and DELETE requests (through a `version` query parameter) provide the current version. Stale update -> HTTP 409.
+Mutable configuration DTOs include `version`. Entity update requests and configuration DELETE
+requests (through a `version` query parameter) provide the current version. Stale update -> HTTP
+409. Relationship mapping endpoints and user assignment endpoints do not accept a client version;
+they operate against the mapping's current database state and assignment-source ownership.
 
 ## Admin authorization
 

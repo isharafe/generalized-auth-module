@@ -82,4 +82,41 @@ class AuthorizationSeedValidatorTest {
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("Conflicting");
   }
+
+  @Test
+  void acceptsAllKeycloakExternalAuthorityMappingCombinations() {
+    AuthorizationSeedDefinition seed = new AuthorizationSeedDefinition();
+    seed.setRoles(List.of(new RoleSeed("ROLE", "Role", null, List.of(), true)));
+    seed.setPermissionGroups(
+        List.of(new PermissionGroupSeed("GROUP", "Group", null, List.of(), true)));
+    seed.setExternalAuthorityMappings(
+        List.of(
+            mapping("GROUP", "/Finance", "ROLE", "ROLE"),
+            mapping("GROUP", "/Employees", "PERMISSION_GROUP", "GROUP"),
+            mapping("ROLE", "approver", "ROLE", "ROLE"),
+            mapping("ROLE", "viewer", "PERMISSION_GROUP", "GROUP")));
+
+    assertThatCode(() -> new AuthorizationSeedValidator().validate(seed)).doesNotThrowAnyException();
+  }
+
+  @Test
+  void rejectsExternalAuthorityMappingWithUnknownTarget() {
+    AuthorizationSeedDefinition seed = new AuthorizationSeedDefinition();
+    seed.setExternalAuthorityMappings(
+        List.of(mapping("GROUP", "/Finance", "ROLE", "MISSING")));
+
+    assertThatThrownBy(() -> new AuthorizationSeedValidator().validate(seed))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("unknown target ROLE:MISSING");
+  }
+
+  private ExternalAuthorityMappingSeed mapping(
+      String authorityType, String authority, String targetType, String targetCode) {
+    return new ExternalAuthorityMappingSeed(
+        "KEYCLOAK",
+        authorityType,
+        authority,
+        new ExternalAuthorityTargetSeed(targetType, targetCode),
+        true);
+  }
 }

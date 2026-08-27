@@ -55,7 +55,10 @@ resourceType = URL
 pattern      = GET:/api/employees/123
 ```
 
-The method prefix is normalized to uppercase. Do not include the query string.
+The canonical method prefix is uppercase. Servlet request methods already use that form, and the
+admin authorization-test endpoint uppercases its method input. Seed and admin CRUD patterns are
+validated as canonical uppercase values rather than silently rewritten. Do not include the query
+string.
 
 ## Matching
 
@@ -104,3 +107,19 @@ Do not aggressively replace an application's security configuration.
 Expose a bean/configurer and document the recommended wiring. Conditional auto-configuration may help when safe.
 
 The demo app must show the supported integration exactly.
+
+## Demo browser UI authorization
+
+The `keycloak-demo` profile combines OAuth2/OIDC login with the normal URL authorization manager.
+After login it synchronizes the authenticated `(issuer, subject)`, then evaluates opaque UI
+resources through `AuthorizationEngine`:
+
+```text
+UI:seePage1
+UI:seePage2
+```
+
+The `/demo-ui/**` URL rule requires authentication. Separately, the landing page renders only links
+whose UI decisions are granted, and each page endpoint repeats its UI decision to prevent direct URL
+navigation from bypassing the presentation check. UI decision results use the same audit and
+indeterminate/503 behavior as URL decisions.

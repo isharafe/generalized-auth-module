@@ -36,6 +36,24 @@ public final class AuthorizationSeedBuilder {
     return this;
   }
 
+  public AuthorizationSeedBuilder externalAuthorityMapping(
+      String sourceSystem,
+      String authorityType,
+      String authority,
+      String targetType,
+      String targetCode) {
+    definition
+        .getExternalAuthorityMappings()
+        .add(
+            new ExternalAuthorityMappingSeed(
+                sourceSystem,
+                authorityType,
+                authority,
+                new ExternalAuthorityTargetSeed(targetType, targetCode),
+                true));
+    return this;
+  }
+
   public AuthorizationSeedBuilder user(String issuer, String subject, String username) {
     definition.getUsers().add(new UserSeed(issuer, subject, username, null, null, null, true));
     return this;

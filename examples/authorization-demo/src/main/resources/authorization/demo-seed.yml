@@ -9,13 +9,21 @@ authorization:
         name: Edit employees
         type: URL
         pattern: PUT:/demo/employees/**
+      - code: DEMO_SEE_PAGE_1
+        name: See demo page 1
+        type: UI
+        pattern: seePage1
+      - code: DEMO_SEE_PAGE_2
+        name: See demo page 2
+        type: UI
+        pattern: seePage2
     permission-groups:
       - code: EMPLOYEE_VIEWER
         name: Employee viewer
-        permissions: [EMPLOYEE_VIEW]
+        permissions: [EMPLOYEE_VIEW, DEMO_SEE_PAGE_1]
       - code: EMPLOYEE_MANAGER
         name: Employee manager
-        permissions: [EMPLOYEE_VIEW, EMPLOYEE_EDIT]
+        permissions: [EMPLOYEE_VIEW, EMPLOYEE_EDIT, DEMO_SEE_PAGE_1, DEMO_SEE_PAGE_2]
     roles:
       - code: HR_VIEWER
         name: HR viewer
@@ -36,6 +44,22 @@ authorization:
         type: URL
         pattern: "*:/demo/employees/**"
         access-mode: AUTHORIZED
+      - code: DEMO_UI_SIGNED_OUT
+        type: URL
+        pattern: "*:/demo-ui/signed-out"
+        access-mode: PERMIT_ALL
+      - code: DEMO_UI
+        type: URL
+        pattern: "*:/demo-ui/**"
+        access-mode: AUTHENTICATED
+      - code: DEMO_UI_PAGE_1
+        type: UI
+        pattern: seePage1
+        access-mode: AUTHORIZED
+      - code: DEMO_UI_PAGE_2
+        type: UI
+        pattern: seePage2
+        access-mode: AUTHORIZED
       - code: AUTHZ_ADMIN_API
         type: URL
         pattern: "*:/authorization-admin/api/**"
@@ -44,6 +68,37 @@ authorization:
         type: URL
         pattern: "*:/authorization-admin/**"
         access-mode: AUTHORIZED
+    external-authority-mappings:
+      - source-system: KEYCLOAK
+        authority-type: GROUP
+        authority: /authorization-demo/viewers
+        target:
+          type: ROLE
+          code: HR_VIEWER
+      - source-system: KEYCLOAK
+        authority-type: GROUP
+        authority: /authorization-demo/employee-managers
+        target:
+          type: PERMISSION_GROUP
+          code: EMPLOYEE_MANAGER
+      - source-system: KEYCLOAK
+        authority-type: GROUP
+        authority: /authorization-demo/admins
+        target:
+          type: ROLE
+          code: AUTHZ_SYSTEM_ADMIN
+      - source-system: KEYCLOAK
+        authority-type: ROLE
+        authority: authorization-demo-manager
+        target:
+          type: ROLE
+          code: HR_MANAGER
+      - source-system: KEYCLOAK
+        authority-type: ROLE
+        authority: authorization-demo-viewer
+        target:
+          type: PERMISSION_GROUP
+          code: EMPLOYEE_VIEWER
     users:
       - issuer: local
         subject: viewer

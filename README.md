@@ -5,7 +5,7 @@ A reusable Spring Boot 4.1 authorization library with a functional DB-backed cor
 ## Modules
 
 - `authorization-core`: published DB-backed engine, Spring Security integration, JPA/Flyway, seeds, cache, and audit.
-- `authorization-keycloak`: published optional-module descriptor; implementation starts in Phase 4.
+- `authorization-keycloak`: published optional Keycloak Admin API client and local identity/authority synchronization.
 - `authorization-admin`: published optional management REST API, services, framework-admin seeds, and React/TypeScript SPA.
 - `examples/authorization-demo`: non-published runnable verification application.
 
@@ -32,7 +32,7 @@ The application owns authentication and wires `DynamicRequestAuthorizationManage
 
 ## Seed data
 
-YAML and Java `AuthorizationSeedContributor` inputs are combined, fully validated, and then merged transactionally. Repeated identical seeds are skipped using their checksum. Seeds reference stable logical codes rather than database IDs or SQL. URL permissions and resource rules store the HTTP method and path together as `METHOD:/path`. UI patterns are opaque identifiers matched exactly.
+YAML and Java `AuthorizationSeedContributor` inputs are combined, fully validated, and then merged transactionally. Repeated identical seeds are skipped using their checksum. Seeds reference stable logical codes rather than database IDs or SQL. For a supplied permission group or role, its membership list replaces the stored membership; omitting a top-level object does not delete that object. URL permissions and resource rules store the HTTP method and path together as `METHOD:/path`. UI patterns are opaque identifiers matched exactly.
 
 ```yaml
 authorization:
@@ -94,13 +94,29 @@ authorization:
 
 The module owns the management REST controllers, DTOs, transactional services, framework-admin seed definitions, and same-origin SPA. The API provides capabilities, paginated CRUD and mappings, user assignments and effective permissions, authorization explain, synchronization facade, and audit queries. Writes use optimistic versions, post-commit cache invalidation, and generic authorization-change audit events persisted by core. Every audit row has an explicit `DECISION` or `CHANGE` kind that is returned and filterable through the admin API and UI.
 
-The SPA is served at `/authorization-admin/` by default and discovers both configured base paths from its protected runtime configuration endpoint. The module seeds `AUTHZ_ADMIN_UI` and its API permissions into framework viewer/admin groups, but never assigns a user. The consuming application remains responsible for applicable `AUTHORIZED` resource rules and an appropriate admin assignment.
+The SPA is served at `/authorization-admin/` by default and discovers both configured base paths from its protected runtime configuration endpoint. The API may run without the UI, but the UI requires the API to be enabled. The module seeds `AUTHZ_ADMIN_UI` and its API permissions into framework viewer/admin groups, but never assigns a user. The consuming application remains responsible for applicable `AUTHORIZED` resource rules and an appropriate admin assignment.
 
 An application that includes only `authorization-core` gets the authorization runtime and persistence, but no management endpoints, framework-admin seed definitions, or SPA.
 
 ## Optional Keycloak module
 
-The Keycloak module currently contains its Maven descriptor; implementation begins in Phase 4. Selecting `authorization.source=keycloak` without a synchronization integration fails startup with an actionable error. Runtime authorization remains local after synchronization is implemented.
+Add `authorization-keycloak` when Keycloak supplies external identities and authorities. It depends on
+`authorization-core` and activates only when `authorization.source=keycloak`:
+
+```xml
+<dependency>
+  <groupId>com.example.authorization</groupId>
+  <artifactId>authorization-keycloak</artifactId>
+  <version>0.1.0-SNAPSHOT</version>
+</dependency>
+```
+
+Configure a confidential service-account client under `authorization.keycloak`. The module retrieves
+paged users, group memberships, and realm-role mappings, then reconciles only `IDENTITY_SYNC`
+assignments into the local database. `MANUAL` and `SEED` assignments are preserved. Full,
+targeted, and scheduled synchronization update status/audit data and invalidate affected entitlement
+cache entries after commit. Normal authorization requests still use the local cache/database and
+never call Keycloak. See [the Keycloak integration guide](docs/09-keycloak-integration.md).
 
 ## Run and verify
 
@@ -132,6 +148,18 @@ curl -i -X PUT -H 'X-Demo-User: manager' http://localhost:8080/demo/employees/1
 
 Never copy the demo query/cookie or `X-Demo-User` authentication mechanism into production. A consuming application should use its normal Spring Security authentication mechanism.
 
+For a real browser authentication demonstration, run the `keycloak-demo` profile and open:
+
+```text
+http://localhost:8080/demo-ui/
+```
+
+The browser redirects to Keycloak using Authorization Code/OIDC login. On success, the demo performs
+a targeted identity synchronization and renders links to sample pages according to
+`UI:seePage1` and `UI:seePage2`. Sign out uses OIDC RP-initiated logout to end both the local
+application session and the Keycloak SSO session. See
+[the demo Keycloak setup](docs/14-demo-application.md#keycloak-profile).
+
 ## Current status
 
-Phases 1, 2, and 3 are implemented. See [TASKS.md](TASKS.md) for the remaining phased work, [docs/16-phase-1-implementation.md](docs/16-phase-1-implementation.md) for the DB-backed core, [docs/17-phase-2-implementation.md](docs/17-phase-2-implementation.md) for the admin API, and [docs/18-phase-3-implementation.md](docs/18-phase-3-implementation.md) for the admin SPA.
+Phases 1 through 4 are implemented. See [TASKS.md](TASKS.md) for the remaining phased work and [docs/19-phase-4-implementation.md](docs/19-phase-4-implementation.md) for the optional Keycloak synchronization implementation.

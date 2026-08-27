@@ -196,18 +196,18 @@ Inside `authorization-keycloak`:
 
 ## Auto-configuration
 
-- [ ] activate when module present + `source=keycloak`
-- [ ] validate Keycloak settings
-- [ ] expose capabilities/sync provider
+- [x] activate when module present + `source=keycloak`
+- [x] validate Keycloak settings
+- [x] expose capabilities/sync provider
 
 ## Client
 
-- [ ] service-account token via client credentials
-- [ ] user retrieval/pagination
-- [ ] group memberships
-- [ ] role mappings
-- [ ] configurable timeouts/retries
-- [ ] typed failures
+- [x] service-account token via client credentials
+- [x] user retrieval/pagination
+- [x] group memberships
+- [x] role mappings
+- [x] configurable timeouts/retries
+- [x] typed failures
 
 ## Mapping
 
@@ -222,33 +222,33 @@ KEYCLOAK_ROLE  -> PERMISSION_GROUP
 
 ## Synchronization
 
-- [ ] full reconciliation
-- [ ] targeted user sync
-- [ ] incremental strategy where practical
-- [ ] upsert local users
-- [ ] add desired IDENTITY_SYNC mappings
-- [ ] remove stale IDENTITY_SYNC mappings
-- [ ] preserve MANUAL/SEED
-- [ ] pending seed assignment resolution
-- [ ] entitlement version increment
-- [ ] post-commit invalidation
-- [ ] audit/sync status
-- [ ] multi-pod sync lock
+- [x] full reconciliation
+- [x] targeted user sync
+- [x] incremental strategy where practical
+- [x] upsert local users
+- [x] add desired IDENTITY_SYNC mappings
+- [x] remove stale IDENTITY_SYNC mappings
+- [x] preserve MANUAL/SEED
+- [x] pending seed assignment resolution
+- [x] entitlement version increment
+- [x] post-commit invalidation
+- [x] audit/sync status
+- [x] multi-pod sync lock
 
 ## Tests
 
-- [ ] mock Keycloak Admin API
-- [ ] pagination
-- [ ] group mapping
-- [ ] role mapping
-- [ ] stale removal
-- [ ] manual/seed preservation
-- [ ] timeout/error
-- [ ] cache invalidation
+- [x] mock Keycloak Admin API
+- [x] pagination
+- [x] group mapping
+- [x] role mapping
+- [x] stale removal
+- [x] manual/seed preservation
+- [x] timeout/error
+- [x] cache invalidation
 
 ## Demo
 
-- [ ] optional Keycloak profile documentation/config
+- [x] optional Keycloak profile documentation/config
 
 ---
 

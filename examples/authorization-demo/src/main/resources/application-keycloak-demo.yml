@@ -1,0 +1,37 @@
+spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          keycloak:
+            provider: keycloak
+            client-id: ${AUTHORIZATION_KEYCLOAK_LOGIN_CLIENT_ID:authorization-demo-web}
+            client-secret: ${AUTHORIZATION_KEYCLOAK_LOGIN_CLIENT_SECRET}
+            authorization-grant-type: authorization_code
+            scope: openid,profile,email
+        provider:
+          keycloak:
+            issuer-uri: ${AUTHORIZATION_KEYCLOAK_ISSUER_URI:http://localhost:8081/realms/authorization-demo}
+      resourceserver:
+        jwt:
+          issuer-uri: ${AUTHORIZATION_KEYCLOAK_ISSUER_URI:http://localhost:8081/realms/authorization-demo}
+
+authorization:
+  source: keycloak
+  keycloak:
+    enabled: true
+    base-url: ${AUTHORIZATION_KEYCLOAK_BASE_URL:http://localhost:8081}
+    realm: ${AUTHORIZATION_KEYCLOAK_REALM:authorization-demo}
+    client-id: ${AUTHORIZATION_KEYCLOAK_CLIENT_ID:authorization-sync-service}
+    client-secret: ${AUTHORIZATION_KEYCLOAK_CLIENT_SECRET}
+    issuer: ${AUTHORIZATION_KEYCLOAK_ISSUER_URI:http://localhost:8081/realms/authorization-demo}
+    sync:
+      enabled: true
+      page-size: 100
+      full-cron: "-"
+      incremental-cron: "-"
+    http:
+      connect-timeout: 5s
+      read-timeout: 15s
+      max-attempts: 3
+      retry-backoff: 250ms

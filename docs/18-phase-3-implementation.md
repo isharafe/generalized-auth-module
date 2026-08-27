@@ -61,7 +61,7 @@ The demo includes the UI module. For browser use, the demo-only authentication f
 /authorization-admin?demo-user=manager
 ```
 
-It authenticates the current request, sets a one-hour HttpOnly `DEMO_USER` cookie, and redirects to the clean trailing-slash URL. Header authentication remains supported for automated tests and curl. Neither demo mechanism is suitable for production.
+The demo filter authenticates the current request and sets a one-hour HttpOnly `DEMO_USER` cookie; the admin UI controller redirects the no-trailing-slash request to the clean trailing-slash URL. Header authentication remains supported for automated tests and curl. Neither demo mechanism is suitable for production.
 
 ## Verification
 

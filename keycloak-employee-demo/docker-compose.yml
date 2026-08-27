@@ -1,0 +1,83 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: keycloak-demo-postgres
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: keycloak
+    volumes:
+      - keycloak_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U keycloak -d keycloak"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  ldap:
+    image: osixia/openldap:1.5.0
+    container_name: keycloak-demo-ldap
+    command: --copy-service
+    environment:
+      LDAP_ORGANISATION: "Demo Company"
+      LDAP_DOMAIN: "demo.local"
+      LDAP_BASE_DN: "dc=demo,dc=local"
+      LDAP_ADMIN_PASSWORD: "admin"
+      LDAP_CONFIG_PASSWORD: "config"
+      LDAP_TLS: "false"
+    ports:
+      - "1389:389"
+    volumes:
+      - ldap_data:/var/lib/ldap
+      - ldap_config:/etc/ldap/slapd.d
+      - ./ldap/bootstrap.ldif:/container/service/slapd/assets/config/bootstrap/ldif/custom/50-demo.ldif:ro
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.7.1
+    container_name: keycloak-demo
+    command: start-dev --import-realm
+    environment:
+      KC_DB: postgres
+      KC_DB_URL_HOST: postgres
+      KC_DB_URL_DATABASE: keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: keycloak
+
+      # Demo only. Change these for anything beyond local testing.
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+
+      KC_HEALTH_ENABLED: "true"
+    ports:
+      - "8081:8080"
+      - "9001:9000"
+    volumes:
+      - ./keycloak/employee-demo-realm.json:/opt/keycloak/data/import/employee-demo-realm.json:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ldap:
+        condition: service_started
+
+  keycloak-init:
+    image: quay.io/keycloak/keycloak:26.7.1
+    container_name: keycloak-demo-init
+    entrypoint: ["/bin/bash", "/config/sync-ldap.sh"]
+    environment:
+      KEYCLOAK_URL: "http://keycloak:8080"
+      KEYCLOAK_REALM: "employee-demo"
+      KEYCLOAK_ADMIN: "admin"
+      KEYCLOAK_ADMIN_PASSWORD: "admin"
+    volumes:
+      - ./keycloak/sync-ldap.sh:/config/sync-ldap.sh:ro
+    depends_on:
+      keycloak:
+        condition: service_started
+      ldap:
+        condition: service_started
+    restart: "no"
+
+volumes:
+  keycloak_postgres_data:
+  ldap_data:
+  ldap_config:

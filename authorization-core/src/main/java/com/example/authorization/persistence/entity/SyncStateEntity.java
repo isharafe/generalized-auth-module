@@ -20,6 +20,9 @@ public class SyncStateEntity {
   @Column(name = "UPDATED_AT")
   private Instant updatedAt;
 
+  @Column(length = 1000)
+  private String details;
+
   @Setter(AccessLevel.NONE)
   @Version private long version;
 }

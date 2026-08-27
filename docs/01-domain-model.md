@@ -18,15 +18,16 @@ keyed by `ResourceType`; additional types add a `ResourcePatternMatcher` strateg
 Fields:
 
 ```text
-id
 code
 resourceType
-resourcePattern
+pattern
 accessMode
 priority
 enabled
-version
 ```
+
+The JPA entity adds an internal numeric `id` and optimistic `version`; the public domain record does
+not expose either value. Admin API DTOs expose `version`, but continue to identify rules by code.
 
 Access modes:
 
@@ -41,27 +42,27 @@ DENY_ALL
 
 Fields:
 
-`Permission` is resource-type-neutral. Its `resourcePattern` is opaque to the domain model and is
+`Permission` is resource-type-neutral. Its `pattern` is opaque to the domain model and is
 interpreted only by the matcher for the corresponding `ResourceType`.
 
-
 ```text
-id
 code
 name
 description
 resourceType
-resourcePattern
+pattern
 enabled
-version
 ```
+
+The persistence entity adds an internal numeric `id` and optimistic `version`. The admin API exposes
+`version`, but not the internal ID.
 
 Example:
 
 ```text
 code            = EMPLOYEE_EDIT
-type            = URL
-resourcePattern = PUT:/api/employees/**
+resourceType    = URL
+pattern         = PUT:/api/employees/**
 ```
 
 ## PermissionGroup
@@ -92,8 +93,8 @@ Recommended fields:
 
 ```text
 id
-externalIssuer
-externalSubject
+issuer
+subject
 username
 email
 firstName
@@ -109,8 +110,11 @@ version
 Stable identity key:
 
 ```text
-(externalIssuer, externalSubject)
+(issuer, subject)
 ```
+
+The Java entity and REST DTO call these values `issuer` and `subject`; the database columns retain
+the explicit names `EXTERNAL_ISSUER` and `EXTERNAL_SUBJECT`.
 
 ## Associations
 

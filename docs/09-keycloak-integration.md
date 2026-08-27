@@ -6,7 +6,11 @@ Module:
 authorization-keycloak
 ```
 
-Enabled only when dependency exists and configuration selects Keycloak source.
+The module activates when it is present, `authorization.source=keycloak`, and
+`authorization.keycloak.enabled=true` (the default). It contributes a Keycloak Admin API client,
+a supported `IdentitySynchronizationProvider`, and optional scheduled synchronization. If
+`source=keycloak` is selected without a supported provider, core fails startup with an actionable
+configuration error.
 
 ## Architecture
 
@@ -17,69 +21,50 @@ Keycloak federation
   |
 Keycloak Admin API
   |
-authorization-keycloak sync
+authorization-keycloak synchronization
   |
-local AUTH_* tables
+local AUTH_* tables and caches
   |
-authorization-core runtime cache/DB
+authorization-core runtime authorization
 ```
 
-Normal request authorization remains local.
+Keycloak supplies identity and external authority facts. Application roles, permission groups,
+permissions, resource rules, and authorization decisions remain local.
 
-## AD example
+## Service-account client
+
+The default client obtains an access token through the realm client-credentials endpoint and caches
+it until shortly before expiry. It retrieves:
+
+- users with configurable page size
+- one user by Keycloak user ID
+- each user's group memberships
+- each user's realm-role mappings
+
+Client-role mappings are not synchronized in Phase 4. Map realm roles or groups when client-role
+semantics are required.
+
+Connect/read timeouts, maximum attempts, and retry backoff are configurable. Transport problems and
+HTTP failures are exposed as typed `KeycloakClientException` failures. HTTP 401 clears the cached
+token; 401, 429, and 5xx responses are retryable up to the configured limit. Client secrets, tokens,
+and authorization headers are never written to audit details.
+
+Use a dedicated confidential client such as `authorization-sync-service` and grant its service
+account only the realm-management permissions needed to query users, group memberships, and
+realm-role mappings.
+
+## Explicit authority mappings
+
+All four mapping combinations are supported:
 
 ```text
-John Smith
-sAMAccountName = john.smith
-department = Finance
-employeeNumber = 12345
-memberOf:
-  Finance-Managers
-  Singapore-Employees
+KEYCLOAK GROUP -> ROLE
+KEYCLOAK GROUP -> PERMISSION_GROUP
+KEYCLOAK ROLE  -> ROLE
+KEYCLOAK ROLE  -> PERMISSION_GROUP
 ```
 
-AD groups should express external/business identity facts rather than application URL permissions.
-
-## Keycloak federation example
-
-Conceptual configuration:
-
-```text
-Realm: COMPANY
-User Federation: LDAP / Active Directory
-Users DN: OU=Employees,DC=company,DC=com
-Username LDAP Attribute: sAMAccountName
-```
-
-Mappers:
-
-```text
-department -> Keycloak user attribute
-employeeNumber -> Keycloak user attribute
-LDAP groups -> Keycloak groups
-```
-
-Result:
-
-```text
-john.smith
- groups:
-   /AD/Finance-Managers
-   /AD/Singapore-Employees
-```
-
-## Explicit mappings
-
-Support:
-
-```text
-KEYCLOAK_GROUP -> ROLE
-KEYCLOAK_GROUP -> PERMISSION_GROUP
-KEYCLOAK_ROLE  -> ROLE
-KEYCLOAK_ROLE  -> PERMISSION_GROUP
-```
-
-Example seed:
+Mappings can be managed through the admin API/UI or seeded in YAML:
 
 ```yaml
 authorization:
@@ -96,65 +81,69 @@ authorization:
         authority-type: ROLE
         authority: payroll-approver
         target:
-          type: ROLE
-          code: PAYROLL_APPROVER
+          type: PERMISSION_GROUP
+          code: PAYROLL_APPROVERS
 ```
 
-## Service account
+Java contributors use `AuthorizationSeedBuilder.externalAuthorityMapping(...)`. Seed validation
+rejects missing or unknown local targets before mutation, and MERGE uses the complete
+source/authority/target natural key.
 
-Use a dedicated confidential client such as:
+External authorities never contain URL or UI permissions. They map only to application-owned roles
+or permission groups.
+
+## Stable local identity
+
+The configured issuer and Keycloak user ID become the local stable key:
 
 ```text
-authorization-sync-service
+(authorization.keycloak.issuer, Keycloak user id)
 ```
 
-Use client credentials and least privilege. Never require `realm-admin` if narrower permissions work.
+If `issuer` is omitted it resolves to `{normalized-base-url}/realms/{realm}`. Username, email,
+first name, and last name are synchronized as mutable attributes. The Keycloak user ID is also stored
+as the external directory ID.
 
-Secrets come from environment/secret configuration, not seed data/code.
+## Synchronization behavior
 
-## Sync algorithm
+Full reconciliation:
 
-For each external user:
+1. acquire a pessimistic write lock on `AUTH_SYNC_STATE.GLOBAL_IDENTITY_SYNC`
+2. page through all Keycloak users
+3. retrieve each user's groups and realm roles
+4. map external authorities to local targets
+5. upsert the local user
+6. add missing `IDENTITY_SYNC` role/group assignments
+7. remove stale `IDENTITY_SYNC` assignments
+8. preserve all `MANUAL` and `SEED` assignments
+9. resolve pending seed assignments
+10. mark unseen Keycloak identities missing, disable them, and remove only sync-owned assignments
+11. increment entitlement versions when authorization state changes
+12. commit and invalidate affected identity caches
+13. record synchronization status and audit events
 
-1. fetch user and stable Keycloak identity
-2. fetch configured user attributes
-3. fetch groups
-4. fetch relevant roles
-5. convert to provider-neutral `ExternalAuthority`
-6. apply local `ExternalAuthorityMapping`
-7. upsert `AUTH_USER`
-8. compute desired `IDENTITY_SYNC` role/group assignments
-9. add missing sync-owned assignments
-10. remove stale sync-owned assignments
-11. preserve `MANUAL` and `SEED`
-12. resolve pending seed assignments
-13. increment entitlement version if authorization changed
-14. commit
-15. invalidate affected cache
-16. record audit/sync result
+The database row lock is held for the reconciliation transaction, so application instances sharing
+the same database serialize synchronization work.
 
-## Periodic synchronization
+Targeted synchronization retrieves one user by Keycloak ID. If the user no longer exists, it applies
+the same missing-user handling to that local identity.
 
-Support:
+The Keycloak Admin users API used here has no reliable modified-since contract. Therefore the Phase 4
+incremental entry point deliberately performs a full reconciliation and reports
+`INCREMENTAL_FULL_SCAN`. This preserves correctness while keeping a provider-neutral incremental
+SPI for a future optimized source.
 
-- initial/full reconciliation
-- configurable periodic full reconciliation
-- incremental/targeted synchronization where practical
-- single-user sync
+## Scheduling and manual execution
 
-For multi-pod apps, only one instance performs a given global sync at once.
+`full-cron` and `incremental-cron` use Spring cron syntax. Their default value, `-`, disables
+that schedule. `sync.enabled=false` disables scheduler creation but leaves the provider available
+for admin-triggered full, incremental, and targeted synchronization.
 
-## Event-driven refresh
+Status is stored in `AUTH_SYNC_STATE` as `NEVER`, `RUNNING`, `COMPLETED`, or `FAILED` with
+safe details. Synchronization publishes `IDENTITY_SYNC_STARTED`, `IDENTITY_SYNC_COMPLETED`, and
+`IDENTITY_SYNC_FAILED` change-audit events.
 
-Optional later optimization.
-
-```text
-provider event -> generic IdentityChangeEvent -> targeted sync -> commit -> invalidate cache
-```
-
-Events may be lost/duplicated/reordered, so periodic reconciliation remains the correctness safety net.
-
-## Runtime
+## Runtime request flow
 
 Even with `source=keycloak`:
 
@@ -163,8 +152,10 @@ request
  -> Spring Security authentication (often Keycloak JWT)
  -> AuthenticatedIdentity
  -> local entitlement cache
- -> local DB on miss
+ -> local database on cache miss
  -> AuthorizationEngine
 ```
 
-Do not call Keycloak Admin API for each application request.
+Normal authorization requests never call the Keycloak Admin API. Authentication remains the
+consuming application's Spring Security responsibility. Event-driven refresh is deferred to Phase 5;
+periodic/full reconciliation remains the correctness path.

@@ -1,0 +1,216 @@
+# ------------------------------------------------------------
+# Base branches
+# ------------------------------------------------------------
+
+dn: ou=People,dc=demo,dc=local
+objectClass: organizationalUnit
+ou: People
+
+dn: ou=Groups,dc=demo,dc=local
+objectClass: organizationalUnit
+ou: Groups
+
+# ------------------------------------------------------------
+# Employees
+# Password for every demo employee: demo
+# ------------------------------------------------------------
+
+dn: uid=alice,ou=People,dc=demo,dc=local
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+uid: alice
+cn: Alice Tan
+sn: Tan
+givenName: Alice
+mail: alice@example.com
+employeeNumber: 1001
+departmentNumber: PAYMENTS
+l: SG
+title: Head of Payments
+userPassword: demo
+
+dn: uid=bob,ou=People,dc=demo,dc=local
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+uid: bob
+cn: Bob Lim
+sn: Lim
+givenName: Bob
+mail: bob@example.com
+employeeNumber: 1002
+departmentNumber: PAYMENTS
+l: SG
+title: Payments Manager
+manager: uid=alice,ou=People,dc=demo,dc=local
+userPassword: demo
+
+dn: uid=john,ou=People,dc=demo,dc=local
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+uid: john
+cn: John Lee
+sn: Lee
+givenName: John
+mail: john@example.com
+employeeNumber: 1003
+departmentNumber: PAYMENTS
+l: SG
+title: Software Engineer
+manager: uid=bob,ou=People,dc=demo,dc=local
+userPassword: demo
+
+dn: uid=mary,ou=People,dc=demo,dc=local
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+uid: mary
+cn: Mary Smith
+sn: Smith
+givenName: Mary
+mail: mary@example.com
+employeeNumber: 1004
+departmentNumber: PAYMENTS
+l: LONDON
+title: Business Analyst
+manager: uid=bob,ou=People,dc=demo,dc=local
+userPassword: demo
+
+dn: uid=susan,ou=People,dc=demo,dc=local
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+uid: susan
+cn: Susan Wong
+sn: Wong
+givenName: Susan
+mail: susan@example.com
+employeeNumber: 2001
+departmentNumber: HR
+l: SG
+title: HR Administrator
+userPassword: demo
+
+dn: uid=david,ou=People,dc=demo,dc=local
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+uid: david
+cn: David Chen
+sn: Chen
+givenName: David
+mail: david@example.com
+employeeNumber: 3001
+departmentNumber: FINANCE
+l: TOKYO
+title: Finance Analyst
+userPassword: demo
+
+# ------------------------------------------------------------
+# Department groups
+# ------------------------------------------------------------
+
+dn: cn=Department-Payments,ou=Groups,dc=demo,dc=local
+objectClass: top
+objectClass: groupOfNames
+cn: Department-Payments
+member: uid=alice,ou=People,dc=demo,dc=local
+member: uid=bob,ou=People,dc=demo,dc=local
+member: uid=john,ou=People,dc=demo,dc=local
+member: uid=mary,ou=People,dc=demo,dc=local
+
+dn: cn=Department-HR,ou=Groups,dc=demo,dc=local
+objectClass: top
+objectClass: groupOfNames
+cn: Department-HR
+member: uid=susan,ou=People,dc=demo,dc=local
+
+dn: cn=Department-Finance,ou=Groups,dc=demo,dc=local
+objectClass: top
+objectClass: groupOfNames
+cn: Department-Finance
+member: uid=david,ou=People,dc=demo,dc=local
+
+# ------------------------------------------------------------
+# Location groups
+# ------------------------------------------------------------
+
+dn: cn=Location-Singapore,ou=Groups,dc=demo,dc=local
+objectClass: top
+objectClass: groupOfNames
+cn: Location-Singapore
+member: uid=alice,ou=People,dc=demo,dc=local
+member: uid=bob,ou=People,dc=demo,dc=local
+member: uid=john,ou=People,dc=demo,dc=local
+member: uid=susan,ou=People,dc=demo,dc=local
+
+dn: cn=Location-London,ou=Groups,dc=demo,dc=local
+objectClass: top
+objectClass: groupOfNames
+cn: Location-London
+member: uid=mary,ou=People,dc=demo,dc=local
+
+dn: cn=Location-Tokyo,ou=Groups,dc=demo,dc=local
+objectClass: top
+objectClass: groupOfNames
+cn: Location-Tokyo
+member: uid=david,ou=People,dc=demo,dc=local
+
+# ------------------------------------------------------------
+# Function groups - these map to Keycloak groups that carry roles
+# ------------------------------------------------------------
+
+dn: cn=Function-Employees,ou=Groups,dc=demo,dc=local
+objectClass: top
+objectClass: groupOfNames
+cn: Function-Employees
+member: uid=john,ou=People,dc=demo,dc=local
+member: uid=mary,ou=People,dc=demo,dc=local
+member: uid=david,ou=People,dc=demo,dc=local
+
+dn: cn=Function-Managers,ou=Groups,dc=demo,dc=local
+objectClass: top
+objectClass: groupOfNames
+cn: Function-Managers
+member: uid=bob,ou=People,dc=demo,dc=local
+
+dn: cn=Function-Department-Heads,ou=Groups,dc=demo,dc=local
+objectClass: top
+objectClass: groupOfNames
+cn: Function-Department-Heads
+member: uid=alice,ou=People,dc=demo,dc=local
+
+dn: cn=Function-HR-Admins,ou=Groups,dc=demo,dc=local
+objectClass: top
+objectClass: groupOfNames
+cn: Function-HR-Admins
+member: uid=susan,ou=People,dc=demo,dc=local
+
+# ------------------------------------------------------------
+# Team / reporting-scope groups for a no-code relationship demo
+# ------------------------------------------------------------
+
+dn: cn=Team-Bob,ou=Groups,dc=demo,dc=local
+objectClass: top
+objectClass: groupOfNames
+cn: Team-Bob
+member: uid=bob,ou=People,dc=demo,dc=local
+member: uid=john,ou=People,dc=demo,dc=local
+member: uid=mary,ou=People,dc=demo,dc=local
+
+dn: cn=Team-Alice-Department,ou=Groups,dc=demo,dc=local
+objectClass: top
+objectClass: groupOfNames
+cn: Team-Alice-Department
+member: uid=alice,ou=People,dc=demo,dc=local
+member: uid=bob,ou=People,dc=demo,dc=local
+member: uid=john,ou=People,dc=demo,dc=local
+member: uid=mary,ou=People,dc=demo,dc=local

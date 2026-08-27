@@ -18,9 +18,10 @@ Before writing code, summarize in at most 30 lines:
 8. optional Keycloak synchronization
 9. how the demo proves functionality
 
-Then execute **Phase 1 only** from `TASKS.md`.
+Phases 1-4 are implemented. Execute **Phase 5 only** from `TASKS.md`, preserving the existing
+DB-backed core, admin API, packaged SPA, and Keycloak synchronization behavior.
 
-Generate working code and tests. Run `mvn clean verify`. Stop after Phase 1 and report:
+Generate working code and tests. Run `./mvnw clean verify`. Stop after Phase 5 and report:
 
 - files created/changed
 - tests run
@@ -28,4 +29,4 @@ Generate working code and tests. Run `mvn clean verify`. Stop after Phase 1 and 
 - assumptions
 - any deviations from the specification
 
-Do not start Keycloak or UI implementation during Phase 1 except for creating their Maven module descriptors if required by the parent build.
+Do not start Phase 6 hardening while implementing Phase 5.

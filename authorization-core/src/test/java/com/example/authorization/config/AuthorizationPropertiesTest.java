@@ -54,9 +54,15 @@ class AuthorizationPropertiesTest {
   void rejectsANonFailClosedDefaultDecision() {
     AuthorizationProperties properties = new AuthorizationProperties();
     properties.setDefaultDecision("PERMIT");
-    IdentitySynchronizationProvider synchronization = new IdentitySynchronizationProvider() {};
+    @SuppressWarnings("unchecked")
+    org.springframework.beans.factory.ObjectProvider<IdentitySynchronizationProvider>
+        synchronizationProviders =
+            mock(org.springframework.beans.factory.ObjectProvider.class);
+    org.mockito.Mockito.when(synchronizationProviders.getIfAvailable())
+        .thenReturn(new IdentitySynchronizationProvider() {});
     var guard =
-        new AuthorizationAutoConfiguration().authorizationSourceGuard(properties, synchronization);
+        new AuthorizationAutoConfiguration()
+            .authorizationSourceGuard(properties, synchronizationProviders);
 
     assertThatThrownBy(() -> guard.run(mock(ApplicationArguments.class)))
         .isInstanceOf(IllegalStateException.class)

@@ -9,7 +9,7 @@ Spring Security Authentication
     |
 AuthenticatedIdentity
     |
-DynamicAuthorizationManager
+DynamicRequestAuthorizationManager
     |
 ResourceRuleProvider/cache
     |

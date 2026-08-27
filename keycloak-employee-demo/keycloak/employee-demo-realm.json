@@ -1,0 +1,708 @@
+{
+  "realm": "employee-demo",
+  "displayName": "Employee Hierarchy Demo",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "resetPasswordAllowed": true,
+  "editUsernameAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "roles": {
+    "realm": [
+      {
+        "name": "VIEW_SELF",
+        "description": "Can view own employee profile"
+      },
+      {
+        "name": "VIEW_TEAM",
+        "description": "Can view direct/team employee records"
+      },
+      {
+        "name": "VIEW_DEPARTMENT",
+        "description": "Can view department employee records"
+      },
+      {
+        "name": "VIEW_LOCATION",
+        "description": "Can view employee records for a location"
+      },
+      {
+        "name": "VIEW_ALL",
+        "description": "Can view all employee records"
+      },
+      {
+        "name": "EDIT_SELF",
+        "description": "Can edit own employee profile"
+      },
+      {
+        "name": "EDIT_TEAM",
+        "description": "Can edit team employee records"
+      },
+      {
+        "name": "EDIT_ALL",
+        "description": "Can edit all employee records"
+      },
+      {
+        "name": "APPROVE",
+        "description": "Can approve employee-related requests"
+      }
+    ]
+  },
+  "groups": [
+    {
+      "name": "Department-Payments"
+    },
+    {
+      "name": "Department-Finance"
+    },
+    {
+      "name": "Department-HR"
+    },
+    {
+      "name": "Location-Singapore"
+    },
+    {
+      "name": "Location-London"
+    },
+    {
+      "name": "Location-Tokyo"
+    },
+    {
+      "name": "Function-Employees",
+      "realmRoles": [
+        "VIEW_SELF",
+        "EDIT_SELF"
+      ]
+    },
+    {
+      "name": "Function-Managers",
+      "realmRoles": [
+        "VIEW_SELF",
+        "EDIT_SELF",
+        "VIEW_TEAM",
+        "EDIT_TEAM",
+        "APPROVE"
+      ]
+    },
+    {
+      "name": "Function-Department-Heads",
+      "realmRoles": [
+        "VIEW_SELF",
+        "EDIT_SELF",
+        "VIEW_TEAM",
+        "EDIT_TEAM",
+        "VIEW_DEPARTMENT",
+        "APPROVE"
+      ]
+    },
+    {
+      "name": "Function-HR-Admins",
+      "realmRoles": [
+        "VIEW_SELF",
+        "EDIT_SELF",
+        "VIEW_ALL",
+        "EDIT_ALL",
+        "APPROVE"
+      ]
+    },
+    {
+      "name": "Team-Bob"
+    },
+    {
+      "name": "Team-Alice-Department"
+    }
+  ],
+  "users": [],
+  "clients": [
+    {
+      "clientId": "employee-demo",
+      "name": "Employee Demo Application",
+      "description": "Demo client for employee hierarchy authorization",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "clientAuthenticatorType": "client-secret",
+      "secret": "employee-demo-secret",
+      "publicClient": false,
+      "bearerOnly": false,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "authorizationServicesEnabled": true,
+      "fullScopeAllowed": true,
+      "redirectUris": [
+        "http://localhost:*/*",
+        "http://127.0.0.1:*/*"
+      ],
+      "webOrigins": [
+        "+"
+      ],
+      "protocolMappers": [
+        {
+          "name": "employee-id",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "employeeId",
+            "claim.name": "employeeId",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "multivalued": "false"
+          }
+        },
+        {
+          "name": "manager-dn",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "managerDn",
+            "claim.name": "managerDn",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "multivalued": "false"
+          }
+        },
+        {
+          "name": "department",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "department",
+            "claim.name": "department",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "multivalued": "false"
+          }
+        },
+        {
+          "name": "location",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "location",
+            "claim.name": "location",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "multivalued": "false"
+          }
+        },
+        {
+          "name": "job-title",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "jobTitle",
+            "claim.name": "jobTitle",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "multivalued": "false"
+          }
+        },
+        {
+          "name": "groups",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-group-membership-mapper",
+          "consentRequired": false,
+          "config": {
+            "full.path": "true",
+            "claim.name": "groups",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        }
+      ],
+      "authorizationSettings": {
+        "policyEnforcementMode": "ENFORCING",
+        "allowRemoteResourceManagement": true,
+        "resources": [
+          {
+            "name": "Own Profile",
+            "uri": "/api/me",
+            "type": "employee-profile"
+          },
+          {
+            "name": "Team Records",
+            "uri": "/api/team/*",
+            "type": "employee-records"
+          },
+          {
+            "name": "Department Records",
+            "uri": "/api/department/*",
+            "type": "employee-records"
+          },
+          {
+            "name": "All Employee Records",
+            "uri": "/api/employees/*",
+            "type": "employee-records"
+          },
+          {
+            "name": "Approval Queue",
+            "uri": "/api/approvals/*",
+            "type": "approval-records"
+          }
+        ],
+        "policies": [
+          {
+            "name": "Employee Policy",
+            "description": "Users with VIEW_SELF",
+            "type": "role",
+            "logic": "POSITIVE",
+            "decisionStrategy": "UNANIMOUS",
+            "config": {
+              "roles": "[{\"id\":\"VIEW_SELF\",\"required\":true}]"
+            }
+          },
+          {
+            "name": "Manager Policy",
+            "description": "Users with VIEW_TEAM",
+            "type": "role",
+            "logic": "POSITIVE",
+            "decisionStrategy": "UNANIMOUS",
+            "config": {
+              "roles": "[{\"id\":\"VIEW_TEAM\",\"required\":true}]"
+            }
+          },
+          {
+            "name": "Department Head Policy",
+            "description": "Users with VIEW_DEPARTMENT",
+            "type": "role",
+            "logic": "POSITIVE",
+            "decisionStrategy": "UNANIMOUS",
+            "config": {
+              "roles": "[{\"id\":\"VIEW_DEPARTMENT\",\"required\":true}]"
+            }
+          },
+          {
+            "name": "HR Admin Policy",
+            "description": "Users with VIEW_ALL",
+            "type": "role",
+            "logic": "POSITIVE",
+            "decisionStrategy": "UNANIMOUS",
+            "config": {
+              "roles": "[{\"id\":\"VIEW_ALL\",\"required\":true}]"
+            }
+          },
+          {
+            "name": "Approver Policy",
+            "description": "Users with APPROVE",
+            "type": "role",
+            "logic": "POSITIVE",
+            "decisionStrategy": "UNANIMOUS",
+            "config": {
+              "roles": "[{\"id\":\"APPROVE\",\"required\":true}]"
+            }
+          },
+          {
+            "name": "Own Profile Permission",
+            "type": "resource",
+            "logic": "POSITIVE",
+            "decisionStrategy": "UNANIMOUS",
+            "config": {
+              "resources": "[\"Own Profile\"]",
+              "applyPolicies": "[\"Employee Policy\"]"
+            }
+          },
+          {
+            "name": "Team Records Permission",
+            "type": "resource",
+            "logic": "POSITIVE",
+            "decisionStrategy": "UNANIMOUS",
+            "config": {
+              "resources": "[\"Team Records\"]",
+              "applyPolicies": "[\"Manager Policy\"]"
+            }
+          },
+          {
+            "name": "Department Records Permission",
+            "type": "resource",
+            "logic": "POSITIVE",
+            "decisionStrategy": "UNANIMOUS",
+            "config": {
+              "resources": "[\"Department Records\"]",
+              "applyPolicies": "[\"Department Head Policy\"]"
+            }
+          },
+          {
+            "name": "All Employee Records Permission",
+            "type": "resource",
+            "logic": "POSITIVE",
+            "decisionStrategy": "UNANIMOUS",
+            "config": {
+              "resources": "[\"All Employee Records\"]",
+              "applyPolicies": "[\"HR Admin Policy\"]"
+            }
+          },
+          {
+            "name": "Approval Queue Permission",
+            "type": "resource",
+            "logic": "POSITIVE",
+            "decisionStrategy": "UNANIMOUS",
+            "config": {
+              "resources": "[\"Approval Queue\"]",
+              "applyPolicies": "[\"Approver Policy\"]"
+            }
+          }
+        ],
+        "scopes": [
+          {
+            "name": "view"
+          },
+          {
+            "name": "edit"
+          },
+          {
+            "name": "approve"
+          }
+        ]
+      }
+    }
+  ],
+  "components": {
+    "org.keycloak.storage.UserStorageProvider": [
+      {
+        "id": "a1111111-1111-4111-8111-111111111111",
+        "name": "demo-openldap",
+        "providerId": "ldap",
+        "subComponents": {
+          "org.keycloak.storage.ldap.mappers.LDAPStorageMapper": [
+            {
+              "id": "b0000001-0000-4000-8000-000000000001",
+              "name": "username",
+              "providerId": "user-attribute-ldap-mapper",
+              "subComponents": {},
+              "config": {
+                "ldap.attribute": [
+                  "uid"
+                ],
+                "is.mandatory.in.ldap": [
+                  "true"
+                ],
+                "read.only": [
+                  "true"
+                ],
+                "always.read.value.from.ldap": [
+                  "true"
+                ],
+                "user.model.attribute": [
+                  "username"
+                ]
+              }
+            },
+            {
+              "id": "b0000002-0000-4000-8000-000000000002",
+              "name": "first name",
+              "providerId": "user-attribute-ldap-mapper",
+              "subComponents": {},
+              "config": {
+                "ldap.attribute": [
+                  "givenName"
+                ],
+                "is.mandatory.in.ldap": [
+                  "false"
+                ],
+                "read.only": [
+                  "true"
+                ],
+                "always.read.value.from.ldap": [
+                  "true"
+                ],
+                "user.model.attribute": [
+                  "firstName"
+                ]
+              }
+            },
+            {
+              "id": "b0000003-0000-4000-8000-000000000003",
+              "name": "last name",
+              "providerId": "user-attribute-ldap-mapper",
+              "subComponents": {},
+              "config": {
+                "ldap.attribute": [
+                  "sn"
+                ],
+                "is.mandatory.in.ldap": [
+                  "true"
+                ],
+                "read.only": [
+                  "true"
+                ],
+                "always.read.value.from.ldap": [
+                  "true"
+                ],
+                "user.model.attribute": [
+                  "lastName"
+                ]
+              }
+            },
+            {
+              "id": "b0000004-0000-4000-8000-000000000004",
+              "name": "email",
+              "providerId": "user-attribute-ldap-mapper",
+              "subComponents": {},
+              "config": {
+                "ldap.attribute": [
+                  "mail"
+                ],
+                "is.mandatory.in.ldap": [
+                  "false"
+                ],
+                "read.only": [
+                  "true"
+                ],
+                "always.read.value.from.ldap": [
+                  "true"
+                ],
+                "user.model.attribute": [
+                  "email"
+                ]
+              }
+            },
+            {
+              "id": "b0000005-0000-4000-8000-000000000005",
+              "name": "employee id",
+              "providerId": "user-attribute-ldap-mapper",
+              "subComponents": {},
+              "config": {
+                "ldap.attribute": [
+                  "employeeNumber"
+                ],
+                "is.mandatory.in.ldap": [
+                  "false"
+                ],
+                "read.only": [
+                  "true"
+                ],
+                "always.read.value.from.ldap": [
+                  "true"
+                ],
+                "user.model.attribute": [
+                  "employeeId"
+                ]
+              }
+            },
+            {
+              "id": "b0000006-0000-4000-8000-000000000006",
+              "name": "department",
+              "providerId": "user-attribute-ldap-mapper",
+              "subComponents": {},
+              "config": {
+                "ldap.attribute": [
+                  "departmentNumber"
+                ],
+                "is.mandatory.in.ldap": [
+                  "false"
+                ],
+                "read.only": [
+                  "true"
+                ],
+                "always.read.value.from.ldap": [
+                  "true"
+                ],
+                "user.model.attribute": [
+                  "department"
+                ]
+              }
+            },
+            {
+              "id": "b0000007-0000-4000-8000-000000000007",
+              "name": "location",
+              "providerId": "user-attribute-ldap-mapper",
+              "subComponents": {},
+              "config": {
+                "ldap.attribute": [
+                  "l"
+                ],
+                "is.mandatory.in.ldap": [
+                  "false"
+                ],
+                "read.only": [
+                  "true"
+                ],
+                "always.read.value.from.ldap": [
+                  "true"
+                ],
+                "user.model.attribute": [
+                  "location"
+                ]
+              }
+            },
+            {
+              "id": "b0000008-0000-4000-8000-000000000008",
+              "name": "manager DN",
+              "providerId": "user-attribute-ldap-mapper",
+              "subComponents": {},
+              "config": {
+                "ldap.attribute": [
+                  "manager"
+                ],
+                "is.mandatory.in.ldap": [
+                  "false"
+                ],
+                "read.only": [
+                  "true"
+                ],
+                "always.read.value.from.ldap": [
+                  "true"
+                ],
+                "user.model.attribute": [
+                  "managerDn"
+                ]
+              }
+            },
+            {
+              "id": "b0000009-0000-4000-8000-000000000009",
+              "name": "job title",
+              "providerId": "user-attribute-ldap-mapper",
+              "subComponents": {},
+              "config": {
+                "ldap.attribute": [
+                  "title"
+                ],
+                "is.mandatory.in.ldap": [
+                  "false"
+                ],
+                "read.only": [
+                  "true"
+                ],
+                "always.read.value.from.ldap": [
+                  "true"
+                ],
+                "user.model.attribute": [
+                  "jobTitle"
+                ]
+              }
+            },
+            {
+              "id": "a2222222-2222-4222-8222-222222222222",
+              "name": "company groups",
+              "providerId": "group-ldap-mapper",
+              "subComponents": {},
+              "config": {
+                "membership.attribute.type": [
+                  "DN"
+                ],
+                "group.name.ldap.attribute": [
+                  "cn"
+                ],
+                "preserve.group.inheritance": [
+                  "false"
+                ],
+                "groups.dn": [
+                  "ou=Groups,dc=demo,dc=local"
+                ],
+                "mapped.group.attributes": [
+                  "cn"
+                ],
+                "mode": [
+                  "IMPORT"
+                ],
+                "user.roles.retrieve.strategy": [
+                  "LOAD_GROUPS_BY_MEMBER_ATTRIBUTE"
+                ],
+                "membership.ldap.attribute": [
+                  "member"
+                ],
+                "group.object.classes": [
+                  "groupOfNames"
+                ],
+                "groups.path": [
+                  "/"
+                ],
+                "drop.non.existing.groups.during.sync": [
+                  "false"
+                ]
+              }
+            }
+          ]
+        },
+        "config": {
+          "enabled": [
+            "true"
+          ],
+          "priority": [
+            "0"
+          ],
+          "vendor": [
+            "other"
+          ],
+          "connectionUrl": [
+            "ldap://ldap:389"
+          ],
+          "usersDn": [
+            "ou=People,dc=demo,dc=local"
+          ],
+          "authType": [
+            "simple"
+          ],
+          "bindDn": [
+            "cn=admin,dc=demo,dc=local"
+          ],
+          "bindCredential": [
+            "admin"
+          ],
+          "editMode": [
+            "READ_ONLY"
+          ],
+          "importEnabled": [
+            "true"
+          ],
+          "syncRegistrations": [
+            "false"
+          ],
+          "usernameLDAPAttribute": [
+            "uid"
+          ],
+          "rdnLDAPAttribute": [
+            "uid"
+          ],
+          "uuidLDAPAttribute": [
+            "entryUUID"
+          ],
+          "userObjectClasses": [
+            "top, person, organizationalPerson, inetOrgPerson"
+          ],
+          "searchScope": [
+            "2"
+          ],
+          "pagination": [
+            "true"
+          ],
+          "connectionPooling": [
+            "true"
+          ],
+          "fullSyncPeriod": [
+            "-1"
+          ],
+          "changedSyncPeriod": [
+            "-1"
+          ],
+          "batchSizeForSync": [
+            "1000"
+          ],
+          "trustEmail": [
+            "true"
+          ],
+          "startTls": [
+            "false"
+          ]
+        }
+      }
+    ]
+  }
+}

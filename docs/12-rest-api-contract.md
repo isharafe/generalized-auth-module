@@ -28,6 +28,9 @@ HTTP 400.
 }
 ```
 
+Bean-validation failures populate `errors`. Service-level validation failures use the same response
+shape with a specific top-level `message` and may return an empty `errors` list.
+
 ## Optimistic locking
 
 HTTP 409.
@@ -108,4 +111,5 @@ Do not silently allow deleting an `IDENTITY_SYNC` assignment as if it were manua
 
 Prefer soft disable for referenced authorization configuration. Roles, permission groups,
 permissions, and resource rules are soft-disabled. External-authority mappings support explicit hard
-delete. DELETE requests carry the current optimistic `version` as a query parameter.
+delete. Those configuration DELETE requests carry the current optimistic `version` as a query
+parameter. Relationship-removal and user-assignment DELETE endpoints do not take a version.

@@ -1,6 +1,8 @@
 # Testing Strategy
 
-The generated project must include meaningful automated tests.
+The project includes meaningful automated tests, while later-phase and hardening coverage remains
+explicitly planned below. Lists in the strategy sections are release targets for the phase that owns
+the feature; they should not be read as claims that every listed case already has a dedicated test.
 
 ## Authorization engine
 
@@ -87,6 +89,23 @@ Test:
 The Maven lifecycle runs the frontend production build and Vitest suite. Tests cover critical component/form behavior, capability-driven navigation, API client query/error handling, and route/dashboard smoke rendering.
 
 The demo integration suite also verifies packaged-index delivery, runtime path configuration, 401/403 protection, authorized access, and the demo browser-session bootstrap. Optional browser E2E remains encouraged.
+
+## Current implemented coverage
+
+The current suite covers:
+
+- authorization decisions, rule ranking, conflicts, URL wildcard/method behavior, UI matching, and strategy overrides
+- the consolidated authorization schema and the demo's separate application/authorization Flyway histories
+- seed validation, fail-on-error behavior, pending-assignment resolution invocation, and post-commit cache invalidation
+- demo HTTP 200/401/403/503 behavior and query-string isolation
+- admin API security, CRUD/mappings, validation, optimistic conflicts, assignment ownership, explain, audit, sync facade, and cache-visible updates
+- packaged UI security/runtime configuration and frontend API, dashboard, capability, permission-preview, and audit-kind behavior
+- Keycloak settings validation, client-credentials authentication, pagination, groups, realm roles, typed retry/timeout failures, full and targeted synchronization, stale assignment removal, MANUAL/SEED preservation, pending assignment resolution, audit/status, and cache invalidation
+- demo OIDC browser redirection, login-triggered targeted synchronization, `UI:seePage1`/`UI:seePage2` link visibility, and direct-page denial
+
+Broader seed merge/idempotency upgrade tests, concurrent-startup tests, broader URL bypass regression
+coverage, and real multi-process database-lock verification remain Phase 6 hardening work as
+identified in `TASKS.md`.
 
 ## Release-blocking security tests
 

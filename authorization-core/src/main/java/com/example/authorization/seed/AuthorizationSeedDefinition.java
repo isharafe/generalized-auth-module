@@ -13,6 +13,7 @@ public class AuthorizationSeedDefinition {
   private List<PermissionGroupSeed> permissionGroups = new ArrayList<>();
   private List<RoleSeed> roles = new ArrayList<>();
   private List<ResourceRuleSeed> resourceRules = new ArrayList<>();
+  private List<ExternalAuthorityMappingSeed> externalAuthorityMappings = new ArrayList<>();
   private List<UserSeed> users = new ArrayList<>();
   private List<UserAssignmentSeed> userAssignments = new ArrayList<>();
 
@@ -32,6 +33,10 @@ public class AuthorizationSeedDefinition {
     resourceRules = list(value);
   }
 
+  public void setExternalAuthorityMappings(List<ExternalAuthorityMappingSeed> value) {
+    externalAuthorityMappings = list(value);
+  }
+
   public void setUsers(List<UserSeed> value) {
     users = list(value);
   }
@@ -45,6 +50,7 @@ public class AuthorizationSeedDefinition {
     permissionGroups.addAll(other.permissionGroups);
     roles.addAll(other.roles);
     resourceRules.addAll(other.resourceRules);
+    externalAuthorityMappings.addAll(other.externalAuthorityMappings);
     users.addAll(other.users);
     userAssignments.addAll(other.userAssignments);
   }
@@ -78,6 +84,15 @@ public class AuthorizationSeedDefinition {
       AccessMode accessMode,
       Integer priority,
       Boolean enabled) {}
+
+  public record ExternalAuthorityMappingSeed(
+      String sourceSystem,
+      String authorityType,
+      String authority,
+      ExternalAuthorityTargetSeed target,
+      Boolean enabled) {}
+
+  public record ExternalAuthorityTargetSeed(String type, String code) {}
 
   public record UserSeed(
       String issuer,

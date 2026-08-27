@@ -23,7 +23,7 @@ AUTH_AUDIT_EVENT
 AUTH_SYNC_STATE
 ```
 
-Add a DB lock table only if the chosen initialization/sync locking implementation needs it.
+`AUTH_SYNC_STATE` contains the `GLOBAL_IDENTITY_SYNC` row used both for synchronization status and a pessimistic database lock. Holding that row lock serializes full/targeted synchronization across application instances sharing the database.
 
 ## Constraints
 

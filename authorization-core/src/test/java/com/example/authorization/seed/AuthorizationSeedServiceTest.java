@@ -1,6 +1,7 @@
 package com.example.authorization.seed;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -8,6 +9,7 @@ import static org.mockito.Mockito.when;
 
 import com.example.authorization.domain.AuthenticatedIdentity;
 import com.example.authorization.persistence.entity.UserEntity;
+import com.example.authorization.persistence.repository.ExternalAuthorityMappingRepository;
 import com.example.authorization.persistence.repository.PendingUserAssignmentRepository;
 import com.example.authorization.persistence.repository.PermissionGroupRepository;
 import com.example.authorization.persistence.repository.PermissionRepository;
@@ -18,6 +20,9 @@ import com.example.authorization.persistence.repository.UserPermissionGroupRepos
 import com.example.authorization.persistence.repository.UserRepository;
 import com.example.authorization.persistence.repository.UserRoleRepository;
 import com.example.authorization.persistence.service.PendingUserAssignmentResolver;
+import com.example.authorization.seed.AuthorizationSeedDefinition.ExternalAuthorityMappingSeed;
+import com.example.authorization.seed.AuthorizationSeedDefinition.ExternalAuthorityTargetSeed;
+import com.example.authorization.seed.AuthorizationSeedDefinition.RoleSeed;
 import com.example.authorization.seed.AuthorizationSeedDefinition.UserSeed;
 import com.example.authorization.spi.AuthorizationCacheInvalidator;
 import java.util.List;
@@ -33,6 +38,8 @@ class AuthorizationSeedServiceTest {
   private final PermissionGroupRepository groups = mock(PermissionGroupRepository.class);
   private final RoleRepository roles = mock(RoleRepository.class);
   private final ResourceRuleRepository rules = mock(ResourceRuleRepository.class);
+  private final ExternalAuthorityMappingRepository externalMappings =
+      mock(ExternalAuthorityMappingRepository.class);
   private final UserRepository users = mock(UserRepository.class);
   private final UserRoleRepository userRoles = mock(UserRoleRepository.class);
   private final UserPermissionGroupRepository userGroups = mock(UserPermissionGroupRepository.class);
@@ -70,6 +77,36 @@ class AuthorizationSeedServiceTest {
     }
   }
 
+  @Test
+  void mergesExternalAuthorityMappingsIdempotentlyByNaturalKey() {
+    AuthorizationSeedDefinition seed = new AuthorizationSeedDefinition();
+    seed.setRoles(List.of(new RoleSeed("FINANCE", "Finance", null, List.of(), true)));
+    seed.setExternalAuthorityMappings(
+        List.of(
+            new ExternalAuthorityMappingSeed(
+                "KEYCLOAK",
+                "GROUP",
+                "/Finance",
+                new ExternalAuthorityTargetSeed("ROLE", "FINANCE"),
+                true)));
+
+    service(provider()).apply(seed);
+
+    verify(externalMappings)
+        .findBySourceSystemAndAuthorityTypeAndAuthorityValueAndTargetTypeAndTargetCode(
+            "KEYCLOAK", "GROUP", "/Finance", "ROLE", "FINANCE");
+    verify(externalMappings)
+        .save(
+            argThat(
+                mapping ->
+                    mapping.getSourceSystem().equals("KEYCLOAK")
+                        && mapping.getAuthorityType().equals("GROUP")
+                        && mapping.getAuthorityValue().equals("/Finance")
+                        && mapping.getTargetType().equals("ROLE")
+                        && mapping.getTargetCode().equals("FINANCE")
+                        && mapping.isEnabled()));
+  }
+
   private AuthorizationSeedService service(
       ObjectProvider<PendingUserAssignmentResolver> resolver) {
     return new AuthorizationSeedService(
@@ -77,6 +114,7 @@ class AuthorizationSeedServiceTest {
         groups,
         roles,
         rules,
+        externalMappings,
         users,
         userRoles,
         userGroups,

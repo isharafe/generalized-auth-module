@@ -23,6 +23,7 @@ public class AuthorizationSeedService {
   private final PermissionGroupRepository groups;
   private final RoleRepository roles;
   private final ResourceRuleRepository rules;
+  private final ExternalAuthorityMappingRepository externalMappings;
   private final UserRepository users;
   private final UserRoleRepository userRoles;
   private final UserPermissionGroupRepository userGroups;
@@ -41,6 +42,7 @@ public class AuthorizationSeedService {
     seed.getPermissionGroups().forEach(this::mergeGroup);
     seed.getRoles().forEach(this::mergeRole);
     seed.getResourceRules().forEach(this::mergeRule);
+    seed.getExternalAuthorityMappings().forEach(this::mergeExternalAuthorityMapping);
     seed.getUsers().forEach(this::mergeUser);
     seed.getUserAssignments().forEach(this::mergeAssignment);
     history.save(SeedHistoryEntity.applied("merged", checksum));
@@ -94,6 +96,25 @@ public class AuthorizationSeedService {
     entity.setPriority(value.priority() == null ? 0 : value.priority());
     entity.setEnabled(enabled(value.enabled()));
     rules.save(entity);
+  }
+
+  private void mergeExternalAuthorityMapping(ExternalAuthorityMappingSeed value) {
+    ExternalAuthorityMappingEntity entity =
+        externalMappings
+            .findBySourceSystemAndAuthorityTypeAndAuthorityValueAndTargetTypeAndTargetCode(
+                value.sourceSystem(),
+                value.authorityType(),
+                value.authority(),
+                value.target().type(),
+                value.target().code())
+            .orElseGet(ExternalAuthorityMappingEntity::new);
+    entity.setSourceSystem(value.sourceSystem());
+    entity.setAuthorityType(value.authorityType());
+    entity.setAuthorityValue(value.authority());
+    entity.setTargetType(value.target().type());
+    entity.setTargetCode(value.target().code());
+    entity.setEnabled(enabled(value.enabled()));
+    externalMappings.save(entity);
   }
 
   private void mergeUser(UserSeed value) {
