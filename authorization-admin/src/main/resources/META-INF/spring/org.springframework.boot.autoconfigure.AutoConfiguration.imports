@@ -1,0 +1,2 @@
+com.example.authorization.admin.config.AuthorizationAdminAutoConfiguration
+com.example.authorization.admin.ui.AuthorizationAdminUiAutoConfiguration

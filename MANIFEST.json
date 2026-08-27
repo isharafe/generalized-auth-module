@@ -3,7 +3,7 @@
   "published_modules": [
     "authorization-core",
     "authorization-keycloak",
-    "authorization-admin-ui"
+    "authorization-admin"
   ],
   "example": "examples/authorization-demo",
   "markdown_file_count": 20,

@@ -4,4 +4,4 @@ target/
 node_modules/
 dist/
 coverage/
-authorization-admin-ui/node/
+authorization-admin/node/

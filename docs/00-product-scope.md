@@ -9,7 +9,7 @@ Published modules:
 ```text
 authorization-core
 authorization-keycloak
-authorization-admin-ui
+authorization-admin
 ```
 
 ## Default use case
@@ -19,7 +19,7 @@ Database-backed authorization is the default and requires only `authorization-co
 ## Optional integrations
 
 - Keycloak external identity/authority source through `authorization-keycloak`
-- Built-in admin SPA through `authorization-admin-ui`
+- Management REST API and built-in admin SPA through `authorization-admin`
 
 Future identity sources should be possible through core SPIs without redesigning the engine.
 

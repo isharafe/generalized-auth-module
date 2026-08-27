@@ -58,7 +58,7 @@ public final class AuthorizationSeedBuilder {
     return this;
   }
 
-  AuthorizationSeedDefinition build() {
+  public AuthorizationSeedDefinition build() {
     return definition;
   }
 }

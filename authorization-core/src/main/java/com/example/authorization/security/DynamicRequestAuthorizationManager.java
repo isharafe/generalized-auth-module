@@ -27,7 +27,7 @@ public final class DynamicRequestAuthorizationManager
         new ProtectedResource(
             ResourceType.URL, "%s:%s".formatted(request.getMethod(), request.getRequestURI()));
     AuthorizationResult result = engine.authorize(resource, identity);
-    auditPublisher.publish(result, resource);
+    auditPublisher.publishDecision(result, resource);
     if (result.decision() == com.example.authorization.domain.AuthorizationDecision.INDETERMINATE) {
       throw new IndeterminateAuthorizationException();
     }

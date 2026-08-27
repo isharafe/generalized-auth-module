@@ -2,7 +2,7 @@
 
 ## Delivered
 
-Phase 3 provides the optional `authorization-admin-ui` module as a functional React and TypeScript single-page application. It depends on `authorization-core` but contains no persistence or identity-provider logic.
+Phase 3 adds the functional React and TypeScript SPA to the optional `authorization-admin` module established in Phase 2. The same module owns the management API, DTOs, transactional services, admin seed contributor, UI server integration, and packaged frontend. It depends on `authorization-core`; JPA entities, repositories, migrations, runtime authorization, and provider SPIs remain in core.
 
 The SPA includes:
 
@@ -11,7 +11,7 @@ The SPA includes:
 - CRUD screens for roles, permission groups, permissions, resource rules, and external mappings
 - structured URL permission editing with a `METHOD:/path` preview
 - authorization test/explain results
-- paginated, filterable audit events
+- paginated audit events with explicit DECISION/CHANGE badges and filtering
 - synchronization status and actions only when the capabilities endpoint reports support
 
 Provider-specific navigation is capability-driven. Synchronized and seeded user assignments are displayed as read-only; only MANUAL assignments can be removed through the UI.
@@ -47,7 +47,7 @@ The SPA fetches `./config` on startup and constructs its same-origin API client 
 
 ## Security
 
-The framework seed contributes `AUTHZ_ADMIN_UI` with `GET:/authorization-admin/**` by default and includes it in the framework viewer and admin permission groups. Configured API and UI base paths are normalized independently when the framework seed is built.
+The admin module's seed contributor provides `AUTHZ_ADMIN_UI` with `GET:/authorization-admin/**` by default and includes it in the framework viewer and admin permission groups. Configured API and UI base paths are normalized independently when the admin seed is built.
 
 The UI entry, runtime configuration, assets, and admin API all pass through the consuming application's Spring Security authorization pipeline. There is no UI-only hardcoded role check. The framework still assigns no user to its administration roles.
 
@@ -76,5 +76,5 @@ Frontend coverage includes API query/error handling, capability-driven navigatio
 The full reactor build is the Phase 3 release gate:
 
 ```bash
-mvn clean verify
+./mvnw clean verify
 ```

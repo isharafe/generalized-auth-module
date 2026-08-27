@@ -55,6 +55,17 @@ Initial implementation may use local cache plus documented limitations, then add
 
 ## Audit events
 
+Core exposes two explicit audit operations:
+
+```text
+publishDecision(AuthorizationResult, ProtectedResource)
+publishChange(AuthorizationChangeAuditEvent)
+```
+
+Decision events describe runtime authorization outcomes. Change events describe authorization configuration or assignment mutations and can be emitted by the admin module, identity synchronization, seed processing, or future integrations. Core owns their common database persistence and correlation handling.
+
+Every `AUTH_AUDIT_EVENT` row stores a non-null `EVENT_KIND` discriminator with `DECISION` or `CHANGE`. `EVENT_TYPE` remains the detailed subtype, such as `AUTHORIZATION_DENIED` or `ROLE_UPDATED`. Migration V4 backfills existing rows before enforcing the non-null constraint.
+
 Record at least:
 
 ```text
@@ -77,6 +88,7 @@ Safe fields:
 
 ```text
 timestamp
+event kind (DECISION / CHANGE)
 actor identity
 target/action
 request method/path

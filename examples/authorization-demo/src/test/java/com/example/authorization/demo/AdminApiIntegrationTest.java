@@ -118,9 +118,11 @@ class AdminApiIntegrationTest {
     mvc.perform(
             get(BASE + "/audit")
                 .header("X-Demo-User", ADMIN)
+                .param("eventKind", "CHANGE")
                 .param("eventType", "ADMIN_CREATE")
                 .param("target", "PHASE2_TEST_ROLE"))
         .andExpect(status().isOk())
+        .andExpect(jsonPath("$.content[0].eventKind", is("CHANGE")))
         .andExpect(jsonPath("$.content[0].target", is("ROLE:PHASE2_TEST_ROLE")))
         .andExpect(jsonPath("$.content[0].actorSubject", is("manager")));
   }

@@ -4,7 +4,7 @@
 
 Phase 1 provides a functional DB-only authorization path in `authorization-core` and an H2 demo. The core contains public domain/SPIs, deterministic lock selection, Spring `PathPattern` matching, an `AuthorizationManager<RequestAuthorizationContext>`, top-level JPA entities and repositories, separate Flyway initialization, validated YAML/Java seed merging, local targeted caches, audit persistence, and Spring Boot auto-configuration.
 
-The demo proves public, authenticated-only, permission-view, permission-edit, query-string safety, infrastructure-failure, framework-admin assignment, and independent application/component Flyway histories.
+The demo proves public, authenticated-only, permission-view, permission-edit, query-string safety, infrastructure-failure, application seed assignments, and independent application/component Flyway histories.
 
 ## Persistence layout
 
@@ -22,7 +22,7 @@ Consumers retain ownership of authentication and their `SecurityFilterChain`. Th
 
 ## Phase boundaries
 
-Phase 1 originally included only the admin capabilities endpoint. Phase 2 admin REST CRUD is delivered in `docs/17-phase-2-implementation.md`, and the Phase 3 SPA is delivered in `docs/18-phase-3-implementation.md`. Keycloak synchronization remains Phase 4.
+Phase 1 is limited to the authorization runtime and its extension SPIs. Phase 2 management REST functionality and Phase 3 SPA functionality are delivered together by the optional `authorization-admin` module, as documented in `docs/17-phase-2-implementation.md` and `docs/18-phase-3-implementation.md`. Keycloak synchronization remains Phase 4.
 
 ## Current operational limitation
 

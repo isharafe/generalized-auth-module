@@ -33,11 +33,6 @@ authorization:
     entitlements:
       enabled: true
       ttl: 5m
-
-  admin:
-    api:
-      enabled: true
-      base-path: /authorization-admin/api
 ```
 
 ## Keycloak source
@@ -67,19 +62,22 @@ authorization:
 
 If `source=keycloak` but the integration module is absent, fail startup with a direct actionable error.
 
-## Admin UI
+## Administration module
 
-When optional UI dependency is present:
+These properties are active when the optional `authorization-admin` dependency is present:
 
 ```yaml
 authorization:
   admin:
+    api:
+      enabled: true
+      base-path: /authorization-admin/api
     ui:
       enabled: true
       base-path: /authorization-admin
 ```
 
-The UI base path is normalized without a trailing slash. The packaged SPA loads relative assets and obtains the configured API/UI paths from `<ui-base-path>/config`, so the API and UI paths may be changed independently. The framework seed uses the configured paths when contributing admin permissions.
+The API and UI can be enabled independently. The UI base path is normalized without a trailing slash. The packaged SPA loads relative assets and obtains the configured API/UI paths from `<ui-base-path>/config`. The admin module uses both paths when contributing its management permissions.
 
 ## Authentication remains separate
 

@@ -1,6 +1,7 @@
 package com.example.authorization.audit;
 
-import com.example.authorization.domain.AdminAuditEvent;
+import com.example.authorization.domain.AuditEventKind;
+import com.example.authorization.domain.AuthorizationChangeAuditEvent;
 import com.example.authorization.domain.AuthorizationResult;
 import com.example.authorization.domain.ProtectedResource;
 import com.example.authorization.domain.ResourceType;
@@ -21,7 +22,7 @@ public class DatabaseAuthorizationAuditPublisher implements AuthorizationAuditPu
   private final AuditEventRepository repository;
 
   @Override
-  public void publish(AuthorizationResult result, ProtectedResource resource) {
+  public void publishDecision(AuthorizationResult result, ProtectedResource resource) {
     try {
       String requestMethod =
           resource.resourceType() == ResourceType.URL
@@ -34,7 +35,8 @@ public class DatabaseAuthorizationAuditPublisher implements AuthorizationAuditPu
       Actor actor = actor(result.identityKey());
       String action = requestMethod == null ? "ACCESS" : requestMethod;
       repository.save(
-          AuditEventEntity.authorization(
+          AuditEventEntity.authorizationDecision(
+              AuditEventKind.DECISION,
               "AUTHORIZATION_" + result.decision(),
               actor.issuer(),
               actor.subject(),
@@ -49,16 +51,17 @@ public class DatabaseAuthorizationAuditPublisher implements AuthorizationAuditPu
               result.matchedRuleCode(),
               result.matchedPermissionCode()));
     } catch (RuntimeException exception) {
-      log.warn("Unable to persist authorization audit event", exception);
+      log.warn("Unable to persist authorization decision audit event", exception);
     }
   }
 
   @Override
   @Transactional(propagation = Propagation.REQUIRES_NEW)
-  public void publish(AdminAuditEvent event) {
+  public void publishChange(AuthorizationChangeAuditEvent event) {
     try {
       repository.save(
-          AuditEventEntity.admin(
+          AuditEventEntity.authorizationChange(
+              AuditEventKind.CHANGE,
               event.eventType(),
               event.actorIssuer(),
               event.actorSubject(),
@@ -67,7 +70,7 @@ public class DatabaseAuthorizationAuditPublisher implements AuthorizationAuditPu
               correlationId(),
               event.detailsJson()));
     } catch (RuntimeException exception) {
-      log.warn("Unable to persist admin audit event", exception);
+      log.warn("Unable to persist authorization change audit event", exception);
     }
   }
 

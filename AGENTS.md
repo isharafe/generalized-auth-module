@@ -10,10 +10,10 @@ Keep the library intentionally small:
 authorization-parent
 ├── authorization-core
 ├── authorization-keycloak      # optional
-└── authorization-admin-ui      # optional
+└── authorization-admin         # optional
 ```
 
-Do not split Spring Security, JPA, Flyway, seed processing, caching, or admin REST into additional Maven modules. Use packages inside `authorization-core`.
+Do not split Spring Security, JPA, Flyway, seed processing, or caching into additional Maven modules. Keep runtime authorization and persistence in `authorization-core`; keep all management REST and UI functionality together in `authorization-admin`.
 
 A non-published runnable example may live at `examples/authorization-demo/`.
 
@@ -33,7 +33,6 @@ Default DB-backed implementation. It contains:
 - seed YAML/Java API
 - caching and invalidation
 - audit hooks
-- admin REST API
 - Spring Boot auto-configuration
 
 An application using only DB-backed authorization adds only this dependency.
@@ -51,9 +50,9 @@ Optional. It contains only Keycloak-specific integration:
 
 It depends on `authorization-core`. `authorization-core` must never depend on Keycloak classes.
 
-### authorization-admin-ui
+### authorization-admin
 
-Optional React/TypeScript admin SPA packaged as JAR static resources. It calls admin REST APIs from `authorization-core`. It contains no persistence or Keycloak logic.
+Optional administration component. It contains the management REST API, DTOs, transactional management services, framework-admin seed definitions, and the React/TypeScript SPA packaged as JAR static resources. It depends on `authorization-core`, uses core repositories/SPIs, and contains no JPA entities, Flyway migrations, or Keycloak-specific logic.
 
 ## Core model
 
@@ -230,7 +229,7 @@ Validate complete seed configuration before database mutation. Invalid security 
 
 ## Admin API and UI
 
-Admin REST API lives in `authorization-core`. Optional UI lives in `authorization-admin-ui`.
+The admin REST API, management services, framework-admin seed definitions, and optional UI live together in `authorization-admin`. The module depends on `authorization-core`; core must not depend on admin.
 
 Admin write flow:
 

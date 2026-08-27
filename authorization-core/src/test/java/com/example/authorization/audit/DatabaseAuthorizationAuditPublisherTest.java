@@ -6,6 +6,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.example.authorization.domain.AuditEventKind;
+import com.example.authorization.domain.AuthorizationChangeAuditEvent;
 import com.example.authorization.domain.AuthorizationDecision;
 import com.example.authorization.domain.AuthorizationReason;
 import com.example.authorization.domain.AuthenticatedIdentity;
@@ -28,7 +30,7 @@ class DatabaseAuthorizationAuditPublisherTest {
 
     MDC.put("correlationId", "request-123");
     try {
-      publisher.publish(
+      publisher.publishDecision(
           AuthorizationResult.of(
               AuthorizationDecision.DENIED,
               AuthorizationReason.NO_MATCHING_RULE,
@@ -43,6 +45,7 @@ class DatabaseAuthorizationAuditPublisherTest {
     ArgumentCaptor<AuditEventEntity> event = ArgumentCaptor.forClass(AuditEventEntity.class);
     verify(repository).save(event.capture());
     AuditEventEntity value = event.getValue();
+    assertThat(value.getEventKind()).isEqualTo(AuditEventKind.DECISION);
     assertThat(value.getActorIssuer()).isEqualTo("local");
     assertThat(value.getActorSubject()).isEqualTo("alice");
     assertThat(value.getTarget()).isEqualTo("/api/items/a:b");
@@ -60,7 +63,7 @@ class DatabaseAuthorizationAuditPublisherTest {
     DatabaseAuthorizationAuditPublisher publisher =
         new DatabaseAuthorizationAuditPublisher(repository);
 
-    publisher.publish(
+    publisher.publishDecision(
         AuthorizationResult.of(
             AuthorizationDecision.GRANTED,
             AuthorizationReason.PUBLIC_RESOURCE,
@@ -76,5 +79,45 @@ class DatabaseAuthorizationAuditPublisherTest {
     assertThat(event.getValue().getCorrelationId()).isNotBlank();
     assertThat(event.getValue().getRequestMethod()).isNull();
     assertThat(event.getValue().getRequestPath()).isEqualTo("employees.edit");
+  }
+
+  @Test
+  void storesAuthorizationChangeFieldsWithoutDecisionFields() {
+    AuditEventRepository repository = mock(AuditEventRepository.class);
+    when(repository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+    DatabaseAuthorizationAuditPublisher publisher =
+        new DatabaseAuthorizationAuditPublisher(repository);
+
+    MDC.put("correlationId", "change-123");
+    try {
+      publisher.publishChange(
+          new AuthorizationChangeAuditEvent(
+              "ROLE_UPDATED",
+              "local",
+              "manager",
+              "ROLE:HR_MANAGER",
+              "UPDATE",
+              "{\"version\":2}"));
+    } finally {
+      MDC.remove("correlationId");
+    }
+
+    ArgumentCaptor<AuditEventEntity> event = ArgumentCaptor.forClass(AuditEventEntity.class);
+    verify(repository).save(event.capture());
+    AuditEventEntity value = event.getValue();
+    assertThat(value.getEventKind()).isEqualTo(AuditEventKind.CHANGE);
+    assertThat(value.getEventType()).isEqualTo("ROLE_UPDATED");
+    assertThat(value.getActorIssuer()).isEqualTo("local");
+    assertThat(value.getActorSubject()).isEqualTo("manager");
+    assertThat(value.getTarget()).isEqualTo("ROLE:HR_MANAGER");
+    assertThat(value.getAction()).isEqualTo("UPDATE");
+    assertThat(value.getCorrelationId()).isEqualTo("change-123");
+    assertThat(value.getDetailsJson()).isEqualTo("{\"version\":2}");
+    assertThat(value.getRequestMethod()).isNull();
+    assertThat(value.getRequestPath()).isNull();
+    assertThat(value.getDecision()).isNull();
+    assertThat(value.getReason()).isNull();
+    assertThat(value.getRuleCode()).isNull();
+    assertThat(value.getPermissionCode()).isNull();
   }
 }

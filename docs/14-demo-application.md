@@ -130,7 +130,7 @@ Manager/admin can manage data through admin REST APIs according to seeded framew
 
 ## Admin UI
 
-The demo includes `authorization-admin-ui` and serves it from `/authorization-admin/`. Open:
+The demo includes `authorization-admin` and serves it from `/authorization-admin/`. Open:
 
 ```text
 http://localhost:8080/authorization-admin?demo-user=manager

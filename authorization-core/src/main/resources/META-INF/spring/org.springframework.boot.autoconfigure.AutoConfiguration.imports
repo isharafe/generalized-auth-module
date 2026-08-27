@@ -1,3 +1,2 @@
 com.example.authorization.config.AuthorizationAutoConfiguration
 com.example.authorization.config.AuthorizationAssignmentAutoConfiguration
-com.example.authorization.config.AuthorizationAdminAutoConfiguration

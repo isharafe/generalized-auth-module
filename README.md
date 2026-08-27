@@ -1,12 +1,12 @@
 # Reusable Authorization Framework
 
-A reusable Spring Boot 4.1 authorization library with a functional DB-backed core, optional admin SPA, and runnable H2 demo.
+A reusable Spring Boot 4.1 authorization library with a functional DB-backed core, optional administration module, and runnable H2 demo.
 
 ## Modules
 
-- `authorization-core`: published DB-backed engine, Spring Security integration, JPA/Flyway, seeds, cache, audit, and functional admin REST API.
+- `authorization-core`: published DB-backed engine, Spring Security integration, JPA/Flyway, seeds, cache, and audit.
 - `authorization-keycloak`: published optional-module descriptor; implementation starts in Phase 4.
-- `authorization-admin-ui`: published optional React/TypeScript admin SPA packaged as Spring Boot static resources.
+- `authorization-admin`: published optional management REST API, services, framework-admin seeds, and React/TypeScript SPA.
 - `examples/authorization-demo`: non-published runnable verification application.
 
 ## Add the DB-backed core
@@ -57,7 +57,7 @@ authorization:
         access-mode: AUTHORIZED
 ```
 
-Java contributors use `AuthorizationSeedBuilder` to define the same concepts. Core always contributes framework administration permissions and the `AUTHZ_SYSTEM_VIEWER` and `AUTHZ_SYSTEM_ADMIN` roles, but assigns no user to them.
+Java contributors use `AuthorizationSeedBuilder` to define the same concepts. When present, `authorization-admin` contributes its management permissions and the `AUTHZ_SYSTEM_VIEWER` and `AUTHZ_SYSTEM_ADMIN` roles, but assigns no user to them.
 
 ## Database and Flyway
 
@@ -69,18 +69,14 @@ Java-containing framework modules use Lombok as an optional, provided build-time
 
 Lombok supplies constructor injection, logging, configuration/seed accessors, entity accessors, and embeddable-ID constructors/equality. Immutable domain types and DTOs remain Java records. JPA entities intentionally avoid `@Data`: generated setters are suppressed for identifiers, versions, entitlement counters, and relationship collections where mutation must remain controlled.
 
-## Admin API
+## Optional administration module
 
-Phase 2 provides the full admin REST API: capabilities; paginated CRUD and mappings; user assignments and effective permissions; authorization explain; sync facade; and audit queries. Writes use optimistic versions, post-commit cache invalidation, and admin audit events. The API path and enablement are configured under `authorization.admin.api`.
-
-## Optional admin UI
-
-Add the UI alongside `authorization-core`:
+Add `authorization-admin` when the application needs management APIs or the built-in UI. It depends on `authorization-core`, so adding this dependency provides both runtime authorization and administration:
 
 ```xml
 <dependency>
   <groupId>com.example.authorization</groupId>
-  <artifactId>authorization-admin-ui</artifactId>
+  <artifactId>authorization-admin</artifactId>
   <version>0.1.0-SNAPSHOT</version>
 </dependency>
 ```
@@ -88,14 +84,19 @@ Add the UI alongside `authorization-core`:
 ```yaml
 authorization:
   admin:
+    api:
+      enabled: true
+      base-path: /authorization-admin/api
     ui:
       enabled: true
       base-path: /authorization-admin
 ```
 
-The same-origin SPA is served at `/authorization-admin/` by default and discovers both configured base paths from its protected runtime configuration endpoint. It provides capability-aware dashboard, configuration CRUD, user assignments and effective permissions, authorization explain, conditional synchronization, and audit screens.
+The module owns the management REST controllers, DTOs, transactional services, framework-admin seed definitions, and same-origin SPA. The API provides capabilities, paginated CRUD and mappings, user assignments and effective permissions, authorization explain, synchronization facade, and audit queries. Writes use optimistic versions, post-commit cache invalidation, and generic authorization-change audit events persisted by core. Every audit row has an explicit `DECISION` or `CHANGE` kind that is returned and filterable through the admin API and UI.
 
-The framework seeds the `AUTHZ_ADMIN_UI` permission into its viewer/admin permission groups, but it never assigns a user. The consuming application remains responsible for an `AUTHORIZED` resource rule covering the configured UI path and for assigning an appropriate framework admin role. Both the UI and API are protected by the normal authorization engine.
+The SPA is served at `/authorization-admin/` by default and discovers both configured base paths from its protected runtime configuration endpoint. The module seeds `AUTHZ_ADMIN_UI` and its API permissions into framework viewer/admin groups, but never assigns a user. The consuming application remains responsible for applicable `AUTHORIZED` resource rules and an appropriate admin assignment.
+
+An application that includes only `authorization-core` gets the authorization runtime and persistence, but no management endpoints, framework-admin seed definitions, or SPA.
 
 ## Optional Keycloak module
 

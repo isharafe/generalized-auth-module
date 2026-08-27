@@ -2,9 +2,7 @@
 
 ## Delivered
 
-Phase 2 provides the functional admin REST API in `authorization-core`. It is registered through
-explicit Spring Boot auto-configuration and remains configurable under
-`authorization.admin.api`.
+Phase 2 provides the functional admin REST API in the optional `authorization-admin` module. The module depends on `authorization-core`, registers through explicit Spring Boot auto-configuration, and remains configurable under `authorization.admin.api`. Applications using only core expose no management API.
 
 The API includes:
 
@@ -41,9 +39,7 @@ independent transaction after the business transaction commits.
 
 ## Security
 
-The framework seed assigns resource-specific URL patterns to the `AUTHZ_*_VIEW` and
-`AUTHZ_*_MANAGE` permissions. Admin APIs are therefore protected through the same authorization
-engine as application endpoints; there is no hardcoded administrator role check.
+The admin module's seed contributor assigns resource-specific URL patterns to the `AUTHZ_*_VIEW` and `AUTHZ_*_MANAGE` permissions. Admin APIs are therefore protected through the core authorization engine like application endpoints; there is no hardcoded administrator role check.
 
 The database source reports synchronization as unsupported. Its sync status endpoint remains
 available for capability-driven clients, while action endpoints return HTTP 501 until a supporting

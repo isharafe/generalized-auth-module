@@ -1,6 +1,6 @@
 # Admin REST API
 
-The backend admin API is part of `authorization-core`.
+The backend admin API is part of the optional `authorization-admin` module, which depends on `authorization-core`.
 
 Default base path:
 
@@ -174,10 +174,10 @@ Response should show safe explanation:
 ## Audit
 
 ```text
-GET /audit
+GET /audit?eventKind=DECISION|CHANGE
 ```
 
-Support pagination/filtering.
+Support pagination and filtering by `eventKind`, `eventType`, actor, and target. `eventKind` is the stable record-shape discriminator; `eventType` remains the specific event name.
 
 ## Optimistic locking
 
@@ -190,13 +190,11 @@ Protect each API with framework permissions, not hardcoded `hasRole("ADMIN")`.
 
 ## Implemented behavior
 
-Collection endpoints accept `page`, `size`, `sort`, and `search`; audit additionally accepts
-`eventType`, `actor`, and `target`. Page sizes are bounded to 1-100.
+Collection endpoints accept `page`, `size`, `sort`, and `search`; audit additionally accepts `eventKind`, `eventType`, `actor`, and `target`. Page sizes are bounded to 1-100.
 
 Configuration DELETE operations soft-disable roles, permission groups, permissions, and resource
 rules. External mappings are explicitly deleted. User assignment endpoints create `MANUAL`
 assignments and reject removal of `SEED` or `IDENTITY_SYNC` assignments.
 
-All successful writes commit before cache invalidation and admin audit publication. The admin API is
-registered by `AuthorizationAdminAutoConfiguration`, so consumers do not need to scan framework
-packages.
+All successful writes commit before cache invalidation and authorization-change audit publication through the core audit SPI. The admin API is
+registered by `AuthorizationAdminAutoConfiguration` from `authorization-admin`, so consumers do not need to scan framework packages. Applications that include only `authorization-core` expose no management endpoints.

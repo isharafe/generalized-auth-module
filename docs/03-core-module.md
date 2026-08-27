@@ -16,15 +16,11 @@ com.example.authorization
 │   └── service
 ├── seed
 ├── cache
-├── admin
-│   ├── api
-│   ├── dto
-│   └── service
 ├── audit
 └── config
 ```
 
-These are packages, not Maven modules.
+These are packages, not Maven modules. Administrative controllers, DTOs, management services, UI resources, admin configuration, and framework-admin seed definitions belong to the optional `authorization-admin` module.
 
 ## Source conventions
 
@@ -65,8 +61,6 @@ UiResourcePatternMatcher
 IdentitySynchronizationProvider (unsupported default bean)
 DatabaseExternalAuthorityMapper
 DefaultAuthorizationCacheInvalidator
-AuthorizationAdminService
-AuthorizationAdminController
 ```
 
 ## Auto-configuration
@@ -87,8 +81,6 @@ Auto-configure when applicable:
 - caches
 - authorization manager
 - seed processor
-- admin REST API
-- framework admin seed definitions
 
 Back off when the application supplies its own SPI bean.
 
@@ -107,4 +99,4 @@ If `source=keycloak` and the optional Keycloak integration is absent, fail start
 
 ## Functional requirement
 
-Core must be independently useful. DB-only mode must run end-to-end without `authorization-keycloak` or `authorization-admin-ui`.
+Core must be independently useful. DB-only mode must run end-to-end without `authorization-keycloak` or `authorization-admin`.

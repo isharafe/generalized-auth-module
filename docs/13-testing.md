@@ -57,13 +57,14 @@ Test:
 - safe descriptive update
 - unknown reference fails before mutation
 - conflict fails
-- framework admin seed exists
+- optional admin module contributes its framework admin seed
 - pending user assignment resolves
 - concurrent startup does not duplicate data
+- audit event kind migration backfills legacy rows and enforces a non-null discriminator
 
 ## Admin API
 
-Test CRUD, all mapping families, validation, permissions, 409, audit, authorization explain, sync capabilities, and post-commit cache invalidation. The demo `AdminApiIntegrationTest` provides this Phase 2 coverage.
+In `authorization-admin`, test CRUD, all mapping families, validation, permissions, 409, audit, authorization explain, sync capabilities, and post-commit cache invalidation. The demo `AdminApiIntegrationTest` provides end-to-end Phase 2 coverage.
 
 ## Keycloak integration
 

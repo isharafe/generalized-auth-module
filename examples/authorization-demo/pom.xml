@@ -20,7 +20,7 @@
     </dependency>
     <dependency>
       <groupId>com.example.authorization</groupId>
-      <artifactId>authorization-admin-ui</artifactId>
+      <artifactId>authorization-admin</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>

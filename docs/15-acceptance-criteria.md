@@ -7,12 +7,12 @@ The implementation is acceptable only when all criteria for completed phases are
 From repository root:
 
 ```text
-mvn clean verify
+./mvnw clean verify
 ```
 
 passes.
 
-Frontend build is integrated when `authorization-admin-ui` is built.
+Frontend build is integrated when `authorization-admin` is built.
 
 ## Module count
 
@@ -21,14 +21,14 @@ Published reusable modules are exactly:
 ```text
 authorization-core
 authorization-keycloak
-authorization-admin-ui
+authorization-admin
 ```
 
-Do not create extra framework modules for Spring/JPA/Flyway/admin API.
+Do not create extra framework modules for Spring/JPA/Flyway. Keep the management API and UI together in `authorization-admin`.
 
 ## DB-only
 
-`authorization-core` works without Keycloak or UI dependencies.
+`authorization-core` works without Keycloak or admin dependencies and exposes no management endpoints.
 
 Demo proves end-to-end DB-only authorization.
 
@@ -58,17 +58,11 @@ Demo proves end-to-end DB-only authorization.
 - framework admin permissions/roles exist
 - consuming application can seed initial admin assignment
 
-## Admin API
+## Administration module
 
-Functional CRUD/mapping/explain/audit endpoints.
+`authorization-admin` is optional and depends only on `authorization-core` among framework modules.
 
-Writes validate, transact, invalidate caches after commit, and audit.
-
-## Admin UI
-
-Optional dependency only.
-
-Functional SPA uses admin REST API and capabilities endpoint.
+It provides functional CRUD/mapping/explain/audit endpoints, framework-admin seed definitions, and the SPA. Writes validate, transact, invalidate caches after commit, and audit. The frontend uses only the admin REST API and capabilities endpoint.
 
 ## Keycloak
 
@@ -91,7 +85,7 @@ Repository README must explain:
 - core dependency
 - DB-only configuration
 - seed format
-- admin API
-- optional UI dependency
+- optional administration dependency and API
+- built-in admin UI
 - optional Keycloak dependency/configuration
 - demo run commands

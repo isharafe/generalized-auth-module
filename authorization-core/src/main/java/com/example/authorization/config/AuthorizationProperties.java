@@ -17,7 +17,6 @@ public class AuthorizationProperties {
   private final Database database = new Database();
   private final Seed seed = new Seed();
   private final Cache cache = new Cache();
-  private final Admin admin = new Admin();
 
   @Getter
   public static class Database {
@@ -61,25 +60,5 @@ public class AuthorizationProperties {
     private CacheRegion(Duration ttl) {
       this.ttl = ttl;
     }
-  }
-
-  @Getter
-  public static class Admin {
-    private final Api api = new Api();
-    private final Ui ui = new Ui();
-  }
-
-  @Getter
-  @Setter
-  public static class Api {
-    private boolean enabled = true;
-    private String basePath = "/authorization-admin/api";
-  }
-
-  @Getter
-  @Setter
-  public static class Ui {
-    private boolean enabled = true;
-    private String basePath = "/authorization-admin";
   }
 }

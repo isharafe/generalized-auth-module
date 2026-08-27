@@ -10,7 +10,7 @@ Create repository layout:
 pom.xml
 authorization-core/
 authorization-keycloak/
-authorization-admin-ui/
+authorization-admin/
 examples/authorization-demo/
 ```
 
@@ -88,7 +88,7 @@ Only core + demo must be functional in Phase 1; optional modules may contain onl
 - [x] merged definition
 - [x] validation before persistence
 - [x] idempotent MERGE
-- [x] framework admin permissions/roles seed
+- [x] Java seed contributor SPI for optional modules
 - [x] seed history/checksum
 - [x] pending user assignments
 
@@ -105,7 +105,7 @@ Only core + demo must be functional in Phase 1; optional modules may contain onl
 - [x] `authorization.enabled`
 - [x] `authorization.source=database` default
 - [x] DB provider defaults
-- [x] configurable migrations/seed/cache/admin API
+- [x] configurable migrations/seed/cache
 - [x] custom SPI beans override defaults
 - [x] clear failure if unsupported source selected
 
@@ -116,7 +116,7 @@ Only core + demo must be functional in Phase 1; optional modules may contain onl
 - [x] seeded viewer/manager users
 - [x] seeded roles/groups/permissions/rules
 - [x] public/profile/view/edit endpoints
-- [x] admin assignment for manager
+- [x] application authorization assignments for demo users
 - [x] integration tests prove expected 200/401/403 behavior
 
 ## Phase 1 exit
@@ -124,7 +124,7 @@ Only core + demo must be functional in Phase 1; optional modules may contain onl
 Run:
 
 ```text
-mvn clean verify
+./mvnw clean verify
 ```
 
 All tests pass and demo can start.
@@ -133,7 +133,7 @@ All tests pass and demo can start.
 
 # Phase 2 — Functional Admin REST API
 
-Inside `authorization-core`:
+Inside `authorization-admin`:
 
 - [x] capabilities
 - [x] user query/assignments
@@ -155,6 +155,7 @@ Inside `authorization-core`:
 - [x] optimistic locking / 409
 - [x] post-commit cache invalidation
 - [x] admin write audit
+- [x] framework admin permissions/roles seed
 - [x] API security with framework permissions
 - [x] integration tests
 
@@ -164,7 +165,7 @@ Exit: demo admin APIs are usable with curl/Postman and tests.
 
 # Phase 3 — Optional Admin UI
 
-Inside `authorization-admin-ui`:
+Inside `authorization-admin`:
 
 - [x] React + TypeScript project
 - [x] Maven-integrated frontend build

@@ -3,7 +3,7 @@
 Module:
 
 ```text
-authorization-admin-ui
+authorization-admin
 ```
 
 Implementation:
@@ -27,9 +27,9 @@ Use same origin/API to avoid CORS complexity.
 
 ## UI uses API only
 
-The UI calls the admin REST API in `authorization-core`.
+The frontend calls the admin REST API colocated in `authorization-admin`. It communicates only through HTTP and never accesses repositories or the database directly.
 
-It must not access repositories/DB and must not contain Keycloak SDK logic.
+The module's Java management services use repositories and SPIs supplied by `authorization-core`. The module owns no JPA entities, Flyway migrations, or Keycloak SDK logic.
 
 ## Pages
 
@@ -118,7 +118,7 @@ Let admin choose identity + method + path and display the explain result/path.
 
 ### Audit
 
-Paginated, filterable events.
+Paginated events with visible `DECISION`/`CHANGE` badges and filters for event kind, event type, actor, and target.
 
 ## Capability-driven behavior
 

@@ -1,5 +1,6 @@
 package com.example.authorization.persistence.entity;
 
+import com.example.authorization.domain.AuditEventKind;
 import jakarta.persistence.*;
 import java.time.Instant;
 import lombok.Getter;
@@ -14,6 +15,10 @@ public class AuditEventEntity {
 
   @Column(nullable = false)
   private Instant timestamp;
+
+  @Enumerated(EnumType.STRING)
+  @Column(name = "EVENT_KIND", nullable = false, length = 30)
+  private AuditEventKind eventKind;
 
   @Column(name = "EVENT_TYPE", nullable = false, length = 100)
   private String eventType;
@@ -54,7 +59,8 @@ public class AuditEventEntity {
   @Column(name = "PERMISSION_CODE", length = 100)
   private String permissionCode;
 
-  public static AuditEventEntity admin(
+  public static AuditEventEntity authorizationChange(
+      AuditEventKind eventKind,
       String type,
       String actorIssuer,
       String actorSubject,
@@ -62,8 +68,10 @@ public class AuditEventEntity {
       String action,
       String correlationId,
       String detailsJson) {
+    requireKind(eventKind, AuditEventKind.CHANGE);
     AuditEventEntity value = new AuditEventEntity();
     value.timestamp = Instant.now();
+    value.eventKind = eventKind;
     value.eventType = type;
     value.actorIssuer = actorIssuer;
     value.actorSubject = actorSubject;
@@ -74,7 +82,8 @@ public class AuditEventEntity {
     return value;
   }
 
-  public static AuditEventEntity authorization(
+  public static AuditEventEntity authorizationDecision(
+      AuditEventKind eventKind,
       String type,
       String actorIssuer,
       String actorSubject,
@@ -88,8 +97,10 @@ public class AuditEventEntity {
       String reason,
       String rule,
       String permission) {
+    requireKind(eventKind, AuditEventKind.DECISION);
     AuditEventEntity value = new AuditEventEntity();
     value.timestamp = Instant.now();
+    value.eventKind = eventKind;
     value.eventType = type;
     value.actorIssuer = actorIssuer;
     value.actorSubject = actorSubject;
@@ -104,5 +115,12 @@ public class AuditEventEntity {
     value.ruleCode = rule;
     value.permissionCode = permission;
     return value;
+  }
+
+  private static void requireKind(AuditEventKind actual, AuditEventKind expected) {
+    if (actual != expected) {
+      throw new IllegalArgumentException(
+          "Expected audit event kind " + expected + " but received " + actual);
+    }
   }
 }
