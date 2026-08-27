@@ -12,6 +12,7 @@
     <node.version>v22.14.0</node.version>
     <npm.version>10.9.2</npm.version>
     <frontend-maven-plugin.version>1.15.1</frontend-maven-plugin.version>
+    <frontend.directory>${project.basedir}/frontend</frontend.directory>
   </properties>
 
   <dependencies>
@@ -49,8 +50,8 @@
         <artifactId>frontend-maven-plugin</artifactId>
         <version>${frontend-maven-plugin.version}</version>
         <configuration>
-          <workingDirectory>${project.basedir}</workingDirectory>
-          <installDirectory>${project.basedir}</installDirectory>
+          <workingDirectory>${frontend.directory}</workingDirectory>
+          <installDirectory>${frontend.directory}</installDirectory>
         </configuration>
         <executions>
           <execution>
@@ -110,7 +111,7 @@
               <outputDirectory>${project.build.outputDirectory}/META-INF/resources/authorization-admin</outputDirectory>
               <resources>
                 <resource>
-                  <directory>${project.basedir}/dist</directory>
+                  <directory>${frontend.directory}/dist</directory>
                   <filtering>false</filtering>
                 </resource>
               </resources>

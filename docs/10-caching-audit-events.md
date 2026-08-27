@@ -64,7 +64,7 @@ publishChange(AuthorizationChangeAuditEvent)
 
 Decision events describe runtime authorization outcomes. Change events describe authorization configuration or assignment mutations and can be emitted by the admin module, identity synchronization, seed processing, or future integrations. Core owns their common database persistence and correlation handling.
 
-Every `AUTH_AUDIT_EVENT` row stores a non-null `EVENT_KIND` discriminator with `DECISION` or `CHANGE`. `EVENT_TYPE` remains the detailed subtype, such as `AUTHORIZATION_DENIED` or `ROLE_UPDATED`. Migration V4 backfills existing rows before enforcing the non-null constraint.
+Every `AUTH_AUDIT_EVENT` row stores a non-null `EVENT_KIND` discriminator with `DECISION` or `CHANGE`. `EVENT_TYPE` remains the detailed subtype, such as `AUTHORIZATION_DENIED` or `ROLE_UPDATED`. The consolidated baseline migration `V1` creates this discriminator as non-null; no upgrade backfill is needed because the schema has not yet been released.
 
 Record at least:
 

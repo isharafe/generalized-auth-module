@@ -108,7 +108,8 @@ Requires Java 21. The repository-level Maven Wrapper pins Maven 3.9.11 for every
 
 ```bash
 ./mvnw clean verify
-./mvnw -pl examples/authorization-demo -am spring-boot:run
+./mvnw -pl examples/authorization-demo -am package
+java -jar examples/authorization-demo/target/authorization-demo-0.1.0-SNAPSHOT.jar
 ```
 
 On Windows, use `mvnw.cmd` in place of `./mvnw`. Run the wrapper from the repository root so all modules use the same reactor and Maven version.

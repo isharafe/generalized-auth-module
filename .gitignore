@@ -4,4 +4,4 @@ target/
 node_modules/
 dist/
 coverage/
-authorization-admin/node/
+authorization-admin/frontend/node/

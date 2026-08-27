@@ -18,7 +18,7 @@ Provider-specific navigation is capability-driven. Synchronized and seeded user 
 
 ## Build and packaging
 
-The module pins Node and npm through `frontend-maven-plugin`, uses `npm ci` from `package-lock.json`, runs Vitest during Maven's test phase, and builds the Vite production bundle during resource generation. Maven packages the result under:
+The self-contained Vite project lives under `authorization-admin/frontend`, separate from Maven's `src/main` and `src/test` Java trees. The module pins Node and npm through `frontend-maven-plugin`, uses `npm ci` from the frontend `package-lock.json`, runs Vitest during Maven's test phase, and builds the Vite production bundle during resource generation. Maven packages the result under:
 
 ```text
 META-INF/resources/authorization-admin/

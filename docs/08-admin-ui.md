@@ -15,7 +15,7 @@ React + TypeScript
 
 ## Packaging
 
-Frontend build output is packaged into the JAR and served by the consuming Spring Boot application.
+The Node/Vite project lives under `authorization-admin/frontend`, separate from the module's Maven Java source trees. Frontend build output is packaged into the JAR and served by the consuming Spring Boot application.
 
 Default configurable path:
 

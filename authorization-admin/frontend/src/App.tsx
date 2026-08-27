@@ -772,6 +772,7 @@ function RulesPage({ api }: { api: AdminApi }) {
               <div>
                 <div className="record-title">
                   <code>{item.code}</code>
+                  <Badge>{item.resourceType}</Badge>
                   <Badge>{item.accessMode}</Badge>
                   <Status enabled={item.enabled} />
                 </div>

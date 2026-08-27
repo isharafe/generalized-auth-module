@@ -60,7 +60,7 @@ Test:
 - optional admin module contributes its framework admin seed
 - pending user assignment resolves
 - concurrent startup does not duplicate data
-- audit event kind migration backfills legacy rows and enforces a non-null discriminator
+- consolidated baseline migration creates the final schema, including a non-null audit event kind and canonical resource patterns
 
 ## Admin API
 
