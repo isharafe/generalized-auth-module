@@ -30,6 +30,30 @@ export interface CurrentUser {
   lastName?: string | null;
 }
 
+export interface AuthorizationDataBundle {
+  formatVersion: number;
+  exportedAt: string;
+  permissions: unknown[];
+  permissionGroups: unknown[];
+  roles: unknown[];
+  resourceRules: unknown[];
+  users: unknown[];
+  externalMappings: unknown[];
+  pendingUserAssignments: unknown[];
+}
+
+export interface AuthorizationDataImportResult {
+  permissions: number;
+  permissionGroups: number;
+  roles: number;
+  resourceRules: number;
+  users: number;
+  userRoleAssignments: number;
+  userPermissionGroupAssignments: number;
+  externalMappings: number;
+  pendingUserAssignments: number;
+}
+
 export interface Role {
   code: string;
   name: string;

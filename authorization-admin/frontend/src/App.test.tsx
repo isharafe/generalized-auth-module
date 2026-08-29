@@ -193,4 +193,32 @@ describe("Authorization admin UI", () => {
       ).toBe(true)
     );
   });
+
+  it("warns that importing is a destructive full replacement", async () => {
+    window.location.hash = "#/data";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.endsWith("/capabilities"))
+          return response({
+            source: "DATABASE",
+            identitySynchronization: false,
+            externalAuthorityMapping: true,
+            syncProvider: null
+          });
+        throw new Error(`Unexpected request ${url}`);
+      })
+    );
+
+    render(<App config={config} api={new AdminApi(config.apiBasePath)} />);
+
+    expect(await screen.findByText("This is a full replacement.")).toBeVisible();
+    expect(
+      screen.getByText(/all current roles, permission groups, permissions/)
+    ).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: "Download full export" })
+    ).toBeVisible();
+  });
 });

@@ -8,6 +8,8 @@ import { ApiError, AdminApi } from "./api";
 import type {
   Assignment,
   AuditEvent,
+  AuthorizationDataBundle,
+  AuthorizationDataImportResult,
   AuthorizationTestResponse,
   Capabilities,
   CurrentUser,
@@ -33,7 +35,8 @@ type Route =
   | "mappings"
   | "explain"
   | "sync"
-  | "audit";
+  | "audit"
+  | "data";
 
 const NAVIGATION: Array<{
   route: Route;
@@ -60,7 +63,8 @@ const NAVIGATION: Array<{
     eyebrow: "09",
     capability: "identitySynchronization"
   },
-  { route: "audit", label: "Audit", eyebrow: "10" }
+  { route: "audit", label: "Audit", eyebrow: "10" },
+  { route: "data", label: "Data transfer", eyebrow: "11" }
 ];
 
 function routeFromHash(): Route {
@@ -244,6 +248,8 @@ function RouteContent({
       return <SyncPage api={api} />;
     case "audit":
       return <AuditPage api={api} />;
+    case "data":
+      return <DataTransferPage api={api} />;
   }
 }
 
@@ -1459,6 +1465,203 @@ function SyncPage({ api }: { api: AdminApi }) {
         </div>
       </div>
     </section>
+  );
+}
+
+const DATA_SECTIONS: Array<{
+  key: keyof Pick<
+    AuthorizationDataBundle,
+    | "permissions"
+    | "permissionGroups"
+    | "roles"
+    | "resourceRules"
+    | "users"
+    | "externalMappings"
+    | "pendingUserAssignments"
+  >;
+  label: string;
+}> = [
+  { key: "permissions", label: "Permissions" },
+  { key: "permissionGroups", label: "Permission groups" },
+  { key: "roles", label: "Roles" },
+  { key: "resourceRules", label: "Resource rules" },
+  { key: "users", label: "Users" },
+  { key: "externalMappings", label: "External mappings" },
+  { key: "pendingUserAssignments", label: "Pending assignments" }
+];
+
+function DataTransferPage({ api }: { api: AdminApi }) {
+  const [bundle, setBundle] = useState<AuthorizationDataBundle | null>(null);
+  const [fileName, setFileName] = useState("");
+  const [acknowledged, setAcknowledged] = useState(false);
+  const [result, setResult] = useState<AuthorizationDataImportResult | null>(null);
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const exportData = async () => {
+    setBusy(true);
+    setError("");
+    try {
+      const exported = await api.exportData();
+      const blob = new Blob([JSON.stringify(exported, null, 2)], {
+        type: "application/json"
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `authorization-data-${new Date()
+        .toISOString()
+        .replace(/[:.]/g, "-")}.json`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (caught) {
+      setError(message(caught));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const selectFile = async (file?: File) => {
+    setBundle(null);
+    setResult(null);
+    setAcknowledged(false);
+    setError("");
+    setFileName(file?.name ?? "");
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      setError("The import file must not exceed 10 MB.");
+      return;
+    }
+    try {
+      const parsed = JSON.parse(await file.text()) as AuthorizationDataBundle;
+      if (
+        parsed.formatVersion !== 1 ||
+        !parsed.exportedAt ||
+        DATA_SECTIONS.some(({ key }) => !Array.isArray(parsed[key]))
+      ) {
+        throw new Error("This is not a complete version 1 authorization export.");
+      }
+      setBundle(parsed);
+    } catch (caught) {
+      setError(
+        caught instanceof Error ? caught.message : "The selected file is not valid JSON."
+      );
+    }
+  };
+
+  const replaceData = async () => {
+    if (!bundle || !acknowledged) return;
+    if (
+      !window.confirm(
+        "Replace all current authorization data with this file? This cannot be undone."
+      )
+    )
+      return;
+    setBusy(true);
+    setError("");
+    setResult(null);
+    try {
+      setResult(await api.replaceData(bundle));
+    } catch (caught) {
+      setError(message(caught));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="data-transfer-layout">
+      <section className="panel">
+        <PageHeading
+          eyebrow="Portable snapshot"
+          title="Export authorization data"
+          description="Download all portable configuration, users, assignments, and external mappings as a versioned JSON file."
+        />
+        <p className="muted">
+          Audit events, migration history, caches, synchronization runtime state,
+          and authentication credentials are not exported.
+        </p>
+        <button className="primary" disabled={busy} onClick={exportData}>
+          {busy ? "Working..." : "Download full export"}
+        </button>
+      </section>
+
+      <section className="panel destructive-panel">
+        <PageHeading
+          eyebrow="Destructive operation"
+          title="Replace from export"
+          description="Upload a complete export file and replace the current authorization data."
+        />
+        <div className="destructive-warning" role="alert">
+          <strong>This is a full replacement.</strong>
+          <p>
+            Importing permanently deletes all current roles, permission groups,
+            permissions, resource rules, users, assignments, pending assignments,
+            and external mappings before recreating them from the file.
+          </p>
+          <p>
+            You may lose administrator access if your current identity and admin
+            assignments are not present in the import.
+          </p>
+        </div>
+        {error && <Notice tone="error">{error}</Notice>}
+        {result && (
+          <Notice tone="info">
+            Replacement completed: {result.permissions} permissions,{" "}
+            {result.permissionGroups} groups, {result.roles} roles, and{" "}
+            {result.users} users imported.
+          </Notice>
+        )}
+        <label className="file-picker">
+          <span>Select authorization export</span>
+          <input
+            aria-label="Authorization export file"
+            type="file"
+            accept="application/json,.json"
+            onChange={(event) => void selectFile(event.target.files?.[0])}
+          />
+          <small>{fileName || "No file selected"}</small>
+        </label>
+        {bundle && (
+          <>
+            <div className="bundle-summary" aria-label="Import file contents">
+              <div>
+                <small>Format</small>
+                <strong>Version {bundle.formatVersion}</strong>
+                <span>{new Date(bundle.exportedAt).toLocaleString()}</span>
+              </div>
+              {DATA_SECTIONS.map(({ key, label }) => (
+                <div key={key}>
+                  <small>{label}</small>
+                  <strong>{bundle[key].length}</strong>
+                  <span>records</span>
+                </div>
+              ))}
+            </div>
+            <label className="destructive-check">
+              <input
+                type="checkbox"
+                checked={acknowledged}
+                onChange={(event) => setAcknowledged(event.target.checked)}
+              />
+              <span>
+                I understand that all current authorization data will be deleted
+                and replaced by this file.
+              </span>
+            </label>
+            <button
+              className="danger-button"
+              disabled={!acknowledged || busy}
+              onClick={replaceData}
+            >
+              {busy ? "Replacing data..." : "Delete current data and import"}
+            </button>
+          </>
+        )}
+      </section>
+    </div>
   );
 }
 

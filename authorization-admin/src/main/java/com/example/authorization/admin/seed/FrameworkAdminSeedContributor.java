@@ -70,6 +70,16 @@ public final class FrameworkAdminSeedContributor implements AuthorizationSeedCon
       "AUTHZ_AUTHORIZATION_TEST",
       "Test authorization decisions",
       "POST:/authorization-admin/api/authorization-test"
+    },
+    {
+      "AUTHZ_DATA_EXPORT",
+      "Export authorization data",
+      "POST:/authorization-admin/api/data/export"
+    },
+    {
+      "AUTHZ_DATA_IMPORT",
+      "Replace authorization data from an export",
+      "POST:/authorization-admin/api/data/import"
     }
   };
 

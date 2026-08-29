@@ -3,8 +3,10 @@ package com.example.authorization.admin.config;
 import com.example.authorization.admin.api.AdminApiExceptionHandler;
 import com.example.authorization.admin.api.AuthorizationAdminController;
 import com.example.authorization.admin.api.AuthorizationCapabilitiesController;
+import com.example.authorization.admin.api.AuthorizationDataTransferController;
 import com.example.authorization.admin.seed.FrameworkAdminSeedContributor;
 import com.example.authorization.admin.service.AuthorizationAdminService;
+import com.example.authorization.admin.service.AuthorizationDataTransferService;
 import com.example.authorization.config.AuthorizationAutoConfiguration;
 import com.example.authorization.config.AuthorizationProperties;
 import com.example.authorization.engine.AuthorizationEngine;
@@ -12,6 +14,7 @@ import com.example.authorization.persistence.repository.AuditEventRepository;
 import com.example.authorization.persistence.repository.ExternalAuthorityMappingRepository;
 import com.example.authorization.persistence.repository.PermissionGroupRepository;
 import com.example.authorization.persistence.repository.PermissionRepository;
+import com.example.authorization.persistence.repository.PendingUserAssignmentRepository;
 import com.example.authorization.persistence.repository.ResourceRuleRepository;
 import com.example.authorization.persistence.repository.RoleRepository;
 import com.example.authorization.persistence.repository.UserPermissionGroupRepository;
@@ -23,6 +26,7 @@ import com.example.authorization.spi.AuthorizationCacheInvalidator;
 import com.example.authorization.spi.EntitlementProvider;
 import com.example.authorization.spi.IdentitySynchronizationProvider;
 import com.example.authorization.spi.PermissionMatcher;
+import jakarta.persistence.EntityManager;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -97,6 +101,57 @@ public class AuthorizationAdminAutoConfiguration {
   AuthorizationAdminController authorizationAdminController(
       AuthorizationAdminService service) {
     return new AuthorizationAdminController(service);
+  }
+
+  @Bean
+  @ConditionalOnMissingBean
+  @ConditionalOnProperty(
+      prefix = "authorization.admin.api",
+      name = "enabled",
+      havingValue = "true",
+      matchIfMissing = true)
+  AuthorizationDataTransferService authorizationDataTransferService(
+      PermissionRepository permissions,
+      PermissionGroupRepository groups,
+      RoleRepository roles,
+      ResourceRuleRepository rules,
+      UserRepository users,
+      UserRoleRepository userRoles,
+      UserPermissionGroupRepository userGroups,
+      ExternalAuthorityMappingRepository externalMappings,
+      PendingUserAssignmentRepository pendingAssignments,
+      PermissionMatcher matcher,
+      AuthorizationCacheInvalidator cache,
+      AuthorizationAuditPublisher audit,
+      SpringAuthenticationIdentityResolver identityResolver,
+      EntityManager entityManager) {
+    return new AuthorizationDataTransferService(
+        permissions,
+        groups,
+        roles,
+        rules,
+        users,
+        userRoles,
+        userGroups,
+        externalMappings,
+        pendingAssignments,
+        matcher,
+        cache,
+        audit,
+        identityResolver,
+        entityManager);
+  }
+
+  @Bean
+  @ConditionalOnMissingBean
+  @ConditionalOnProperty(
+      prefix = "authorization.admin.api",
+      name = "enabled",
+      havingValue = "true",
+      matchIfMissing = true)
+  AuthorizationDataTransferController authorizationDataTransferController(
+      AuthorizationDataTransferService service) {
+    return new AuthorizationDataTransferController(service);
   }
 
   @Bean

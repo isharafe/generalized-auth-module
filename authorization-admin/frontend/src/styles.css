@@ -694,6 +694,115 @@ button:disabled {
   background: var(--teal-soft);
 }
 
+.data-transfer-layout {
+  display: grid;
+  grid-template-columns: minmax(300px, 0.75fr) minmax(460px, 1.25fr);
+  gap: 22px;
+  align-items: start;
+}
+
+.destructive-panel {
+  border-color: #e3b4ae;
+}
+
+.destructive-warning {
+  margin-bottom: 18px;
+  padding: 16px;
+  color: #7d312f;
+  background: #f9e7e4;
+  border: 1px solid #edc3be;
+  border-radius: 11px;
+}
+
+.destructive-warning strong {
+  font-size: 14px;
+}
+
+.destructive-warning p {
+  margin: 8px 0 0;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.file-picker {
+  display: grid;
+  gap: 8px;
+  margin: 18px 0;
+  padding: 16px;
+  background: white;
+  border: 1px dashed #c7c3ba;
+  border-radius: 11px;
+}
+
+.file-picker > span {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.file-picker small {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.bundle-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.bundle-summary > div {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+  padding: 12px;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+}
+
+.bundle-summary small,
+.bundle-summary span {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bundle-summary strong {
+  font-size: 15px;
+}
+
+.destructive-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin: 16px 0;
+  color: #5d3332;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.destructive-check input {
+  margin-top: 3px;
+  accent-color: var(--red);
+}
+
+.danger-button {
+  padding: 11px 16px;
+  color: white;
+  background: var(--red);
+  border: 0;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.danger-button:hover:not(:disabled) {
+  background: #9f3937;
+}
+
 .user-row {
   display: grid;
   grid-template-columns: 40px minmax(0, 1fr) auto;
@@ -1104,7 +1213,8 @@ td code {
   }
 
   .split-layout,
-  .explain-layout {
+  .explain-layout,
+  .data-transfer-layout {
     grid-template-columns: 1fr;
   }
 
@@ -1191,6 +1301,10 @@ td code {
   .form-grid,
   .filter-bar {
     grid-template-columns: 1fr;
+  }
+
+  .bundle-summary {
+    grid-template-columns: 1fr 1fr;
   }
 
   .subsection-heading,

@@ -96,6 +96,15 @@ The module owns the management REST controllers, DTOs, transactional services, f
 
 The SPA is served at `/authorization-admin/` by default and discovers both configured base paths from its protected runtime configuration endpoint. The API may run without the UI, but the UI requires the API to be enabled. The module seeds `AUTHZ_ADMIN_UI` and its API permissions into framework viewer/admin groups, but never assigns a user. The consuming application remains responsible for applicable `AUTHORIZED` resource rules and an appropriate admin assignment.
 
+The Data transfer page exports a versioned JSON snapshot containing all permissions, permission
+groups, roles, relationships, resource rules, users, user assignments, pending assignments, and
+external authority mappings. Import is deliberately replacement-only: the complete file is
+validated before mutation, then all current portable authorization data is deleted and recreated
+in one transaction. Invalid files leave existing data unchanged. The UI requires an explicit
+destructive-operation acknowledgement and warns that importing a snapshot without the current
+administrator can remove their access. Audit events, Flyway and seed history, cache contents,
+synchronization runtime state, and authentication credentials are not part of the snapshot.
+
 An application that includes only `authorization-core` gets the authorization runtime and persistence, but no management endpoints, framework-admin seed definitions, or SPA.
 
 ## Optional Keycloak module

@@ -1,4 +1,10 @@
-import type { Capabilities, CurrentUser, Page } from "./types";
+import type {
+  AuthorizationDataBundle,
+  AuthorizationDataImportResult,
+  Capabilities,
+  CurrentUser,
+  Page
+} from "./types";
 
 export class ApiError extends Error {
   constructor(
@@ -20,6 +26,16 @@ export class AdminApi {
 
   currentUser(): Promise<CurrentUser> {
     return this.get<CurrentUser>("/current-user");
+  }
+
+  exportData(): Promise<AuthorizationDataBundle> {
+    return this.post<AuthorizationDataBundle>("/data/export");
+  }
+
+  replaceData(
+    bundle: AuthorizationDataBundle
+  ): Promise<AuthorizationDataImportResult> {
+    return this.post<AuthorizationDataImportResult>("/data/import", bundle);
   }
 
   page<T>(
