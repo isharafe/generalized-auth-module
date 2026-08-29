@@ -34,9 +34,9 @@ loadedAt
 
 Increment a user's authorization version when role/group assignments change.
 
-The version is returned with entitlements and incremented when assignments change. The current
-in-process cache is invalidated directly after commit; version-based stale-cache detection and
-multi-pod invalidation remain future hardening work.
+The version is returned with entitlements and incremented only when assignments actually change.
+The in-process cache is invalidated directly after commit. Multi-instance deployments can enable
+the database invalidation transport or replace its provider-neutral publisher SPI.
 
 ## Invalidation
 
@@ -53,7 +53,28 @@ Do not publish invalidation before commit.
 
 Define provider-neutral invalidation event contracts. Do not hardcode Kafka/Redis.
 
-Initial implementation may use local cache plus documented limitations, then add distributed adapters later.
+`AuthorizationInvalidationPublisher` is the transport SPI. The default is a no-op, retaining
+single-instance behavior. With `authorization.distributed-invalidation.enabled=true`, the database
+implementation appends identity/resource-rule/all events and a scheduled receiver applies events
+from other origins. A custom publisher can use Redis, Kafka, or another transport without changing
+authorization semantics.
+
+## Metrics
+
+When a Micrometer registry is present, `AuthorizationObservation` records:
+
+```text
+authorization.decisions
+authorization.decision.duration
+authorization.cache.requests
+authorization.identity.events
+authorization.identity.event.duration
+authorization.cache.invalidations
+```
+
+Tags are limited to decision/reason/resource type, cache/result, event result, and invalidation
+scope/delivery. Stable identities, request paths, permission codes, and exception messages are not
+used as tags. Without a registry, a no-op implementation keeps Micrometer optional at runtime.
 
 ## Audit events
 

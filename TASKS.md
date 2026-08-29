@@ -300,13 +300,13 @@ Inside `authorization-ldap`:
 
 # Phase 7 — Production hardening
 
-- [ ] metrics/observability
-- [ ] path bypass regression suite
-- [ ] migration upgrade tests
-- [ ] seed upgrade tests
-- [ ] concurrency tests
-- [ ] multi-pod initialization lock tests
-- [ ] distributed invalidation SPI/implementation option
-- [ ] performance/load tests
-- [ ] admin API security review
-- [ ] docs/examples polish
+- [x] metrics/observability
+- [x] path bypass regression suite
+- [x] migration upgrade tests
+- [x] seed upgrade tests
+- [x] concurrency tests
+- [x] multi-pod initialization lock tests
+- [x] distributed invalidation SPI/implementation option
+- [x] performance/load tests
+- [x] admin API security review
+- [x] docs/examples polish

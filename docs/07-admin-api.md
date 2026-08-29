@@ -200,6 +200,12 @@ they operate against the mapping's current database state and assignment-source 
 
 Protect each API with framework permissions, not hardcoded `hasRole("ADMIN")`.
 
+UI delivery permissions are exact and namespace-specific: the UI root, runtime config, and static
+assets are distinct from API operations. In particular, no UI permission uses a broad
+`GET:/authorization-admin/**` pattern that could also match the API. `current-user` has its own
+explicit API permission, and every admin capability family has unauthenticated and non-admin
+regression coverage.
+
 
 ## Implemented behavior
 

@@ -175,11 +175,13 @@ Unchanged seed can be skipped where safe.
 
 ## Multi-pod safety
 
-The current implementation relies on:
+The implementation combines:
 
 - unique constraints
 - transactions
 - idempotent operations
+- a pessimistically locked `AUTH_SYNC_STATE.GLOBAL_SEED_INITIALIZATION` row
 
-A dedicated database/distributed initialization lock and explicit concurrent-startup verification
-remain Phase 7 hardening work.
+The complete seed is validated before the lock-protected mutation. Concurrent-startup integration
+tests run multiple callers against the same database and verify one consistent result and history
+record.

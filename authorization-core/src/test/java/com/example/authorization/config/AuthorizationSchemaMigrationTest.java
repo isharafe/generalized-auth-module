@@ -28,8 +28,8 @@ class AuthorizationSchemaMigrationTest {
 
     flyway.migrate();
 
-    assertThat(flyway.info().applied()).hasSize(2);
-    assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("2");
+    assertThat(flyway.info().applied()).hasSize(3);
+    assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("3");
 
     JdbcTemplate jdbc = new JdbcTemplate(dataSource);
     List<String> auditColumns =
@@ -123,5 +123,60 @@ class AuthorizationSchemaMigrationTest {
             "PROCESSING_STARTED_AT",
             "PROCESSED_AT",
             "LAST_ERROR");
+
+    assertThat(
+            jdbc.queryForObject(
+                "SELECT COUNT(*) FROM AUTH_SYNC_STATE WHERE SYNC_KEY = 'GLOBAL_SEED_INITIALIZATION'",
+                Integer.class))
+        .isEqualTo(1);
+    assertThat(
+            jdbc.queryForObject(
+                "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'AUTH_CACHE_INVALIDATION'",
+                Integer.class))
+        .isEqualTo(1);
+  }
+
+  @Test
+  void upgradesAVersionOneSchemaWithoutLosingExistingAuthorizationData() {
+    JdbcDataSource dataSource = new JdbcDataSource();
+    dataSource.setURL(
+        "jdbc:h2:mem:authorization-upgrade-" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1");
+    dataSource.setUser("sa");
+
+    Flyway versionOne =
+        Flyway.configure()
+            .dataSource(dataSource)
+            .locations("classpath:db/authorization/migration")
+            .table("authorization_flyway_schema_history")
+            .target("1")
+            .load();
+    versionOne.migrate();
+    JdbcTemplate jdbc = new JdbcTemplate(dataSource);
+    jdbc.update(
+        "INSERT INTO AUTH_ROLE (CODE, NAME, ENABLED, VERSION) VALUES ('UPGRADE_ROLE', 'Before upgrade', TRUE, 0)");
+
+    Flyway current =
+        Flyway.configure()
+            .dataSource(dataSource)
+            .locations("classpath:db/authorization/migration")
+            .table("authorization_flyway_schema_history")
+            .load();
+    current.migrate();
+
+    assertThat(current.info().current().getVersion().getVersion()).isEqualTo("3");
+    assertThat(
+            jdbc.queryForObject(
+                "SELECT NAME FROM AUTH_ROLE WHERE CODE = 'UPGRADE_ROLE'", String.class))
+        .isEqualTo("Before upgrade");
+    assertThat(
+            jdbc.queryForObject(
+                "SELECT COUNT(*) FROM AUTH_SYNC_STATE WHERE SYNC_KEY = 'GLOBAL_SEED_INITIALIZATION'",
+                Integer.class))
+        .isEqualTo(1);
+    assertThat(
+            jdbc.queryForObject(
+                "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'AUTH_CACHE_INVALIDATION'",
+                Integer.class))
+        .isEqualTo(1);
   }
 }

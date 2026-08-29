@@ -15,9 +15,29 @@ public final class FrameworkAdminSeedContributor implements AuthorizationSeedCon
       "GET:/authorization-admin/api/capabilities"
     },
     {
+      "AUTHZ_ADMIN_CURRENT_USER",
+      "View the current authorization administrator",
+      "GET:/authorization-admin/api/current-user"
+    },
+    {
       "AUTHZ_ADMIN_UI",
       "Use authorization administration UI",
-      "GET:/authorization-admin/**"
+      "GET:/authorization-admin"
+    },
+    {
+      "AUTHZ_ADMIN_UI_INDEX",
+      "Load authorization administration UI",
+      "GET:/authorization-admin/"
+    },
+    {
+      "AUTHZ_ADMIN_UI_CONFIG",
+      "Load authorization administration UI configuration",
+      "GET:/authorization-admin/config"
+    },
+    {
+      "AUTHZ_ADMIN_UI_ASSETS",
+      "Load authorization administration UI assets",
+      "GET:/authorization-admin/assets/**"
     },
     {"AUTHZ_USER_VIEW", "View users", "GET:/authorization-admin/api/users/**"},
     {"AUTHZ_USER_MANAGE", "Manage users", "*:/authorization-admin/api/users/**"},
@@ -114,7 +134,7 @@ public final class FrameworkAdminSeedContributor implements AuthorizationSeedCon
           permission[0],
           permission[1],
           ResourceType.URL,
-          "AUTHZ_ADMIN_UI".equals(permission[0])
+          permission[0].startsWith("AUTHZ_ADMIN_UI")
               ? permission[2].replace(DEFAULT_UI_BASE_PATH, uiBasePath)
               : permission[2].replace(DEFAULT_BASE_PATH, basePath));
     String[] codes = Arrays.stream(PERMISSIONS).map(value -> value[0]).toArray(String[]::new);
@@ -122,7 +142,11 @@ public final class FrameworkAdminSeedContributor implements AuthorizationSeedCon
         "AUTHZ_SYSTEM_VIEWER",
         "Authorization system viewer",
         "AUTHZ_ADMIN_VIEW",
+        "AUTHZ_ADMIN_CURRENT_USER",
         "AUTHZ_ADMIN_UI",
+        "AUTHZ_ADMIN_UI_INDEX",
+        "AUTHZ_ADMIN_UI_CONFIG",
+        "AUTHZ_ADMIN_UI_ASSETS",
         "AUTHZ_USER_VIEW",
         "AUTHZ_ROLE_VIEW",
         "AUTHZ_PERMISSION_VIEW",

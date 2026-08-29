@@ -5,9 +5,12 @@ import com.example.authorization.domain.IdentityChangeEvent;
 import com.example.authorization.domain.IdentityChangeProcessingResult;
 import com.example.authorization.persistence.entity.IdentityChangeEventEntity;
 import com.example.authorization.persistence.repository.IdentityChangeEventRepository;
+import com.example.authorization.observability.NoOpAuthorizationObservation;
+import com.example.authorization.spi.AuthorizationObservation;
 import com.example.authorization.spi.IdentityChangeEventProcessor;
 import com.example.authorization.spi.IdentitySynchronizationProvider;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -20,6 +23,7 @@ public final class DatabaseIdentityChangeEventProcessor implements IdentityChang
   private final ObjectProvider<IdentitySynchronizationProvider> synchronizationProviders;
   private final AuthorizationProperties properties;
   private final Clock clock;
+  private final AuthorizationObservation observation;
   private final TransactionTemplate ledgerTransaction;
 
   public DatabaseIdentityChangeEventProcessor(
@@ -28,10 +32,27 @@ public final class DatabaseIdentityChangeEventProcessor implements IdentityChang
       AuthorizationProperties properties,
       Clock clock,
       PlatformTransactionManager transactionManager) {
+    this(
+        events,
+        synchronizationProviders,
+        properties,
+        clock,
+        transactionManager,
+        new NoOpAuthorizationObservation());
+  }
+
+  public DatabaseIdentityChangeEventProcessor(
+      IdentityChangeEventRepository events,
+      ObjectProvider<IdentitySynchronizationProvider> synchronizationProviders,
+      AuthorizationProperties properties,
+      Clock clock,
+      PlatformTransactionManager transactionManager,
+      AuthorizationObservation observation) {
     this.events = events;
     this.synchronizationProviders = synchronizationProviders;
     this.properties = properties;
     this.clock = clock;
+    this.observation = observation;
     ledgerTransaction = new TransactionTemplate(transactionManager);
     ledgerTransaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
   }
@@ -39,6 +60,19 @@ public final class DatabaseIdentityChangeEventProcessor implements IdentityChang
   @Override
   public IdentityChangeProcessingResult process(IdentityChangeEvent event) {
     if (event == null) throw new IllegalArgumentException("event is required");
+    long started = System.nanoTime();
+    try {
+      IdentityChangeProcessingResult result = processClaimed(event);
+      observation.recordIdentityEvent(
+          result, Duration.ofNanos(System.nanoTime() - started));
+      return result;
+    } catch (RuntimeException exception) {
+      observation.recordIdentityEventFailure(Duration.ofNanos(System.nanoTime() - started));
+      throw exception;
+    }
+  }
+
+  private IdentityChangeProcessingResult processClaimed(IdentityChangeEvent event) {
     ensureRecorded(event);
     ClaimResult claim = claim(event);
     if (claim == ClaimResult.DUPLICATE) return IdentityChangeProcessingResult.DUPLICATE;

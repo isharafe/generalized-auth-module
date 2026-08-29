@@ -41,6 +41,8 @@ Demo proves end-to-end DB-only authorization.
 - URL matching security tests pass
 - admin endpoints protected
 - secrets/tokens not logged
+- encoded/path-parameter/method-override bypass regressions pass
+- UI delivery permissions cannot authorize admin API operations
 
 ## Database/Flyway
 
@@ -50,12 +52,15 @@ Demo proves end-to-end DB-only authorization.
 - logical codes unique
 - assignment source stored
 - optimistic locking works
+- V1-to-current migration preserves existing data
+- concurrent seed initialization is serialized by a database lock
 
 ## Seed
 
 - consumers use YAML/Java, not internal SQL
 - repeated seed is idempotent
 - bad seed fails startup before partial mutation
+- changed seeds upgrade memberships idempotently
 - framework admin permissions/roles exist
 - consuming application can seed initial admin assignment
 
@@ -95,6 +100,13 @@ Normal request authorization stays local and does not query LDAP.
 ## No placeholders
 
 No unfinished production TODOs, placeholder migrations, fake implementations, or unsupported methods for features claimed complete.
+
+## Operations
+
+- low-cardinality authorization/cache/event metrics register when Micrometer is available
+- single-instance cache invalidation works without an external transport
+- an opt-in database transport propagates invalidations between instances
+- cache miss concurrency does not stampede the database for the same cache entry
 
 ## Documentation
 

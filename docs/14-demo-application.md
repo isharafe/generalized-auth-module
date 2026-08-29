@@ -88,6 +88,10 @@ For demo administration, manager may also receive framework role `AUTHZ_SYSTEM_A
 
 Admin API permissions themselves must enforce finer-grained admin operations.
 
+The integration suite treats the UI and API namespaces independently and exercises path parsing
+through the actual filter chain, including context paths, encoded/repeated separators, semicolon
+parameters, trailing slashes, and method-override headers.
+
 ## Endpoints
 
 ```text

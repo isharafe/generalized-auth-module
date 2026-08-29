@@ -95,7 +95,13 @@ authorization:
 
 The module owns the management REST controllers, DTOs, transactional services, framework-admin seed definitions, and same-origin SPA. The API provides capabilities, paginated CRUD and mappings, user assignments and effective permissions, authorization explain, synchronization facade, and audit queries. Writes use optimistic versions, post-commit cache invalidation, and generic authorization-change audit events persisted by core. Every audit row has an explicit `DECISION` or `CHANGE` kind that is returned and filterable through the admin API and UI.
 
-The SPA is served at `/authorization-admin/` by default and discovers both configured base paths from its protected runtime configuration endpoint. The API may run without the UI, but the UI requires the API to be enabled. The module seeds `AUTHZ_ADMIN_UI` and its API permissions into framework viewer/admin groups, but never assigns a user. The consuming application remains responsible for applicable `AUTHORIZED` resource rules and an appropriate admin assignment.
+The SPA is served at `/authorization-admin/` by default and discovers both configured base paths
+from its protected runtime configuration endpoint. The API may run without the UI, but the UI
+requires the API to be enabled. The module seeds exact UI entry/config/asset permissions and
+operation-specific API permissions into framework viewer/admin groups, but never assigns a user.
+UI permissions deliberately do not overlap the `/authorization-admin/api/**` namespace. The
+consuming application remains responsible for applicable `AUTHORIZED` resource rules and an
+appropriate admin assignment.
 
 The Data transfer page exports a versioned JSON snapshot containing all permissions, permission
 groups, roles, relationships, resource rules, users, user assignments, pending assignments, and
@@ -191,6 +197,31 @@ application still owns Spring Security authentication and must resolve the authe
 to the same configured LDAP issuer and stable subject. See
 [the LDAP integration guide](docs/20-ldap-integration.md).
 
+## Production observability and multi-instance caches
+
+When a Micrometer `MeterRegistry` bean is available, core records authorization decisions and
+latency, cache hits/misses, identity-event processing, and cache invalidations. The tags are bounded
+enums/categories; user IDs, paths, and permission codes are never metric tags. Add Spring Boot
+Actuator and the registry/exporter appropriate for the deployment to expose them.
+
+Local caches are the default. Applications with multiple instances sharing one authorization
+database can enable the built-in database invalidation transport:
+
+```yaml
+authorization:
+  distributed-invalidation:
+    enabled: true
+    instance-id: ${HOSTNAME}
+    poll-interval: 1s
+    retention: 24h
+    batch-size: 500
+```
+
+Each instance must have a unique, stable `instance-id`. The provider-neutral
+`AuthorizationInvalidationPublisher` SPI can be replaced with another transport. Seed startup is
+serialized across instances with a database lock, while unchanged checksums keep repeat startup
+idempotent. See [the Phase 7 hardening summary](docs/22-phase-7-implementation.md).
+
 ## Run and verify
 
 Requires Java 21. The repository-level Maven Wrapper pins Maven 3.9.11 for every module, so a separate Maven installation is not required.
@@ -235,7 +266,8 @@ application session and the Keycloak SSO session. See
 
 ## Current status
 
-Phases 1 through 6 are implemented. See [TASKS.md](TASKS.md) for the remaining phased work,
+Phases 1 through 7 are implemented. See [TASKS.md](TASKS.md) for the phased record,
 [docs/19-phase-4-implementation.md](docs/19-phase-4-implementation.md) for Keycloak, and
 [docs/20-ldap-integration.md](docs/20-ldap-integration.md) for LDAP. Phase 6 event refresh is
-summarized in [docs/21-phase-6-implementation.md](docs/21-phase-6-implementation.md).
+summarized in [docs/21-phase-6-implementation.md](docs/21-phase-6-implementation.md), and production
+hardening in [docs/22-phase-7-implementation.md](docs/22-phase-7-implementation.md).

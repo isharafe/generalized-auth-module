@@ -6,6 +6,7 @@ import static org.mockito.Mockito.mock;
 
 import com.example.authorization.persistence.repository.UserRepository;
 import com.example.authorization.cache.CachingEntitlementProvider;
+import com.example.authorization.observability.NoOpAuthorizationObservation;
 import com.example.authorization.spi.EntitlementProvider;
 import com.example.authorization.spi.IdentitySynchronizationProvider;
 import java.time.Duration;
@@ -45,7 +46,8 @@ class AuthorizationPropertiesTest {
 
     EntitlementProvider provider =
         new AuthorizationAutoConfiguration()
-            .entitlementProvider(mock(UserRepository.class), properties);
+            .entitlementProvider(
+                mock(UserRepository.class), properties, new NoOpAuthorizationObservation());
 
     assertThat(provider).isNotInstanceOf(CachingEntitlementProvider.class);
   }

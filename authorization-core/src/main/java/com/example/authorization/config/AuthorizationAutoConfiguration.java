@@ -3,11 +3,14 @@ package com.example.authorization.config;
 import com.example.authorization.audit.DatabaseAuthorizationAuditPublisher;
 import com.example.authorization.cache.*;
 import com.example.authorization.engine.AuthorizationEngine;
+import com.example.authorization.observability.MicrometerAuthorizationObservation;
+import com.example.authorization.observability.NoOpAuthorizationObservation;
 import com.example.authorization.persistence.repository.*;
 import com.example.authorization.persistence.service.*;
 import com.example.authorization.security.*;
 import com.example.authorization.seed.*;
 import com.example.authorization.spi.*;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.time.Clock;
 import java.util.List;
 import org.springframework.beans.factory.ObjectProvider;
@@ -16,8 +19,10 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.*;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.io.ResourceLoader;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 @AutoConfiguration
 @EnableConfigurationProperties(AuthorizationProperties.class)
@@ -28,6 +33,19 @@ import org.springframework.core.io.ResourceLoader;
     matchIfMissing = true)
 @Import(AuthorizationPersistenceConfiguration.class)
 public class AuthorizationAutoConfiguration {
+  @Bean
+  @ConditionalOnBean(MeterRegistry.class)
+  @ConditionalOnMissingBean(AuthorizationObservation.class)
+  AuthorizationObservation micrometerAuthorizationObservation(MeterRegistry registry) {
+    return new MicrometerAuthorizationObservation(registry);
+  }
+
+  @Bean
+  @ConditionalOnMissingBean(AuthorizationObservation.class)
+  AuthorizationObservation authorizationObservation() {
+    return new NoOpAuthorizationObservation();
+  }
+
   @Bean
   @ConditionalOnMissingBean
   PermissionMatcher permissionMatcher(ObjectProvider<ResourcePatternMatcher> strategies) {
@@ -43,27 +61,76 @@ public class AuthorizationAutoConfiguration {
   @Bean
   @ConditionalOnMissingBean(EntitlementProvider.class)
   EntitlementProvider entitlementProvider(
-      UserRepository repository, AuthorizationProperties properties) {
+      UserRepository repository,
+      AuthorizationProperties properties,
+      AuthorizationObservation observation) {
     EntitlementProvider provider = new DatabaseEntitlementProvider(repository);
     AuthorizationProperties.CacheRegion cache = properties.getCache().getEntitlements();
-    return cache.isEnabled() ? new CachingEntitlementProvider(provider, cache.getTtl()) : provider;
+    return cache.isEnabled()
+        ? new CachingEntitlementProvider(provider, cache.getTtl(), observation)
+        : provider;
   }
 
   @Bean
   @ConditionalOnMissingBean(ResourceRuleProvider.class)
   ResourceRuleProvider resourceRuleProvider(
-      ResourceRuleRepository repository, AuthorizationProperties properties) {
+      ResourceRuleRepository repository,
+      AuthorizationProperties properties,
+      AuthorizationObservation observation) {
     ResourceRuleProvider provider = new DatabaseResourceRuleProvider(repository);
     AuthorizationProperties.CacheRegion cache = properties.getCache().getResourceRules();
-    return cache.isEnabled() ? new CachingResourceRuleProvider(provider, cache.getTtl()) : provider;
+    return cache.isEnabled()
+        ? new CachingResourceRuleProvider(provider, cache.getTtl(), observation)
+        : provider;
+  }
+
+  @Bean
+  @ConditionalOnMissingBean(AuthorizationInvalidationPublisher.class)
+  @ConditionalOnProperty(
+      prefix = "authorization.distributed-invalidation",
+      name = "enabled",
+      havingValue = "true")
+  AuthorizationInvalidationPublisher databaseAuthorizationInvalidationPublisher(
+      CacheInvalidationRepository repository) {
+    return new DatabaseAuthorizationInvalidationPublisher(repository);
+  }
+
+  @Bean
+  @ConditionalOnMissingBean(AuthorizationInvalidationPublisher.class)
+  AuthorizationInvalidationPublisher authorizationInvalidationPublisher() {
+    return new NoOpAuthorizationInvalidationPublisher();
   }
 
   @Bean
   @ConditionalOnMissingBean(AuthorizationCacheInvalidator.class)
-  AuthorizationCacheInvalidator authorizationCacheInvalidator(
+  PublishingAuthorizationCacheInvalidator authorizationCacheInvalidator(
       ObjectProvider<EntitlementProvider> entitlements,
-      ObjectProvider<ResourceRuleProvider> rules) {
-    return new DefaultAuthorizationCacheInvalidator(entitlements, rules);
+      ObjectProvider<ResourceRuleProvider> rules,
+      AuthorizationInvalidationPublisher publisher,
+      AuthorizationObservation observation,
+      AuthorizationProperties properties,
+      ObjectProvider<Clock> clocks) {
+    return new PublishingAuthorizationCacheInvalidator(
+        new DefaultAuthorizationCacheInvalidator(entitlements, rules),
+        publisher,
+        observation,
+        properties.getDistributedInvalidation().getInstanceId(),
+        clocks.getIfAvailable(Clock::systemUTC));
+  }
+
+  @Bean
+  @ConditionalOnBean(PublishingAuthorizationCacheInvalidator.class)
+  @ConditionalOnProperty(
+      prefix = "authorization.distributed-invalidation",
+      name = "enabled",
+      havingValue = "true")
+  DatabaseAuthorizationInvalidationReceiver databaseAuthorizationInvalidationReceiver(
+      CacheInvalidationRepository repository,
+      PublishingAuthorizationCacheInvalidator invalidator,
+      AuthorizationProperties properties,
+      ObjectProvider<Clock> clocks) {
+    return new DatabaseAuthorizationInvalidationReceiver(
+        repository, invalidator, properties, clocks.getIfAvailable(Clock::systemUTC));
   }
 
   @Bean
@@ -101,8 +168,9 @@ public class AuthorizationAutoConfiguration {
   DynamicRequestAuthorizationManager dynamicRequestAuthorizationManager(
       AuthorizationEngine engine,
       SpringAuthenticationIdentityResolver resolver,
-      AuthorizationAuditPublisher audit) {
-    return new DynamicRequestAuthorizationManager(engine, resolver, audit);
+      AuthorizationAuditPublisher audit,
+      AuthorizationObservation observation) {
+    return new DynamicRequestAuthorizationManager(engine, resolver, audit, observation);
   }
 
   @Bean
@@ -154,6 +222,12 @@ public class AuthorizationAutoConfiguration {
   }
 
   @Bean
+  AuthorizationSeedInitializationService authorizationSeedInitializationService(
+      SyncStateRepository syncStates, AuthorizationSeedService seeds) {
+    return new AuthorizationSeedInitializationService(syncStates, seeds);
+  }
+
+  @Bean
   @ConditionalOnProperty(
       prefix = "authorization.seed",
       name = "enabled",
@@ -162,7 +236,7 @@ public class AuthorizationAutoConfiguration {
   AuthorizationSeedRunner authorizationSeedRunner(
       AuthorizationSeedLoader loader,
       List<AuthorizationSeedContributor> contributors,
-      AuthorizationSeedService service,
+      AuthorizationSeedInitializationService service,
       AuthorizationProperties properties) {
     return new AuthorizationSeedRunner(
         loader,
@@ -179,13 +253,15 @@ public class AuthorizationAutoConfiguration {
       ObjectProvider<IdentitySynchronizationProvider> synchronizationProviders,
       AuthorizationProperties properties,
       ObjectProvider<Clock> clocks,
-      org.springframework.transaction.PlatformTransactionManager transactionManager) {
+      org.springframework.transaction.PlatformTransactionManager transactionManager,
+      AuthorizationObservation observation) {
     return new DatabaseIdentityChangeEventProcessor(
         events,
         synchronizationProviders,
         properties,
         clocks.getIfAvailable(Clock::systemUTC),
-        transactionManager);
+        transactionManager,
+        observation);
   }
 
   @Bean
@@ -201,6 +277,26 @@ public class AuthorizationAutoConfiguration {
           || properties.getIdentityEvents().getProcessingTimeout().isNegative())
         throw new IllegalStateException(
             "authorization.identity-events.processing-timeout must be positive");
+      AuthorizationProperties.DistributedInvalidation distributed =
+          properties.getDistributedInvalidation();
+      if (distributed.getPollInterval() == null
+          || distributed.getPollInterval().isZero()
+          || distributed.getPollInterval().isNegative())
+        throw new IllegalStateException(
+            "authorization.distributed-invalidation.poll-interval must be positive");
+      if (distributed.getRetention() == null
+          || distributed.getRetention().isZero()
+          || distributed.getRetention().isNegative())
+        throw new IllegalStateException(
+            "authorization.distributed-invalidation.retention must be positive");
+      if (distributed.getBatchSize() < 1 || distributed.getBatchSize() > 10000)
+        throw new IllegalStateException(
+            "authorization.distributed-invalidation.batch-size must be between 1 and 10000");
+      if (distributed.getInstanceId() == null
+          || distributed.getInstanceId().isBlank()
+          || distributed.getInstanceId().length() > 100)
+        throw new IllegalStateException(
+            "authorization.distributed-invalidation.instance-id must contain 1 to 100 characters");
       IdentitySynchronizationProvider synchronizationProvider =
           synchronizationProviders.getIfAvailable();
       if (!properties.getSource().equalsIgnoreCase("database")
@@ -212,4 +308,12 @@ public class AuthorizationAutoConfiguration {
                 + " authorization-core supports database by default");
     };
   }
+
+  @Configuration(proxyBeanMethods = false)
+  @EnableScheduling
+  @ConditionalOnProperty(
+      prefix = "authorization.distributed-invalidation",
+      name = "enabled",
+      havingValue = "true")
+  static class DistributedInvalidationSchedulingConfiguration {}
 }

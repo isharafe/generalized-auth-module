@@ -3,6 +3,7 @@ package com.example.authorization.config;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -18,6 +19,7 @@ public class AuthorizationProperties {
   private final Seed seed = new Seed();
   private final Cache cache = new Cache();
   private final IdentityEvents identityEvents = new IdentityEvents();
+  private final DistributedInvalidation distributedInvalidation = new DistributedInvalidation();
 
   @Getter
   public static class Database {
@@ -67,5 +69,15 @@ public class AuthorizationProperties {
   @Setter
   public static class IdentityEvents {
     private Duration processingTimeout = Duration.ofMinutes(5);
+  }
+
+  @Getter
+  @Setter
+  public static class DistributedInvalidation {
+    private boolean enabled;
+    private Duration pollInterval = Duration.ofSeconds(1);
+    private Duration retention = Duration.ofHours(24);
+    private int batchSize = 500;
+    private String instanceId = UUID.randomUUID().toString();
   }
 }

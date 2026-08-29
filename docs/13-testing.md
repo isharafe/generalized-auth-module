@@ -1,8 +1,7 @@
 # Testing Strategy
 
-The project includes meaningful automated tests, while later-phase and hardening coverage remains
-explicitly planned below. Lists in the strategy sections are release targets for the phase that owns
-the feature; they should not be read as claims that every listed case already has a dedicated test.
+The project includes automated unit, integration, migration, concurrency, security-regression, and
+frontend tests. The strategy sections describe the maintained release coverage.
 
 ## Authorization engine
 
@@ -121,10 +120,17 @@ The current suite covers:
   missing/stale removal, MANUAL/SEED preservation, pending assignment resolution, failure status,
   audit, and cache invalidation
 - demo OIDC browser redirection, login-triggered targeted synchronization, `UI:seePage1`/`UI:seePage2` link visibility, and direct-page denial
+- V1-to-current Flyway upgrade with existing data preserved and final schema validation
+- seed definition upgrades, invalid-seed rollback, idempotency, and concurrent lock-protected startup
+- concurrent cache-miss collapse, concurrent event claims, and a bounded sustained cached-decision load
+- cross-instance database invalidation delivery with origin-echo suppression and Micrometer registration
+- context paths, trailing/repeated/encoded paths, semicolon parameters, and method-override bypass attempts
+- unauthenticated/non-admin denial across every admin API capability family and UI/API namespace isolation
 
-Broader seed merge/idempotency upgrade tests, concurrent-startup tests, broader URL bypass regression
-coverage, and real multi-process database-lock verification remain Phase 7 hardening work as
-identified in `TASKS.md`.
+The initialization-lock integration test uses independent concurrent transactions against one
+database, matching the lock boundary used by multiple pods. Transport-specific production database
+and deployment load tests should still be added by consuming applications for their selected DB,
+connection pool, traffic shape, and latency objectives.
 
 ## Release-blocking security tests
 

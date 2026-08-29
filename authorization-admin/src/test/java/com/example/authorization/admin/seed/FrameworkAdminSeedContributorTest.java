@@ -3,6 +3,10 @@ package com.example.authorization.admin.seed;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.example.authorization.seed.AuthorizationSeedBuilder;
+import com.example.authorization.domain.Permission;
+import com.example.authorization.domain.ProtectedResource;
+import com.example.authorization.domain.ResourceType;
+import com.example.authorization.security.DefaultPermissionMatcher;
 import org.junit.jupiter.api.Test;
 
 class FrameworkAdminSeedContributorTest {
@@ -16,7 +20,7 @@ class FrameworkAdminSeedContributorTest {
 
     assertThat(builder.build().getPermissions())
         .isNotEmpty()
-        .filteredOn(permission -> !permission.code().equals("AUTHZ_ADMIN_UI"))
+        .filteredOn(permission -> !permission.code().startsWith("AUTHZ_ADMIN_UI"))
         .allSatisfy(
             permission -> {
               assertThat(permission.pattern()).contains(":/company/authorization/api");
@@ -27,10 +31,37 @@ class FrameworkAdminSeedContributorTest {
             permission ->
                 assertThat(permission.code()).isEqualTo("AUTHZ_AUTHORIZATION_TEST"));
     assertThat(builder.build().getPermissions())
-        .filteredOn(permission -> permission.code().equals("AUTHZ_ADMIN_UI"))
-        .singleElement()
-        .satisfies(
-            permission ->
-                assertThat(permission.pattern()).isEqualTo("GET:/company/authorization/ui/**"));
+        .filteredOn(permission -> permission.code().startsWith("AUTHZ_ADMIN_UI"))
+        .extracting(permission -> permission.pattern())
+        .containsExactlyInAnyOrder(
+            "GET:/company/authorization/ui",
+            "GET:/company/authorization/ui/",
+            "GET:/company/authorization/ui/config",
+            "GET:/company/authorization/ui/assets/**")
+        .allSatisfy(pattern -> assertThat(pattern).doesNotContain("/api"));
+  }
+
+  @Test
+  void uiOnlyPermissionsCannotReadAnyAdminApiEndpoint() {
+    AuthorizationSeedBuilder builder = new AuthorizationSeedBuilder();
+    new FrameworkAdminSeedContributor().contribute(builder);
+    ProtectedResource api =
+        new ProtectedResource(ResourceType.URL, "GET:/authorization-admin/api/roles");
+    DefaultPermissionMatcher matcher = new DefaultPermissionMatcher();
+
+    assertThat(builder.build().getPermissions())
+        .filteredOn(permission -> permission.code().startsWith("AUTHZ_ADMIN_UI"))
+        .allSatisfy(
+            seed -> {
+              Permission permission =
+                  new Permission(
+                      seed.code(),
+                      seed.name(),
+                      seed.description(),
+                      seed.type(),
+                      seed.pattern(),
+                      true);
+              assertThat(matcher.matches(permission, api)).isFalse();
+            });
   }
 }

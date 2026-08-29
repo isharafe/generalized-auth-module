@@ -46,6 +46,37 @@ class AdminApiIntegrationTest {
   }
 
   @Test
+  void everyAdminCapabilityFamilyRejectsUnauthenticatedAndNonAdminUsers() throws Exception {
+    for (String path :
+        java.util.List.of(
+            "/capabilities",
+            "/current-user",
+            "/users",
+            "/roles",
+            "/permission-groups",
+            "/permissions",
+            "/resource-rules",
+            "/external-mappings",
+            "/sync/status",
+            "/audit")) {
+      mvc.perform(get(BASE + path)).andExpect(status().isUnauthorized());
+      mvc.perform(get(BASE + path).header("X-Demo-User", "viewer"))
+          .andExpect(status().isForbidden());
+    }
+    for (String path :
+        java.util.List.of(
+            "/authorization-test",
+            "/sync/full",
+            "/sync/incremental",
+            "/data/export",
+            "/data/import")) {
+      mvc.perform(post(BASE + path)).andExpect(status().isUnauthorized());
+      mvc.perform(post(BASE + path).header("X-Demo-User", "viewer"))
+          .andExpect(status().isForbidden());
+    }
+  }
+
+  @Test
   void roleCrudSupportsSearchVersionConflictsSoftDisableAndAudit() throws Exception {
     mvc.perform(
             post(BASE + "/roles")

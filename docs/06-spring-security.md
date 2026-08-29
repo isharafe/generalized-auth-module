@@ -60,6 +60,11 @@ admin authorization-test endpoint uppercases its method input. Seed and admin CR
 validated as canonical uppercase values rather than silently rewritten. Do not include the query
 string.
 
+Servlet context paths are removed before authorization, so rules remain application-relative (for
+example, a request URI `/company/api/users` under context path `/company` is checked as
+`GET:/api/users`). The container's parsed request URI is used; override headers do not change the
+method being authorized.
+
 ## Matching
 
 `DefaultPermissionMatcher` selects a `ResourcePatternMatcher` strategy by `ResourceType`. URL uses
@@ -77,6 +82,10 @@ Tests must cover:
 - context path
 - exact vs wildcard method
 - query string ignored
+
+The release-blocking HTTP regression suite additionally checks encoded slash/backslash attempts,
+semicolon path parameters, repeated slashes, method-override headers, context-path handling, and
+trailing-slash behavior through the actual Spring Security filter chain.
 
 ## Authorization flow
 

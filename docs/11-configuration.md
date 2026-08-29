@@ -36,7 +36,24 @@ authorization:
 
   identity-events:
     processing-timeout: 5m
+
+  distributed-invalidation:
+    enabled: false
+    instance-id: ${HOSTNAME:replace-with-a-unique-instance-id}
+    poll-interval: 1s
+    retention: 24h
+    batch-size: 500
 ```
+
+Distributed invalidation remains disabled for a single-instance deployment. Enable it on every
+instance sharing the authorization database and give every running instance a unique ID. Poll
+interval and retention must be positive, batch size must be between 1 and 10,000, and instance ID
+must contain 1-100 characters. The generated UUID default is unique per application start; an
+explicit stable pod/host identifier is easier to operate. Retention bounds replay and storage, so it
+must exceed the longest expected instance outage when retained invalidations need to be replayed.
+
+Micrometer collection activates automatically when the application provides a `MeterRegistry`.
+Spring Boot Actuator plus the selected registry implementation controls how the metrics are exposed.
 
 ## Keycloak source
 
@@ -212,3 +229,7 @@ EntitlementProvider entitlementProvider() {
 A custom `KeycloakAdminClient` replaces the HTTP client while retaining the supplied synchronization
 provider. A custom `IdentitySynchronizationProvider` replaces the Keycloak synchronizer and is also
 used by the scheduler.
+
+`AuthorizationObservation` can be replaced to integrate another telemetry system.
+`AuthorizationInvalidationPublisher` can replace the database event transport; applications that
+replace `AuthorizationCacheInvalidator` own both local and cross-instance invalidation behavior.

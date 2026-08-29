@@ -5,6 +5,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import javax.sql.DataSource;
+import java.net.URI;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -35,6 +36,32 @@ class DemoAuthorizationIntegrationTest {
   @Test
   void queryStringDoesNotBypassAuthorization() throws Exception {
     mvc.perform(get("/demo/employees?ignored=/demo/public")).andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  void contextPathIsNotPartOfTheApplicationOwnedAuthorizationPattern() throws Exception {
+    mvc.perform(
+            get("/application/demo/public")
+                .contextPath("/application")
+                .servletPath("/demo/public"))
+        .andExpect(status().isOk());
+  }
+
+  @Test
+  void rejectsPathAndMethodBypassVariants() throws Exception {
+    mvc.perform(get("/demo/public/")).andExpect(status().isUnauthorized());
+    mvc.perform(get(URI.create("/demo//public"))).andExpect(status().isBadRequest());
+    mvc.perform(get(URI.create("/demo/public%2F..%2Femployees")))
+        .andExpect(status().isBadRequest());
+    mvc.perform(get(URI.create("/demo/public%5C..%5Cemployees")))
+        .andExpect(status().isBadRequest());
+    mvc.perform(get(URI.create("/demo/public;ignored=/employees")))
+        .andExpect(status().isBadRequest());
+    mvc.perform(
+            post("/demo/employees")
+                .header("X-Demo-User", "viewer")
+                .header("X-HTTP-Method-Override", "GET"))
+        .andExpect(status().isForbidden());
   }
 
   @Test

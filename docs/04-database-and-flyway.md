@@ -22,14 +22,22 @@ AUTH_SEED_HISTORY
 AUTH_AUDIT_EVENT
 AUTH_SYNC_STATE
 AUTH_IDENTITY_CHANGE_EVENT
+AUTH_CACHE_INVALIDATION
 ```
 
 `AUTH_SYNC_STATE` contains the `GLOBAL_IDENTITY_SYNC` row used both for synchronization status and a pessimistic database lock. Holding that row lock serializes full/targeted synchronization across application instances sharing the database.
+
+It also contains `GLOBAL_SEED_INITIALIZATION`. The seed initialization service locks this row before
+checking/applying the combined seed, serializing concurrent application starts that share a database.
 
 `AUTH_IDENTITY_CHANGE_EVENT` is the provider-neutral event-processing ledger. Its
 `(SOURCE_SYSTEM, EXTERNAL_EVENT_ID)` unique key makes callback delivery idempotent across application
 instances. Status, attempt count, claim time, completion time, and safe failure class support replay,
 retry, and stale-claim recovery without storing callback secrets or request bodies.
+
+`AUTH_CACHE_INVALIDATION` is the optional database transport for provider-neutral invalidation
+events. Polling instances skip their own origin, apply other instances' identity/rule/all-cache
+events locally, and remove expired records according to the configured retention period.
 
 ## Constraints
 
@@ -102,7 +110,7 @@ The critical rule is that authorization repositories/seed code cannot run before
 
 ## Tests
 
-Create an integration test where:
+Integration coverage verifies:
 
 ```text
 application V1
@@ -110,6 +118,9 @@ authorization V1
 ```
 
 both execute and are recorded in separate history tables.
+
+It also migrates an existing V1 database through V2/V3, verifies existing authorization data is
+preserved, and asserts the final lock/invalidation schema.
 
 ## Demo database
 

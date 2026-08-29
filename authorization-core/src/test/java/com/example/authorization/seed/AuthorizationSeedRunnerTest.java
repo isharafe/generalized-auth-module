@@ -17,7 +17,11 @@ class AuthorizationSeedRunnerTest {
     when(loader.load(anyList())).thenThrow(new IllegalArgumentException("bad seed"));
     AuthorizationSeedRunner runner =
         new AuthorizationSeedRunner(
-            loader, List.of("seed.yml"), List.of(), mock(AuthorizationSeedService.class), false);
+            loader,
+            List.of("seed.yml"),
+            List.of(),
+            mock(AuthorizationSeedInitializationService.class),
+            false);
 
     assertThatCode(() -> runner.run(mock(ApplicationArguments.class))).doesNotThrowAnyException();
   }
@@ -28,7 +32,11 @@ class AuthorizationSeedRunnerTest {
     when(loader.load(anyList())).thenThrow(new IllegalArgumentException("bad seed"));
     AuthorizationSeedRunner runner =
         new AuthorizationSeedRunner(
-            loader, List.of("seed.yml"), List.of(), mock(AuthorizationSeedService.class), true);
+            loader,
+            List.of("seed.yml"),
+            List.of(),
+            mock(AuthorizationSeedInitializationService.class),
+            true);
 
     assertThatThrownBy(() -> runner.run(mock(ApplicationArguments.class)))
         .isInstanceOf(IllegalArgumentException.class)

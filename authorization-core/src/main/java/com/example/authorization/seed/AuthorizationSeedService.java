@@ -147,18 +147,26 @@ public class AuthorizationSeedService {
       pending.save(entity);
       return;
     }
+    boolean changed = false;
     if (value.targetType().equals("ROLE")) {
       RoleEntity role = roles.findByCode(value.targetCode()).orElseThrow();
       UserRoleId id = new UserRoleId(user.getId(), role.getId());
-      if (!userRoles.existsById(id)) userRoles.save(new UserRoleEntity(user, role, source, "seed"));
+      if (!userRoles.existsById(id)) {
+        userRoles.save(new UserRoleEntity(user, role, source, "seed"));
+        changed = true;
+      }
     } else {
       PermissionGroupEntity group = groups.findByCode(value.targetCode()).orElseThrow();
       UserPermissionGroupId id = new UserPermissionGroupId(user.getId(), group.getId());
-      if (!userGroups.existsById(id))
+      if (!userGroups.existsById(id)) {
         userGroups.save(new UserPermissionGroupEntity(user, group, source, "seed"));
+        changed = true;
+      }
     }
-    user.incrementEntitlementVersion();
-    users.save(user);
+    if (changed) {
+      user.incrementEntitlementVersion();
+      users.save(user);
+    }
   }
 
   private void invalidateAfterCommit() {

@@ -15,6 +15,10 @@ import com.example.authorization.spi.IdentitySynchronizationProvider;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.time.Duration;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.SpringBootConfiguration;
@@ -50,6 +54,8 @@ class DatabaseIdentityChangeEventProcessorIntegrationTest {
     synchronization.calls = 0;
     synchronization.failure = null;
     synchronization.lastIdentity = null;
+    synchronization.entered = null;
+    synchronization.release = null;
   }
 
   @Test
@@ -116,6 +122,25 @@ class DatabaseIdentityChangeEventProcessorIntegrationTest {
     assertThat(stored("evt-processing").getAttempts()).isEqualTo(3);
   }
 
+  @Test
+  void concurrentDeliveryCannotRunTargetedSynchronizationTwice() throws Exception {
+    IdentityChangeEvent event = event("evt-concurrent", "user-4");
+    synchronization.entered = new CountDownLatch(1);
+    synchronization.release = new CountDownLatch(1);
+
+    try (var executor = Executors.newSingleThreadExecutor()) {
+      var first = executor.submit(() -> processor.process(event));
+      assertThat(synchronization.entered.await(5, TimeUnit.SECONDS)).isTrue();
+
+      assertThat(processor.process(event))
+          .isEqualTo(IdentityChangeProcessingResult.IN_PROGRESS);
+      synchronization.release.countDown();
+
+      assertThat(first.get()).isEqualTo(IdentityChangeProcessingResult.PROCESSED);
+    }
+    assertThat(synchronization.calls).isEqualTo(1);
+  }
+
   private IdentityChangeEvent event(String eventId, String subject) {
     return new IdentityChangeEvent(
         eventId,
@@ -148,9 +173,11 @@ class DatabaseIdentityChangeEventProcessorIntegrationTest {
 
   static final class TrackingSynchronizationProvider
       implements IdentitySynchronizationProvider {
-    private int calls;
+    private volatile int calls;
     private RuntimeException failure;
     private AuthenticatedIdentity lastIdentity;
+    private CountDownLatch entered;
+    private CountDownLatch release;
 
     @Override
     public boolean supported() {
@@ -166,6 +193,15 @@ class DatabaseIdentityChangeEventProcessorIntegrationTest {
     public void synchronize(AuthenticatedIdentity identity) {
       calls++;
       lastIdentity = identity;
+      if (entered != null) {
+        entered.countDown();
+        try {
+          release.await();
+        } catch (InterruptedException exception) {
+          Thread.currentThread().interrupt();
+          throw new IllegalStateException("Interrupted while holding test synchronization", exception);
+        }
+      }
       if (failure != null) throw failure;
     }
   }

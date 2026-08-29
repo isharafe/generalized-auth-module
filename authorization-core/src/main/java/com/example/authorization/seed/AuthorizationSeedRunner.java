@@ -12,7 +12,7 @@ public final class AuthorizationSeedRunner implements ApplicationRunner {
   private final AuthorizationSeedLoader loader;
   private final List<String> locations;
   private final List<AuthorizationSeedContributor> contributors;
-  private final AuthorizationSeedService service;
+  private final AuthorizationSeedInitializationService service;
   private final boolean failOnError;
 
   @Override

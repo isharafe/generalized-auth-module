@@ -48,7 +48,9 @@ IdentitySynchronizationProvider
 IdentityChangeEventProcessor
 ExternalAuthorityMapper
 AuthorizationCacheInvalidator
+AuthorizationInvalidationPublisher
 AuthorizationAuditPublisher
+AuthorizationObservation
 ```
 
 ## Default implementations
@@ -63,6 +65,8 @@ IdentitySynchronizationProvider (unsupported default bean)
 DatabaseIdentityChangeEventProcessor
 DatabaseExternalAuthorityMapper
 DefaultAuthorizationCacheInvalidator
+DatabaseAuthorizationInvalidationPublisher (opt-in)
+MicrometerAuthorizationObservation (when a MeterRegistry exists)
 ```
 
 ## Auto-configuration
@@ -84,6 +88,8 @@ Auto-configure when applicable:
 - authorization manager
 - seed processor
 - provider-neutral identity-change event processor and durable replay ledger
+- low-cardinality Micrometer observations when a registry is available
+- optional database-backed cross-instance cache invalidation
 
 Back off when the application supplies its own SPI bean.
 

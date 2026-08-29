@@ -24,6 +24,9 @@ Consumers retain ownership of authentication and their `SecurityFilterChain`. Th
 
 Phase 1 is limited to the authorization runtime and its extension SPIs. Phase 2 management REST functionality and Phase 3 SPA functionality are delivered together by the optional `authorization-admin` module, as documented in `docs/17-phase-2-implementation.md` and `docs/18-phase-3-implementation.md`. Keycloak synchronization remains Phase 4.
 
-## Current operational limitation
+## Original Phase 1 operational boundary
 
-The cache is local to one application instance. Entitlement versions and targeted invalidation contracts are present, but distributed invalidation is intentionally deferred to production hardening. Seed concurrency relies on transactions and database uniqueness; a dedicated cross-pod initialization lock can be added during hardening if the target database requires it.
+Phase 1 initially shipped only local cache invalidation and transaction/uniqueness-based seed
+safety. Phase 7 subsequently added the provider-neutral/database distributed invalidation option,
+the seed initialization database lock, and concurrent verification. See
+[the Phase 7 summary](22-phase-7-implementation.md).
