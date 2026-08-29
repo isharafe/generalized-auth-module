@@ -38,7 +38,6 @@ import com.example.authorization.spi.AuthorizationCacheInvalidator;
 import com.example.authorization.spi.EntitlementProvider;
 import com.example.authorization.spi.IdentitySynchronizationProvider;
 import com.example.authorization.spi.PermissionMatcher;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -48,6 +47,7 @@ import java.util.TreeSet;
 import java.util.function.Function;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.transaction.annotation.Transactional;
@@ -72,6 +72,25 @@ public class AuthorizationAdminService {
   private final AuthorizationCacheInvalidator cache;
   private final AuthorizationAuditPublisher audit;
   private final SpringAuthenticationIdentityResolver identityResolver;
+
+  @Transactional(readOnly = true)
+  public AdminDtos.CurrentUser currentUser(Authentication authentication) {
+    AuthenticatedIdentity identity = identityResolver.resolve(authentication);
+    if (identity == null) {
+      throw new AdminApiException(
+          HttpStatus.UNAUTHORIZED,
+          "AUTHZ_AUTHENTICATION_REQUIRED",
+          "An authenticated identity is required");
+    }
+    UserEntity user = users.findByIssuerAndSubject(identity.issuer(), identity.subject()).orElse(null);
+    return new AdminDtos.CurrentUser(
+        identity.issuer(),
+        identity.subject(),
+        user == null || user.getUsername() == null ? identity.username() : user.getUsername(),
+        user == null ? null : user.getEmail(),
+        user == null ? null : user.getFirstName(),
+        user == null ? null : user.getLastName());
+  }
 
   @Transactional(readOnly = true)
   public AdminDtos.Page<AdminDtos.Role> roles(String search, Pageable pageable) {

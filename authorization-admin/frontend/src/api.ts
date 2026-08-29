@@ -1,4 +1,4 @@
-import type { Capabilities, Page } from "./types";
+import type { Capabilities, CurrentUser, Page } from "./types";
 
 export class ApiError extends Error {
   constructor(
@@ -16,6 +16,10 @@ export class AdminApi {
 
   capabilities(): Promise<Capabilities> {
     return this.get<Capabilities>("/capabilities");
+  }
+
+  currentUser(): Promise<CurrentUser> {
+    return this.get<CurrentUser>("/current-user");
   }
 
   page<T>(

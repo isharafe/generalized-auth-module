@@ -21,6 +21,15 @@ export interface Capabilities {
   syncProvider: string | null;
 }
 
+export interface CurrentUser {
+  issuer: string;
+  subject: string;
+  username?: string | null;
+  email?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+}
+
 export interface Role {
   code: string;
   name: string;

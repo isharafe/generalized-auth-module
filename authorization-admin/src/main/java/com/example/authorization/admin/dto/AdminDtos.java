@@ -122,6 +122,14 @@ public final class AdminDtos {
 
   public record Identity(@NotBlank String issuer, @NotBlank String subject, String username) {}
 
+  public record CurrentUser(
+      String issuer,
+      String subject,
+      String username,
+      String email,
+      String firstName,
+      String lastName) {}
+
   public record AuthorizationTestRequest(
       @NotNull @Valid Identity identity,
       ResourceType resourceType,

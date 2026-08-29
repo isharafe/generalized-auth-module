@@ -37,6 +37,12 @@ class AdminApiIntegrationTest {
         .andExpect(jsonPath("$.source", is("DATABASE")))
         .andExpect(jsonPath("$.identitySynchronization", is(false)))
         .andExpect(jsonPath("$.externalAuthorityMapping", is(true)));
+
+    mvc.perform(get(BASE + "/current-user").header("X-Demo-User", ADMIN))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.issuer", is("local")))
+        .andExpect(jsonPath("$.subject", is(ADMIN)))
+        .andExpect(jsonPath("$.username", is(ADMIN)));
   }
 
   @Test

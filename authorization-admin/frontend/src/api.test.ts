@@ -2,6 +2,26 @@ import { describe, expect, it, vi } from "vitest";
 import { AdminApi } from "./api";
 
 describe("AdminApi", () => {
+  it("loads the current authenticated user", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({ issuer: "local", subject: "manager", username: "manager" }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      )
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(new AdminApi("/api").currentUser()).resolves.toEqual({
+      issuer: "local",
+      subject: "manager",
+      username: "manager"
+    });
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/current-user",
+      expect.objectContaining({ credentials: "same-origin" })
+    );
+  });
+
   it("encodes pagination and search parameters", async () => {
     const fetchMock = vi
       .fn()

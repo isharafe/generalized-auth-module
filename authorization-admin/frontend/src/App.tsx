@@ -10,6 +10,7 @@ import type {
   AuditEvent,
   AuthorizationTestResponse,
   Capabilities,
+  CurrentUser,
   EffectiveEntitlements,
   ExternalMapping,
   Page,
@@ -77,11 +78,17 @@ export function App({
   api: AdminApi;
 }) {
   const [capabilities, setCapabilities] = useState<Capabilities | null>(null);
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [route, setRoute] = useState<Route>(routeFromHash());
   const [startupError, setStartupError] = useState("");
 
   useEffect(() => {
-    api.capabilities().then(setCapabilities).catch((error) => setStartupError(message(error)));
+    Promise.all([api.capabilities(), api.currentUser()])
+      .then(([loadedCapabilities, loadedUser]) => {
+        setCapabilities(loadedCapabilities);
+        setCurrentUser(loadedUser);
+      })
+      .catch((error) => setStartupError(message(error)));
   }, [api]);
 
   useEffect(() => {
@@ -98,7 +105,7 @@ export function App({
         <p>{startupError}</p>
       </main>
     );
-  if (!capabilities)
+  if (!capabilities || !currentUser)
     return (
       <main className="loading-screen">
         <div className="brand-mark">A</div>
@@ -149,9 +156,12 @@ export function App({
             <p className="eyebrow">Application authorization</p>
             <h1>{NAVIGATION.find((item) => item.route === route)?.label}</h1>
           </div>
-          <div className="environment">
-            <span>LOCAL DECISIONS</span>
-            <small>{config.apiBasePath}</small>
+          <div className="topbar-context">
+            <div className="environment">
+              <span>LOCAL DECISIONS</span>
+              <small>{config.apiBasePath}</small>
+            </div>
+            <CurrentUserSummary user={currentUser} />
           </div>
         </header>
         <main className="content">
@@ -163,6 +173,26 @@ export function App({
         </main>
       </div>
     </div>
+  );
+}
+
+function CurrentUserSummary({ user }: { user: CurrentUser }) {
+  const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ");
+  const displayName = fullName || user.username || user.subject;
+  const secondary = user.email || user.username || user.subject;
+  const initial = displayName.trim().charAt(0).toUpperCase() || "?";
+
+  return (
+    <section className="current-user" aria-label="Current logged in user">
+      <span className="user-avatar" aria-hidden="true">{initial}</span>
+      <div>
+        <strong>{displayName}</strong>
+        <span>{secondary}</span>
+        <small className="identity-key" title={`${user.issuer} · ${user.subject}`}>
+          {user.issuer} · {user.subject}
+        </small>
+      </div>
+    </section>
   );
 }
 

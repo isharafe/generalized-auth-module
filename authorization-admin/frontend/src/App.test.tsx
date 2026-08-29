@@ -8,6 +8,15 @@ const config = {
   uiBasePath: "/authorization-admin"
 };
 
+const currentUser = {
+  issuer: "http://localhost:8081/realms/employee-demo",
+  subject: "user-123",
+  username: "manager",
+  email: "manager@example.com",
+  firstName: "Demo",
+  lastName: "Manager"
+};
+
 function page(content: unknown[] = [], totalElements = content.length) {
   return { content, page: 0, size: 20, totalElements, totalPages: totalElements ? 1 : 0 };
 }
@@ -24,6 +33,7 @@ function response(body: unknown, status = 200) {
 describe("Authorization admin UI", () => {
   beforeEach(() => {
     window.location.hash = "#/dashboard";
+    vi.spyOn(AdminApi.prototype, "currentUser").mockResolvedValue(currentUser);
   });
 
   it("loads capabilities, renders the dashboard, and hides unsupported sync", async () => {
@@ -51,6 +61,8 @@ describe("Authorization admin UI", () => {
     render(<App config={config} api={new AdminApi(config.apiBasePath)} />);
 
     expect(await screen.findByText("Local authorization, clearly explained.")).toBeVisible();
+    expect(screen.getByText("Demo Manager")).toBeVisible();
+    expect(screen.getByText("manager@example.com")).toBeVisible();
     expect(screen.getAllByText("DATABASE")).not.toHaveLength(0);
     expect(screen.queryByRole("link", { name: /Synchronization/ })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: /External mappings/ })).toBeVisible();
