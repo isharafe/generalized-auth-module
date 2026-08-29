@@ -45,6 +45,14 @@
       {
         "name": "APPROVE",
         "description": "Can approve employee-related requests"
+      },
+      {
+        "name": "authorization-demo-viewer",
+        "description": "Generalized authorization demo viewer authority"
+      },
+      {
+        "name": "authorization-demo-manager",
+        "description": "Generalized authorization demo manager authority"
       }
     ]
   },
@@ -110,9 +118,85 @@
     },
     {
       "name": "Team-Alice-Department"
+    },
+    {
+      "name": "authorization-demo",
+      "subGroups": [
+        {
+          "name": "viewers"
+        },
+        {
+          "name": "employee-managers"
+        },
+        {
+          "name": "admins"
+        }
+      ]
     }
   ],
-  "users": [],
+  "users": [
+    {
+      "username": "viewer",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "demo",
+          "temporary": false
+        }
+      ],
+      "groups": [
+        "/authorization-demo/viewers"
+      ],
+      "realmRoles": [
+        "authorization-demo-viewer"
+      ]
+    },
+    {
+      "username": "manager",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "demo",
+          "temporary": false
+        }
+      ],
+      "groups": [
+        "/authorization-demo/employee-managers"
+      ],
+      "realmRoles": [
+        "authorization-demo-manager"
+      ]
+    },
+    {
+      "username": "admin-user",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "demo",
+          "temporary": false
+        }
+      ],
+      "groups": [
+        "/authorization-demo/admins"
+      ]
+    },
+    {
+      "username": "service-account-authorization-sync-service",
+      "enabled": true,
+      "serviceAccountClientId": "authorization-sync-service",
+      "clientRoles": {
+        "realm-management": [
+          "view-users"
+        ]
+      }
+    }
+  ],
   "clients": [
     {
       "clientId": "employee-demo",
@@ -371,6 +455,23 @@
           }
         ]
       }
+    },
+    {
+      "clientId": "authorization-sync-service",
+      "name": "Authorization Synchronization Service",
+      "description": "Service-account client used by the generalized authorization module to read Keycloak users, groups, and realm roles",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "clientAuthenticatorType": "client-secret",
+      "secret": "Bbu2aby10Ov8LQ7uUvgU54B1wYHwF7Cm6RSK7vlqheLhj4WJgFZEGLx55B4G1F2rHFX9zz59goRpmtUtqmXtYY",
+      "publicClient": false,
+      "bearerOnly": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "authorizationServicesEnabled": false,
+      "fullScopeAllowed": false
     }
   ],
   "components": {
