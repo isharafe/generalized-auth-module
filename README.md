@@ -126,7 +126,13 @@ paged users, group memberships, and realm-role mappings, then reconciles only `I
 assignments into the local database. `MANUAL` and `SEED` assignments are preserved. Full,
 targeted, and scheduled synchronization update status/audit data and invalidate affected entitlement
 cache entries after commit. Normal authorization requests still use the local cache/database and
-never call Keycloak. See [the Keycloak integration guide](docs/09-keycloak-integration.md).
+never call Keycloak.
+
+An opt-in HMAC-authenticated callback can turn Keycloak identity events into provider-neutral,
+idempotent targeted synchronization. Replayed event IDs do not synchronize twice, failed deliveries
+can be retried, and stale in-progress claims are recoverable. Keep a scheduled full reconciliation
+enabled because event delivery is an optimization, not the correctness boundary. See
+[the Keycloak integration guide](docs/09-keycloak-integration.md).
 
 ## Optional LDAP module
 
@@ -229,6 +235,7 @@ application session and the Keycloak SSO session. See
 
 ## Current status
 
-Phases 1 through 5 are implemented. See [TASKS.md](TASKS.md) for the remaining phased work,
+Phases 1 through 6 are implemented. See [TASKS.md](TASKS.md) for the remaining phased work,
 [docs/19-phase-4-implementation.md](docs/19-phase-4-implementation.md) for Keycloak, and
-[docs/20-ldap-integration.md](docs/20-ldap-integration.md) for LDAP.
+[docs/20-ldap-integration.md](docs/20-ldap-integration.md) for LDAP. Phase 6 event refresh is
+summarized in [docs/21-phase-6-implementation.md](docs/21-phase-6-implementation.md).

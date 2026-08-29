@@ -33,6 +33,9 @@ authorization:
     entitlements:
       enabled: true
       ttl: 5m
+
+  identity-events:
+    processing-timeout: 5m
 ```
 
 ## Keycloak source
@@ -62,6 +65,12 @@ authorization:
       read-timeout: 15s
       max-attempts: 3
       retry-backoff: 250ms
+
+    events:
+      enabled: false
+      path: /authorization/keycloak/events
+      secret: ${AUTHORIZATION_KEYCLOAK_EVENT_SECRET}
+      max-clock-skew: 5m
 ```
 
 Required default-client settings are `base-url`, `realm`, `client-id`, and `client-secret`.
@@ -74,6 +83,18 @@ The schedule default is `-`, which disables that scheduled method. Setting
 `authorization.keycloak.sync.enabled=false` disables scheduler creation while retaining manual
 admin synchronization. The incremental entry point currently performs a correctness-preserving full
 scan because the integrated Keycloak users endpoint provides no reliable modified-since cursor.
+
+The event callback is disabled by default. When enabled, `secret` is required and must contain at
+least 32 UTF-8 bytes, `path` must begin with `/`, and `max-clock-skew` must be positive. The callback
+uses HMAC-SHA256 over the timestamp and exact request bytes and triggers targeted synchronization.
+Configure the consuming application's Spring Security chain to permit only this callback path and
+ignore CSRF only for that exact path; the controller performs HMAC authentication. Keep a periodic
+`full-cron` schedule as the event-delivery correctness safety net. See
+[the Keycloak integration guide](09-keycloak-integration.md#optional-event-callback) for the payload,
+headers, signature contract, and response semantics.
+
+`authorization.identity-events.processing-timeout` controls when an abandoned provider-neutral
+event claim may be retried. It must be positive and defaults to five minutes.
 
 If `source=keycloak` is selected but the optional module/provider is absent, startup fails with a
 direct actionable error. `source=database` continues to work without the Keycloak module.

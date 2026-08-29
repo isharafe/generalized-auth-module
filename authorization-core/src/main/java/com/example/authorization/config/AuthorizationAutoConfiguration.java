@@ -8,6 +8,7 @@ import com.example.authorization.persistence.service.*;
 import com.example.authorization.security.*;
 import com.example.authorization.seed.*;
 import com.example.authorization.spi.*;
+import java.time.Clock;
 import java.util.List;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.ApplicationRunner;
@@ -172,6 +173,22 @@ public class AuthorizationAutoConfiguration {
   }
 
   @Bean
+  @ConditionalOnMissingBean(IdentityChangeEventProcessor.class)
+  IdentityChangeEventProcessor identityChangeEventProcessor(
+      IdentityChangeEventRepository events,
+      ObjectProvider<IdentitySynchronizationProvider> synchronizationProviders,
+      AuthorizationProperties properties,
+      ObjectProvider<Clock> clocks,
+      org.springframework.transaction.PlatformTransactionManager transactionManager) {
+    return new DatabaseIdentityChangeEventProcessor(
+        events,
+        synchronizationProviders,
+        properties,
+        clocks.getIfAvailable(Clock::systemUTC),
+        transactionManager);
+  }
+
+  @Bean
   ApplicationRunner authorizationSourceGuard(
       AuthorizationProperties properties,
       ObjectProvider<IdentitySynchronizationProvider> synchronizationProviders) {
@@ -179,6 +196,11 @@ public class AuthorizationAutoConfiguration {
       if (!"DENY".equalsIgnoreCase(properties.getDefaultDecision()))
         throw new IllegalStateException(
             "authorization.default-decision must be DENY to preserve fail-closed behavior");
+      if (properties.getIdentityEvents().getProcessingTimeout() == null
+          || properties.getIdentityEvents().getProcessingTimeout().isZero()
+          || properties.getIdentityEvents().getProcessingTimeout().isNegative())
+        throw new IllegalStateException(
+            "authorization.identity-events.processing-timeout must be positive");
       IdentitySynchronizationProvider synchronizationProvider =
           synchronizationProviders.getIfAvailable();
       if (!properties.getSource().equalsIgnoreCase("database")

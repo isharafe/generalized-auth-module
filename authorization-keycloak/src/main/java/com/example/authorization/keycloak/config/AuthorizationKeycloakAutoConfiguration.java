@@ -3,6 +3,8 @@ package com.example.authorization.keycloak.config;
 import com.example.authorization.config.AuthorizationAutoConfiguration;
 import com.example.authorization.keycloak.client.HttpKeycloakAdminClient;
 import com.example.authorization.keycloak.client.KeycloakAdminClient;
+import com.example.authorization.keycloak.event.KeycloakEventSignatureVerifier;
+import com.example.authorization.keycloak.event.KeycloakIdentityChangeController;
 import com.example.authorization.keycloak.sync.KeycloakIdentitySynchronizationProvider;
 import com.example.authorization.keycloak.sync.KeycloakSynchronizationScheduler;
 import com.example.authorization.persistence.repository.PermissionGroupRepository;
@@ -15,8 +17,10 @@ import com.example.authorization.persistence.service.PendingUserAssignmentResolv
 import com.example.authorization.spi.AuthorizationAuditPublisher;
 import com.example.authorization.spi.AuthorizationCacheInvalidator;
 import com.example.authorization.spi.ExternalAuthorityMapper;
+import com.example.authorization.spi.IdentityChangeEventProcessor;
 import com.example.authorization.spi.IdentitySynchronizationProvider;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.time.Clock;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -86,5 +90,32 @@ public class AuthorizationKeycloakAutoConfiguration {
   KeycloakSynchronizationScheduler keycloakSynchronizationScheduler(
       IdentitySynchronizationProvider synchronization) {
     return new KeycloakSynchronizationScheduler(synchronization);
+  }
+
+  @Bean
+  @ConditionalOnMissingBean
+  @ConditionalOnProperty(
+      prefix = "authorization.keycloak.events",
+      name = "enabled",
+      havingValue = "true")
+  KeycloakEventSignatureVerifier keycloakEventSignatureVerifier(
+      AuthorizationKeycloakProperties properties, ObjectProvider<Clock> clocks) {
+    return new KeycloakEventSignatureVerifier(
+        properties, clocks.getIfAvailable(Clock::systemUTC));
+  }
+
+  @Bean
+  @ConditionalOnMissingBean
+  @ConditionalOnProperty(
+      prefix = "authorization.keycloak.events",
+      name = "enabled",
+      havingValue = "true")
+  KeycloakIdentityChangeController keycloakIdentityChangeController(
+      AuthorizationKeycloakProperties properties,
+      KeycloakEventSignatureVerifier signatures,
+      IdentityChangeEventProcessor events,
+      ObjectProvider<ObjectMapper> mappers) {
+    return new KeycloakIdentityChangeController(
+        properties, signatures, events, mappers.getIfAvailable(ObjectMapper::new));
   }
 }

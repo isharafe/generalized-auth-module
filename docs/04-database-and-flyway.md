@@ -21,9 +21,15 @@ AUTH_PENDING_USER_ASSIGNMENT
 AUTH_SEED_HISTORY
 AUTH_AUDIT_EVENT
 AUTH_SYNC_STATE
+AUTH_IDENTITY_CHANGE_EVENT
 ```
 
 `AUTH_SYNC_STATE` contains the `GLOBAL_IDENTITY_SYNC` row used both for synchronization status and a pessimistic database lock. Holding that row lock serializes full/targeted synchronization across application instances sharing the database.
+
+`AUTH_IDENTITY_CHANGE_EVENT` is the provider-neutral event-processing ledger. Its
+`(SOURCE_SYSTEM, EXTERNAL_EVENT_ID)` unique key makes callback delivery idempotent across application
+instances. Status, attempt count, claim time, completion time, and safe failure class support replay,
+retry, and stale-claim recovery without storing callback secrets or request bodies.
 
 ## Constraints
 
@@ -34,6 +40,7 @@ AUTH_ROLE.CODE
 AUTH_PERMISSION_GROUP.CODE
 AUTH_PERMISSION.CODE
 AUTH_USER(EXTERNAL_ISSUER, EXTERNAL_SUBJECT)
+AUTH_IDENTITY_CHANGE_EVENT(SOURCE_SYSTEM, EXTERNAL_EVENT_ID)
 ```
 
 All mapping tables require appropriate unique constraints.

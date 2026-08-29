@@ -75,6 +75,12 @@ Optional dependency only.
 
 Normal request authorization stays local.
 
+An optional Keycloak callback authenticates exact request bytes with HMAC-SHA256, rejects stale
+timestamps, translates supported user changes into the core event contract, and performs targeted
+synchronization. Replayed completed event IDs do not synchronize twice; failed or abandoned claims
+are retryable. Periodic full synchronization remains supported and documented as the correctness
+safety net.
+
 ## LDAP
 
 Optional dependency only.

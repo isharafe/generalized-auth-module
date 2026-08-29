@@ -1,5 +1,6 @@
 package com.example.authorization.keycloak.config;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import lombok.Getter;
 import lombok.Setter;
@@ -17,6 +18,7 @@ public class AuthorizationKeycloakProperties {
   private String issuer;
   private final Sync sync = new Sync();
   private final Http http = new Http();
+  private final Events events = new Events();
 
   public String resolvedIssuer() {
     if (issuer != null && !issuer.isBlank()) return issuer;
@@ -43,6 +45,21 @@ public class AuthorizationKeycloakProperties {
       throw new IllegalStateException("authorization.keycloak.http.read-timeout must be positive");
     if (http.retryBackoff == null || http.retryBackoff.isNegative())
       throw new IllegalStateException("authorization.keycloak.http.retry-backoff must not be negative");
+    if (events.enabled) {
+      required(events.secret, "authorization.keycloak.events.secret");
+      if (events.secret.getBytes(StandardCharsets.UTF_8).length < 32)
+        throw new IllegalStateException(
+            "authorization.keycloak.events.secret must contain at least 32 bytes");
+      required(events.path, "authorization.keycloak.events.path");
+      if (!events.path.startsWith("/") || events.path.length() > 200)
+        throw new IllegalStateException(
+            "authorization.keycloak.events.path must start with / and not exceed 200 characters");
+      if (events.maxClockSkew == null
+          || events.maxClockSkew.isZero()
+          || events.maxClockSkew.isNegative())
+        throw new IllegalStateException(
+            "authorization.keycloak.events.max-clock-skew must be positive");
+    }
   }
 
   private void required(String value, String property) {
@@ -65,5 +82,14 @@ public class AuthorizationKeycloakProperties {
     private Duration readTimeout = Duration.ofSeconds(15);
     private int maxAttempts = 3;
     private Duration retryBackoff = Duration.ofMillis(250);
+  }
+
+  @Getter
+  @Setter
+  public static class Events {
+    private boolean enabled;
+    private String path = "/authorization/keycloak/events";
+    private String secret;
+    private Duration maxClockSkew = Duration.ofMinutes(5);
   }
 }

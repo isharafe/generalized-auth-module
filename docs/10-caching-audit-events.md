@@ -87,6 +87,17 @@ IDENTITY_SYNC_FAILED
 The Keycloak and LDAP synchronization providers emit started/completed/failed change events without
 storing service-account credentials, access tokens, bind passwords, or authorization headers.
 
+## Identity-change delivery ledger
+
+`IdentityChangeEventProcessor` is a provider-neutral core SPI for external identity change
+notifications. Its default implementation stores source, external event ID, type, stable identity,
+timestamps, status, attempts, and only the failure class in `AUTH_IDENTITY_CHANGE_EVENT`. It never
+stores callback request bodies, signatures, tokens, or secrets.
+
+The ledger's source/event-ID uniqueness prevents completed deliveries from running targeted
+synchronization again. Failed deliveries may be retried and stale processing claims may be reclaimed.
+This event path complements, but does not replace, provider full reconciliation.
+
 ## Audit fields
 
 Safe fields:

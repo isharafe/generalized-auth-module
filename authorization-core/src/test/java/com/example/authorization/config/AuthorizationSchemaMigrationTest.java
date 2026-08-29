@@ -13,7 +13,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 class AuthorizationSchemaMigrationTest {
   @Test
-  void createsTheCurrentSchemaFromOneBaselineMigration() {
+  void createsTheCurrentSchemaFromVersionedMigrations() {
     JdbcDataSource dataSource = new JdbcDataSource();
     dataSource.setURL(
         "jdbc:h2:mem:authorization-schema-" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1");
@@ -28,8 +28,8 @@ class AuthorizationSchemaMigrationTest {
 
     flyway.migrate();
 
-    assertThat(flyway.info().applied()).hasSize(1);
-    assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("1");
+    assertThat(flyway.info().applied()).hasSize(2);
+    assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("2");
 
     JdbcTemplate jdbc = new JdbcTemplate(dataSource);
     List<String> auditColumns =
@@ -102,5 +102,26 @@ class AuthorizationSchemaMigrationTest {
                     VALUES (CURRENT_TIMESTAMP, 'INVALID_WITHOUT_KIND')
                     """))
         .isInstanceOf(DataIntegrityViolationException.class);
+
+    List<String> identityEventColumns =
+        jdbc.queryForList(
+            """
+            SELECT COLUMN_NAME
+            FROM INFORMATION_SCHEMA.COLUMNS
+            WHERE TABLE_NAME = 'AUTH_IDENTITY_CHANGE_EVENT'
+            """,
+            String.class);
+    assertThat(identityEventColumns)
+        .contains(
+            "SOURCE_SYSTEM",
+            "EXTERNAL_EVENT_ID",
+            "EVENT_TYPE",
+            "EXTERNAL_ISSUER",
+            "EXTERNAL_SUBJECT",
+            "STATUS",
+            "ATTEMPTS",
+            "PROCESSING_STARTED_AT",
+            "PROCESSED_AT",
+            "LAST_ERROR");
   }
 }

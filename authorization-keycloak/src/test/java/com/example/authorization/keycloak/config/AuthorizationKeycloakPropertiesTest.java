@@ -31,6 +31,26 @@ class AuthorizationKeycloakPropertiesTest {
         .hasMessageContaining("read-timeout must be positive");
   }
 
+  @Test
+  void validatesEventCallbackSecuritySettingsOnlyWhenEnabled() {
+    AuthorizationKeycloakProperties properties = validProperties();
+    properties.getEvents().setEnabled(true);
+
+    assertThatThrownBy(properties::validate)
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessageContaining("authorization.keycloak.events.secret");
+
+    properties.getEvents().setSecret("short");
+    assertThatThrownBy(properties::validate)
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessageContaining("at least 32 bytes");
+
+    properties.getEvents().setSecret("0123456789abcdef0123456789abcdef");
+    properties.validate();
+    assertThat(properties.getEvents().getPath())
+        .isEqualTo("/authorization/keycloak/events");
+  }
+
   private AuthorizationKeycloakProperties validProperties() {
     AuthorizationKeycloakProperties properties = new AuthorizationKeycloakProperties();
     properties.setBaseUrl("https://id.example/");

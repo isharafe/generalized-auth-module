@@ -38,7 +38,8 @@ completed, and failed operations publish change-audit events with safe details.
 - Realm roles are synchronized; Keycloak client roles are not part of Phase 4.
 - The incremental SPI currently performs a full scan and records `INCREMENTAL_FULL_SCAN`, because
   the integrated users endpoint has no reliable modified-since contract.
-- Event-driven refresh and replay/idempotency handling remain Phase 6.
+- Event-driven refresh and replay/idempotency handling are delivered by Phase 6; see
+  [the Phase 6 implementation summary](21-phase-6-implementation.md).
 - Real multi-process lock testing and broader production hardening remain Phase 7.
 - Authentication remains application-owned; the Keycloak demo uses Spring OAuth2/OIDC login for
   browser sessions and Resource Server JWT for bearer-token API calls.

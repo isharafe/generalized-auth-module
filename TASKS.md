@@ -290,11 +290,11 @@ Inside `authorization-ldap`:
 
 # Phase 6 — Optional event-driven refresh
 
-- [ ] provider-neutral IdentityChangeEvent
-- [ ] optional secure Keycloak event adapter/callback
-- [ ] idempotency/replay handling
-- [ ] targeted sync
-- [ ] periodic reconciliation remains correctness safety net
+- [x] provider-neutral IdentityChangeEvent
+- [x] optional secure Keycloak event adapter/callback
+- [x] idempotency/replay handling
+- [x] targeted sync
+- [x] periodic reconciliation remains correctness safety net
 
 ---
 

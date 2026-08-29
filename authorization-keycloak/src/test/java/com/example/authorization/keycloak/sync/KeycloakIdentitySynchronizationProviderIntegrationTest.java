@@ -5,13 +5,16 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.example.authorization.domain.AssignmentSource;
 import com.example.authorization.domain.AuthenticatedIdentity;
+import com.example.authorization.domain.IdentityChangeProcessingResult;
 import com.example.authorization.keycloak.client.KeycloakAdminClient;
 import com.example.authorization.keycloak.client.KeycloakGroup;
 import com.example.authorization.keycloak.client.KeycloakRole;
 import com.example.authorization.keycloak.client.KeycloakUser;
+import com.example.authorization.keycloak.event.KeycloakIdentityChangeController;
 import com.example.authorization.persistence.entity.*;
 import com.example.authorization.persistence.repository.AuditEventRepository;
 import com.example.authorization.persistence.repository.ExternalAuthorityMappingRepository;
+import com.example.authorization.persistence.repository.IdentityChangeEventRepository;
 import com.example.authorization.persistence.repository.PendingUserAssignmentRepository;
 import com.example.authorization.persistence.repository.PermissionGroupRepository;
 import com.example.authorization.persistence.repository.RoleRepository;
@@ -20,11 +23,16 @@ import com.example.authorization.persistence.repository.UserPermissionGroupRepos
 import com.example.authorization.persistence.repository.UserRepository;
 import com.example.authorization.persistence.repository.UserRoleRepository;
 import com.example.authorization.spi.AuthorizationCacheInvalidator;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.util.HexFormat;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.SpringBootConfiguration;
@@ -51,7 +59,9 @@ import org.springframework.context.annotation.Bean;
       "authorization.keycloak.client-id=sync-client",
       "authorization.keycloak.client-secret=secret",
       "authorization.keycloak.issuer=https://id.example/realms/company",
-      "authorization.keycloak.sync.enabled=false"
+      "authorization.keycloak.sync.enabled=false",
+      "authorization.keycloak.events.enabled=true",
+      "authorization.keycloak.events.secret=0123456789abcdef0123456789abcdef"
     })
 class KeycloakIdentitySynchronizationProviderIntegrationTest {
   private static final String ISSUER = "https://id.example/realms/company";
@@ -68,6 +78,8 @@ class KeycloakIdentitySynchronizationProviderIntegrationTest {
   @jakarta.annotation.Resource private PendingUserAssignmentRepository pending;
   @jakarta.annotation.Resource private AuditEventRepository audit;
   @jakarta.annotation.Resource private SyncStateRepository syncStates;
+  @jakarta.annotation.Resource private IdentityChangeEventRepository identityEvents;
+  @jakarta.annotation.Resource private KeycloakIdentityChangeController eventCallback;
 
   @BeforeEach
   void reset() {
@@ -79,6 +91,7 @@ class KeycloakIdentitySynchronizationProviderIntegrationTest {
     roles.deleteAll();
     groups.deleteAll();
     audit.deleteAll();
+    identityEvents.deleteAll();
     client.reset();
     invalidator.clear();
     SyncStateEntity state = syncStates.findById("GLOBAL_IDENTITY_SYNC").orElseThrow();
@@ -187,6 +200,28 @@ class KeycloakIdentitySynchronizationProviderIntegrationTest {
   }
 
   @Test
+  void signedEventCallbackPerformsTargetedSyncOnlyOnceAcrossReplay() throws Exception {
+    client.users =
+        List.of(new KeycloakUser("u-event", "event-user", null, null, null, true, Map.of()));
+    byte[] body =
+        "{\"eventId\":\"evt-integration\",\"type\":\"USER_UPDATED\",\"userId\":\"u-event\"}"
+            .getBytes(StandardCharsets.UTF_8);
+    String timestamp = Long.toString(Instant.now().getEpochSecond());
+    String signature = eventSignature(timestamp, body);
+
+    var first = eventCallback.receive(timestamp, signature, body);
+    var replay = eventCallback.receive(timestamp, signature, body);
+
+    assertThat(first.getBody().result()).isEqualTo(IdentityChangeProcessingResult.PROCESSED);
+    assertThat(replay.getBody().result()).isEqualTo(IdentityChangeProcessingResult.DUPLICATE);
+    assertThat(users.findByIssuerAndSubject(ISSUER, "u-event").orElseThrow().getUsername())
+        .isEqualTo("event-user");
+    assertThat(invalidator.identities)
+        .extracting(AuthenticatedIdentity::subject)
+        .containsExactly("u-event");
+  }
+
+  @Test
   void failedSyncRollsBackAndRecordsTypedStatusAndAudit() {
     client.failure = new IllegalStateException("remote unavailable");
 
@@ -233,6 +268,17 @@ class KeycloakIdentitySynchronizationProviderIntegrationTest {
     value.setTargetCode(targetCode);
     value.setEnabled(true);
     mappings.saveAndFlush(value);
+  }
+
+  private String eventSignature(String timestamp, byte[] body) throws Exception {
+    Mac mac = Mac.getInstance("HmacSHA256");
+    mac.init(
+        new SecretKeySpec(
+            "0123456789abcdef0123456789abcdef".getBytes(StandardCharsets.UTF_8),
+            "HmacSHA256"));
+    mac.update(timestamp.getBytes(StandardCharsets.US_ASCII));
+    mac.update((byte) '.');
+    return "sha256=" + HexFormat.of().formatHex(mac.doFinal(body));
   }
 
   @SpringBootConfiguration

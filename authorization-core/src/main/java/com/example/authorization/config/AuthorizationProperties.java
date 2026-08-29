@@ -17,6 +17,7 @@ public class AuthorizationProperties {
   private final Database database = new Database();
   private final Seed seed = new Seed();
   private final Cache cache = new Cache();
+  private final IdentityEvents identityEvents = new IdentityEvents();
 
   @Getter
   public static class Database {
@@ -60,5 +61,11 @@ public class AuthorizationProperties {
     private CacheRegion(Duration ttl) {
       this.ttl = ttl;
     }
+  }
+
+  @Getter
+  @Setter
+  public static class IdentityEvents {
+    private Duration processingTimeout = Duration.ofMinutes(5);
   }
 }

@@ -157,5 +157,67 @@ request
 ```
 
 Normal authorization requests never call the Keycloak Admin API. Authentication remains the
-consuming application's Spring Security responsibility. Event-driven refresh is deferred to Phase 6;
-periodic/full reconciliation remains the correctness path.
+consuming application's Spring Security responsibility.
+
+## Optional event callback
+
+Phase 6 adds an opt-in callback that translates Keycloak user changes into the provider-neutral
+core `IdentityChangeEvent` contract and runs targeted synchronization. Enable it with:
+
+```yaml
+authorization:
+  identity-events:
+    processing-timeout: 5m
+
+  keycloak:
+    events:
+      enabled: true
+      path: /authorization/keycloak/events
+      secret: ${AUTHORIZATION_KEYCLOAK_EVENT_SECRET}
+      max-clock-skew: 5m
+```
+
+The secret must contain at least 32 UTF-8 bytes. Send an exact JSON request body such as:
+
+```json
+{
+  "eventId": "01J6H6QM7Z8CVN4NPDH2Q2EJXW",
+  "type": "GROUP_MEMBERSHIP_CHANGED",
+  "userId": "e527961f-350e-4808-932c-56efbc5509c7",
+  "occurredAt": "2026-08-29T12:00:00Z"
+}
+```
+
+Supported types are `USER_CREATED`, `USER_UPDATED`, `USER_DELETED`,
+`GROUP_MEMBERSHIP_CHANGED`, and `ROLE_MAPPING_CHANGED`. `occurredAt` is optional; when supplied it
+must be an ISO-8601 instant. The configured issuer and `userId` form the targeted stable identity.
+
+The sender sets:
+
+```text
+X-Authorization-Timestamp: <Unix epoch seconds>
+X-Authorization-Signature: sha256=<lowercase HMAC-SHA256 hex>
+```
+
+The signed bytes are `ASCII(timestamp) + "." + exactRawRequestBody`, using the configured secret.
+The receiver compares signatures in constant time and rejects timestamps outside `max-clock-skew`.
+Use HTTPS in production and keep this secret separate from the Keycloak Admin API client secret.
+
+Keycloak does not send this normalized webhook by itself. Deploy a Keycloak event-listener extension
+or a trusted event gateway that assigns a stable event ID, creates this payload, and signs it. The
+callback is HMAC-authenticated rather than session-authenticated, so the consuming application's
+`SecurityFilterChain` must permit the configured path and exclude that exact path from CSRF checks.
+Do not permit a broader path. HMAC validation still runs inside the controller before JSON parsing.
+
+Responses are `200` for processed or already-processed deliveries, `202` when another instance has
+an active claim, `400` for an invalid payload, `401` for invalid authentication, `409` when an event
+ID is reused with different identity data, and `503` when targeted synchronization fails.
+
+Core persists only event metadata and a safe failure class in `AUTH_IDENTITY_CHANGE_EVENT`. The
+unique source/event ID key handles replay across pods. Failed events retry on redelivery; a
+`PROCESSING` claim older than `authorization.identity-events.processing-timeout` can be reclaimed.
+Successful replays never call Keycloak twice.
+
+Event delivery can be lost, delayed, or misconfigured. Keep `full-cron` enabled as a periodic
+reconciliation safety net. The callback reduces propagation delay; the local database and full
+reconciliation remain the correctness path.

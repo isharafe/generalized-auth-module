@@ -62,7 +62,7 @@ Test:
 - optional admin module contributes its framework admin seed
 - pending user assignment resolves
 - concurrent startup does not duplicate data
-- consolidated baseline migration creates the final schema, including a non-null audit event kind and canonical resource patterns
+- the baseline plus follow-up migrations create the final schema, including a non-null audit event kind, canonical resource patterns, and the identity-change ledger
 
 ## Admin API
 
@@ -83,6 +83,8 @@ Test:
 - preservation of MANUAL/SEED
 - timeout/error behavior
 - targeted invalidation
+- HMAC callback authentication, timestamp expiry, payload translation, and response semantics
+- provider-neutral replay suppression, failed-delivery retry, event-ID conflict, and stale-claim recovery
 
 ## LDAP integration
 
@@ -114,6 +116,7 @@ The current suite covers:
 - admin API security, CRUD/mappings, validation, optimistic conflicts, assignment ownership, explain, audit, sync facade, and cache-visible updates
 - packaged UI security/runtime configuration and frontend API, dashboard, capability, permission-preview, and audit-kind behavior
 - Keycloak settings validation, client-credentials authentication, pagination, groups, realm roles, typed retry/timeout failures, full and targeted synchronization, stale assignment removal, MANUAL/SEED preservation, pending assignment resolution, audit/status, and cache invalidation
+- Keycloak event callback property validation, HMAC/timestamp rejection, neutral event translation, and provider-neutral durable idempotency/retry processing
 - LDAP settings and filter escaping, group/attribute mapping, full and targeted synchronization,
   missing/stale removal, MANUAL/SEED preservation, pending assignment resolution, failure status,
   audit, and cache invalidation

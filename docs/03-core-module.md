@@ -45,6 +45,7 @@ ResourceRuleProvider
 PermissionMatcher
 ResourcePatternMatcher
 IdentitySynchronizationProvider
+IdentityChangeEventProcessor
 ExternalAuthorityMapper
 AuthorizationCacheInvalidator
 AuthorizationAuditPublisher
@@ -59,6 +60,7 @@ DefaultPermissionMatcher
 UrlResourcePatternMatcher
 UiResourcePatternMatcher
 IdentitySynchronizationProvider (unsupported default bean)
+DatabaseIdentityChangeEventProcessor
 DatabaseExternalAuthorityMapper
 DefaultAuthorizationCacheInvalidator
 ```
@@ -81,6 +83,7 @@ Auto-configure when applicable:
 - caches
 - authorization manager
 - seed processor
+- provider-neutral identity-change event processor and durable replay ledger
 
 Back off when the application supplies its own SPI bean.
 
