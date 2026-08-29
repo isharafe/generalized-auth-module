@@ -13,6 +13,8 @@ The SPA includes:
 - authorization test/explain results
 - paginated audit events with explicit DECISION/CHANGE badges and filtering
 - synchronization status and actions only when the capabilities endpoint reports support
+- current authenticated-user identity details in the application header
+- full JSON export and destructive replacement import with acknowledgement and confirmation
 
 Provider-specific navigation is capability-driven. Synchronized and seeded user assignments are displayed as read-only; only MANUAL assignments can be removed through the UI.
 
@@ -47,7 +49,10 @@ The SPA fetches `./config` on startup and constructs its same-origin API client 
 
 ## Security
 
-The admin module's seed contributor provides `AUTHZ_ADMIN_UI` with `GET:/authorization-admin/**` by default and includes it in the framework viewer and admin permission groups. Configured API and UI base paths are normalized independently when the admin seed is built.
+The admin module's seed contributor provides separate exact permissions for the UI entry paths,
+runtime configuration, and `/assets/**`. API permissions—including `current-user`, export, and
+import—remain separate, so UI delivery cannot accidentally authorize an API operation. Configured
+API and UI base paths are normalized independently when the admin seed is built.
 
 The UI entry, runtime configuration, assets, and admin API all pass through the consuming application's Spring Security authorization pipeline. There is no UI-only hardcoded role check. The framework still assigns no user to its administration roles.
 
@@ -65,7 +70,9 @@ The demo filter authenticates the current request and sets a one-hour HttpOnly `
 
 ## Verification
 
-Frontend coverage includes API query/error handling, capability-driven navigation, dashboard smoke rendering, synchronization visibility, and the structured permission preview. Demo integration coverage verifies:
+Frontend coverage includes API query/error handling, current-user loading, capability-driven
+navigation, dashboard smoke rendering, synchronization visibility, the structured permission
+preview, and the destructive import warning. Demo integration coverage verifies:
 
 - unauthenticated UI access returns 401
 - an authenticated user without admin UI permission receives 403

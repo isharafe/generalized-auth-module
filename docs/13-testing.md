@@ -112,8 +112,10 @@ The current suite covers:
 - the consolidated authorization schema and the demo's separate application/authorization Flyway histories
 - seed validation, fail-on-error behavior, pending-assignment resolution invocation, and post-commit cache invalidation
 - demo HTTP 200/401/403/503 behavior and query-string isolation
-- admin API security, CRUD/mappings, validation, optimistic conflicts, assignment ownership, explain, audit, sync facade, and cache-visible updates
-- packaged UI security/runtime configuration and frontend API, dashboard, capability, permission-preview, and audit-kind behavior
+- admin API security, CRUD/mappings, validation, optimistic conflicts, assignment ownership,
+  current-user details, full export/replacement import, explain, audit, sync facade, and cache-visible updates
+- packaged UI security/runtime configuration and frontend API, dashboard/current-user, capability,
+  permission-preview, destructive data-transfer warning, and audit-kind behavior
 - Keycloak settings validation, client-credentials authentication, pagination, groups, realm roles, typed retry/timeout failures, full and targeted synchronization, stale assignment removal, MANUAL/SEED preservation, pending assignment resolution, audit/status, and cache invalidation
 - Keycloak event callback property validation, HMAC/timestamp rejection, neutral event translation, and provider-neutral durable idempotency/retry processing
 - LDAP settings and filter escaping, group/attribute mapping, full and targeted synchronization,

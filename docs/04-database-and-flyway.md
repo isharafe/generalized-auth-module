@@ -4,7 +4,7 @@
 
 Use `AUTH_` prefix.
 
-Required baseline tables:
+Tables after all current authorization migrations:
 
 ```text
 AUTH_USER

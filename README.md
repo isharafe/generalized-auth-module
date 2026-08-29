@@ -217,10 +217,11 @@ authorization:
     batch-size: 500
 ```
 
-Each instance must have a unique, stable `instance-id`. The provider-neutral
-`AuthorizationInvalidationPublisher` SPI can be replaced with another transport. Seed startup is
-serialized across instances with a database lock, while unchanged checksums keep repeat startup
-idempotent. See [the Phase 7 hardening summary](docs/22-phase-7-implementation.md).
+Each instance must have a unique, stable `instance-id`. A custom transport can implement the
+provider-neutral outbound publisher and deliver inbound events to the supplied cache invalidator;
+the database option covers both directions by default. Seed startup is serialized across instances
+with a database lock, while unchanged checksums keep repeat startup idempotent. See
+[the Phase 7 hardening summary](docs/22-phase-7-implementation.md).
 
 ## Run and verify
 

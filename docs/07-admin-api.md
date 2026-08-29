@@ -44,6 +44,16 @@ Example DB response:
 
 Keycloak response can report synchronization support.
 
+## Current authenticated user
+
+```text
+GET /current-user
+```
+
+Returns the resolved issuer/subject and available username, email, first name, and last name used by
+the SPA header. It requires an authenticated identity and uses local synchronized attributes when a
+matching user exists.
+
 ## Roles
 
 ```text
@@ -113,7 +123,9 @@ For externally synchronized users:
 - MANUAL application role/group assignments are allowed
 - synchronized assignment source is visible
 
-DB-local user creation/edit can be supported when configured, but do not turn the framework into a password-management IAM product.
+The current API does not create or edit user identity records. DB-local users enter through seed or
+full snapshot import; the UI/API manages their role and permission-group assignments. The framework
+does not manage passwords.
 
 ## External mappings
 
@@ -143,6 +155,21 @@ POST /sync/users/{subject}?issuer={issuer}
 The `issuer` query parameter defaults to `external` when omitted.
 
 Protect execution with `AUTHZ_SYNC_RUN`.
+
+## Data transfer
+
+```text
+POST /data/export
+POST /data/import
+```
+
+Export returns a versioned JSON attachment containing permissions, groups, roles, relationships,
+resource rules, users and their assignments, pending assignments, and external mappings. Import
+accepts only a complete supported-version bundle, validates it before mutation, and transactionally
+replaces all portable authorization data. It is deliberately not a merge. Audit events, migration
+and seed history, synchronization state, invalidation events, caches, and credentials are excluded.
+
+Protect export with `AUTHZ_DATA_EXPORT` and replacement import with `AUTHZ_DATA_IMPORT`.
 
 ## Explain/test authorization
 
@@ -209,7 +236,8 @@ regression coverage.
 
 ## Implemented behavior
 
-Collection endpoints accept `page`, `size`, `sort`, and `search`; audit additionally accepts `eventKind`, `eventType`, `actor`, and `target`. Page sizes are bounded to 1-100.
+Collection endpoints accept `page`, `size`, `sort`, and `search`; audit additionally accepts
+`eventKind`, `eventType`, `actor`, and `target`. Page sizes are bounded to 1-100.
 
 Configuration DELETE operations soft-disable roles, permission groups, permissions, and resource
 rules. External mappings are explicitly deleted. User assignment endpoints create `MANUAL`

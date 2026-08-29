@@ -68,7 +68,9 @@ Demo proves end-to-end DB-only authorization.
 
 `authorization-admin` is optional and depends only on `authorization-core` among framework modules.
 
-It provides functional CRUD/mapping/explain/audit endpoints, framework-admin seed definitions, and the SPA. Writes validate, transact, invalidate caches after commit, and audit. The frontend uses only the admin REST API and capabilities endpoint.
+It provides functional CRUD/mapping/explain/audit endpoints, current-user details, full portable
+export/replacement import, framework-admin seed definitions, and the SPA. Writes validate, transact,
+invalidate caches after commit, and audit. The frontend uses only the admin REST API.
 
 ## Keycloak
 

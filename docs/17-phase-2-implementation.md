@@ -7,6 +7,7 @@ Phase 2 provides the functional admin REST API in the optional `authorization-ad
 The API includes:
 
 - provider capabilities
+- current authenticated-user details
 - paginated/searchable users, roles, permission groups, permissions, resource rules, external
   mappings, and audit events
 - role, permission-group, permission, resource-rule, and external-mapping CRUD
@@ -16,6 +17,7 @@ The API includes:
 - safe authorization test/explain results with assignment paths
 - provider-neutral synchronization status/action endpoints
 - optimistic locking and consistent 400/404/409 error responses
+- complete versioned JSON export and validation-first transactional replacement import
 
 ## Write semantics
 
@@ -52,3 +54,7 @@ The demo integration suite covers authentication and authorization, configuratio
 mappings, user assignment ownership, pagination/search, validation, optimistic conflicts,
 authorization explain, immediate post-commit cache invalidation, audit persistence, and the
 unsupported database synchronization facade.
+
+Data-transfer integration coverage verifies complete export content, replacement semantics,
+post-import cache visibility, invalid-file rollback, and continued authorization for an imported
+administrator.

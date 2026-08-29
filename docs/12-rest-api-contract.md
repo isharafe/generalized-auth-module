@@ -107,6 +107,30 @@ Always expose source:
 
 Do not silently allow deleting an `IDENTITY_SYNC` assignment as if it were manual; the next sync would recreate it. UI/API should make source ownership clear.
 
+## Current-user DTO
+
+```json
+{
+  "issuer": "local",
+  "subject": "manager",
+  "username": "manager",
+  "email": "manager@example.com",
+  "firstName": "Demo",
+  "lastName": "Manager"
+}
+```
+
+## Portable data bundle
+
+`POST /data/export` returns JSON with `formatVersion`, `exportedAt`, and complete arrays named
+`permissions`, `permissionGroups`, `roles`, `resourceRules`, `users`, `externalMappings`, and
+`pendingUserAssignments`. User records contain their role and permission-group assignments,
+including assignment source/reference.
+
+`POST /data/import` requires the complete bundle and replaces portable authorization data in one
+transaction after validation. It is not a partial or merge contract. The current format version is
+`1`.
+
 ## Deletion
 
 Prefer soft disable for referenced authorization configuration. Roles, permission groups,

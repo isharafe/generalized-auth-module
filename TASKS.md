@@ -137,6 +137,7 @@ All tests pass and demo can start.
 Inside `authorization-admin`:
 
 - [x] capabilities
+- [x] current authenticated-user details
 - [x] user query/assignments
 - [x] role CRUD
 - [x] permission-group CRUD
@@ -151,6 +152,7 @@ Inside `authorization-admin`:
 - [x] authorization explain/test
 - [x] sync status/action facade
 - [x] audit query
+- [x] versioned full data export and replacement import
 - [x] pagination/search
 - [x] validation
 - [x] optimistic locking / 409
@@ -185,6 +187,8 @@ Inside `authorization-admin`:
 - [x] authorization test/explain
 - [x] sync screen when supported
 - [x] audit
+- [x] current authenticated-user summary
+- [x] destructive full-replacement data transfer page
 - [x] source badges/read-only sync fields
 - [x] component/smoke tests
 - [x] demo includes UI and is usable

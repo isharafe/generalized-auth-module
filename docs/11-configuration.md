@@ -230,6 +230,8 @@ A custom `KeycloakAdminClient` replaces the HTTP client while retaining the supp
 provider. A custom `IdentitySynchronizationProvider` replaces the Keycloak synchronizer and is also
 used by the scheduler.
 
-`AuthorizationObservation` can be replaced to integrate another telemetry system.
-`AuthorizationInvalidationPublisher` can replace the database event transport; applications that
-replace `AuthorizationCacheInvalidator` own both local and cross-instance invalidation behavior.
+`AuthorizationObservation` can be replaced to integrate another telemetry system. A custom
+cross-instance transport supplies an `AuthorizationInvalidationPublisher` plus an inbound adapter
+that invokes `PublishingAuthorizationCacheInvalidator.receive(...)`, with the built-in database
+option left disabled. Applications that replace `AuthorizationCacheInvalidator` own both local and
+cross-instance invalidation behavior.

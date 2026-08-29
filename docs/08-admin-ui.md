@@ -40,7 +40,10 @@ Show:
 - source (DATABASE / KEYCLOAK / LDAP)
 - counts
 - sync status if available
-- recent denies/audit summary
+- recent audit activity
+
+The application header shows the current authenticated user's display name, email/username, issuer,
+and subject from `GET /current-user`.
 
 ### Users
 
@@ -115,7 +118,7 @@ LDAP ATTRIBUTE department=Payroll
 
 Only when supported by `/capabilities`.
 
-Show status/history and actions for single-user/incremental/full sync.
+Show the current status/details and actions for single-user/incremental/full sync.
 
 ### Authorization Test
 
@@ -124,6 +127,13 @@ Let admin choose identity + method + path and display the explain result/path.
 ### Audit
 
 Paginated events with visible `DECISION`/`CHANGE` badges and filters for event kind, event type, actor, and target.
+
+### Data Transfer
+
+Download the complete portable authorization snapshot as versioned JSON. Import accepts a complete
+export only and performs a destructive full replacement after file-shape checks, explicit user
+acknowledgement, and a confirmation dialog. The page warns that omitting the current administrator
+from the snapshot can remove their access.
 
 ## Capability-driven behavior
 
@@ -146,4 +156,8 @@ The Vite bundle uses relative assets and hash routes, so it can be served below 
 
 The Maven lifecycle installs pinned local Node/npm versions, restores dependencies with `npm ci`, runs frontend tests, builds the production bundle, and packages it in the module JAR. Consumers do not need a global frontend toolchain.
 
-The server redirects `/authorization-admin` to `/authorization-admin/`, serves the packaged index explicitly, and serves fingerprinted assets through Spring MVC's resource chain. Setting `authorization.admin.ui.enabled=false` disables the module's server integration. The API can run without the UI; a usable UI requires the admin API to remain enabled because startup loads `/capabilities` and every screen uses that API.
+The server redirects `/authorization-admin` to `/authorization-admin/`, serves the packaged index
+explicitly, and serves fingerprinted assets through Spring MVC's resource chain. Setting
+`authorization.admin.ui.enabled=false` disables the module's server integration. The API can run
+without the UI; a usable UI requires the admin API to remain enabled because startup loads both
+`/capabilities` and `/current-user`, and every screen uses that API.

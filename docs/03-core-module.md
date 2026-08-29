@@ -93,9 +93,9 @@ Auto-configure when applicable:
 
 Back off when the application supplies its own SPI bean.
 
-## Source enum
+## Source selection
 
-Core may define:
+The `authorization.source` property is a string. The supplied implementations use:
 
 ```text
 DATABASE
@@ -103,7 +103,8 @@ KEYCLOAK
 LDAP
 ```
 
-but must contain no Keycloak client classes.
+Core contains no Keycloak or LDAP client classes. A custom source name is also valid when the
+application supplies a supported `IdentitySynchronizationProvider`.
 
 If `source=keycloak` and the optional Keycloak integration is absent, fail startup with a clear message.
 The same guard applies to `source=ldap` when `authorization-ldap` is absent or invalid.

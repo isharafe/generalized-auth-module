@@ -53,11 +53,12 @@ Do not publish invalidation before commit.
 
 Define provider-neutral invalidation event contracts. Do not hardcode Kafka/Redis.
 
-`AuthorizationInvalidationPublisher` is the transport SPI. The default is a no-op, retaining
-single-instance behavior. With `authorization.distributed-invalidation.enabled=true`, the database
-implementation appends identity/resource-rule/all events and a scheduled receiver applies events
-from other origins. A custom publisher can use Redis, Kafka, or another transport without changing
-authorization semantics.
+`AuthorizationInvalidationPublisher` is the outbound transport SPI. The default is a no-op,
+retaining single-instance behavior. With `authorization.distributed-invalidation.enabled=true`, the
+database implementation appends identity/resource-rule/all events and a scheduled receiver applies
+events from other origins. A custom Redis/Kafka transport supplies both a publisher and an inbound
+adapter that calls `PublishingAuthorizationCacheInvalidator.receive(...)`; leave the built-in
+database option disabled for that arrangement.
 
 ## Metrics
 
@@ -87,7 +88,9 @@ publishChange(AuthorizationChangeAuditEvent)
 
 Decision events describe runtime authorization outcomes. Change events describe authorization configuration or assignment mutations and can be emitted by the admin module, identity synchronization, seed processing, or future integrations. Core owns their common database persistence and correlation handling.
 
-Every `AUTH_AUDIT_EVENT` row stores a non-null `EVENT_KIND` discriminator with `DECISION` or `CHANGE`. `EVENT_TYPE` remains the detailed subtype, such as `AUTHORIZATION_DENIED` or `ROLE_UPDATED`. The consolidated baseline migration `V1` creates this discriminator as non-null; no upgrade backfill is needed because the schema has not yet been released.
+Every `AUTH_AUDIT_EVENT` row stores a non-null `EVENT_KIND` discriminator with `DECISION` or
+`CHANGE`. `EVENT_TYPE` remains the detailed subtype, such as `AUTHORIZATION_DENIED` or
+`ADMIN_UPDATE`. The baseline migration `V1` creates this discriminator as non-null.
 
 Current runtime/admin event names include:
 
