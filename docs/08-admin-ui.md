@@ -37,7 +37,7 @@ The module's Java management services use repositories and SPIs supplied by `aut
 
 Show:
 
-- source (DATABASE / KEYCLOAK)
+- source (DATABASE / KEYCLOAK / LDAP)
 - counts
 - sync status if available
 - recent denies/audit summary
@@ -106,6 +106,9 @@ Example display:
 ```text
 KEYCLOAK GROUP /AD/Finance-Managers
   -> ROLE FINANCE_MANAGER
+
+LDAP ATTRIBUTE department=Payroll
+  -> PERMISSION_GROUP PAYROLL_ACCESS
 ```
 
 ### Synchronization

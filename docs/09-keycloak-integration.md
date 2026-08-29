@@ -157,5 +157,5 @@ request
 ```
 
 Normal authorization requests never call the Keycloak Admin API. Authentication remains the
-consuming application's Spring Security responsibility. Event-driven refresh is deferred to Phase 5;
+consuming application's Spring Security responsibility. Event-driven refresh is deferred to Phase 6;
 periodic/full reconciliation remains the correctness path.

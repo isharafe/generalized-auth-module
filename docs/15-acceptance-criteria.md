@@ -21,6 +21,7 @@ Published reusable modules are exactly:
 ```text
 authorization-core
 authorization-keycloak
+authorization-ldap
 authorization-admin
 ```
 
@@ -28,7 +29,7 @@ Do not create extra framework modules for Spring/JPA/Flyway. Keep the management
 
 ## DB-only
 
-`authorization-core` works without Keycloak or admin dependencies and exposes no management endpoints.
+`authorization-core` works without Keycloak, LDAP, or admin dependencies and exposes no management endpoints.
 
 Demo proves end-to-end DB-only authorization.
 
@@ -74,6 +75,17 @@ Optional dependency only.
 
 Normal request authorization stays local.
 
+## LDAP
+
+Optional dependency only.
+
+`source=database` works when the LDAP module is absent.
+
+`source=ldap` explicitly maps/syncs external groups and configured user attributes into local
+assignments while preserving `MANUAL` and `SEED` ownership.
+
+Normal request authorization stays local and does not query LDAP.
+
 ## No placeholders
 
 No unfinished production TODOs, placeholder migrations, fake implementations, or unsupported methods for features claimed complete.
@@ -88,4 +100,5 @@ Repository README must explain:
 - optional administration dependency and API
 - built-in admin UI
 - optional Keycloak dependency/configuration
+- optional LDAP dependency/configuration
 - demo run commands

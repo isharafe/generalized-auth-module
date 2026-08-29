@@ -176,6 +176,8 @@ Examples:
 ```text
 KEYCLOAK | GROUP | /AD/Finance-Managers | ROLE | FINANCE_MANAGER
 KEYCLOAK | ROLE  | payroll-approver     | ROLE | PAYROLL_APPROVER
+LDAP     | GROUP | Finance-Managers     | ROLE | FINANCE_MANAGER
+LDAP     | ATTRIBUTE | department=Payroll | PERMISSION_GROUP | PAYROLL_ACCESS
 ```
 
 ## Effective permissions

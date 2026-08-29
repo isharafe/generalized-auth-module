@@ -182,4 +182,4 @@ The current implementation relies on:
 - idempotent operations
 
 A dedicated database/distributed initialization lock and explicit concurrent-startup verification
-remain Phase 6 hardening work.
+remain Phase 7 hardening work.

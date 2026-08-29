@@ -149,6 +149,30 @@ describe("Authorization admin UI", () => {
     ).toBeVisible();
   });
 
+  it("defaults external mappings to LDAP and offers attribute authorities", async () => {
+    window.location.hash = "#/mappings";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.endsWith("/capabilities"))
+          return response({
+            source: "LDAP",
+            identitySynchronization: true,
+            externalAuthorityMapping: true,
+            syncProvider: "ldap"
+          });
+        if (url.includes("/external-mappings")) return response(page([]));
+        throw new Error(`Unexpected request ${url}`);
+      })
+    );
+
+    render(<App config={config} api={new AdminApi(config.apiBasePath)} />);
+
+    expect(await screen.findByDisplayValue("LDAP")).toBeVisible();
+    expect(screen.getByRole("option", { name: "ATTRIBUTE" })).toBeInTheDocument();
+  });
+
   it("labels and filters audit event kinds", async () => {
     window.location.hash = "#/audit";
     const fetchMock = vi.fn((input: RequestInfo | URL) => {

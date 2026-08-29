@@ -11,6 +11,7 @@
   <modules>
     <module>authorization-core</module>
     <module>authorization-keycloak</module>
+    <module>authorization-ldap</module>
     <module>authorization-admin</module>
     <module>examples/authorization-demo</module>
   </modules>

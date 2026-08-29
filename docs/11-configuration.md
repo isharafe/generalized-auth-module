@@ -78,6 +78,67 @@ scan because the integrated Keycloak users endpoint provides no reliable modifie
 If `source=keycloak` is selected but the optional module/provider is absent, startup fails with a
 direct actionable error. `source=database` continues to work without the Keycloak module.
 
+## LDAP source
+
+Add the optional `authorization-ldap` dependency and configure:
+
+```yaml
+authorization:
+  source: ldap
+
+  ldap:
+    enabled: true
+    urls:
+      - ldaps://directory.example.com:636
+    base-dn: dc=example,dc=com
+    bind-dn: cn=authorization-sync,ou=services,dc=example,dc=com
+    bind-password: ${AUTHORIZATION_LDAP_BIND_PASSWORD}
+    issuer: company-ldap
+    connect-timeout: 5s
+    read-timeout: 15s
+    referral: ignore
+
+    user:
+      base-dn: ou=people
+      search-filter: "(objectClass=inetOrgPerson)"
+      identity-attribute: entryUUID
+      identity-attribute-binary: false
+      username-attribute: uid
+      email-attribute: mail
+      first-name-attribute: givenName
+      last-name-attribute: sn
+      member-of-attribute: memberOf
+      authority-attributes: [department, employeeType]
+
+    group:
+      base-dn: ou=groups
+      search-filter: "(member={0})"
+      name-attribute: cn
+      use-dn-as-authority: false
+
+    sync:
+      enabled: true
+      page-size: 500
+      paged-results: true
+      incremental-cron: "-"
+      full-cron: "0 0 2 * * *"
+```
+
+`urls`, `base-dn`, a valid user filter, and a stable identity attribute are required. Bind DN and
+password are optional as a pair for directories that permit anonymous reads; production deployments
+should normally use a least-privilege read-only bind over LDAPS. Configure `objectGUID` with
+`identity-attribute-binary=true` for Active Directory. Disable either membership strategy by setting
+its `member-of-attribute` or `group.search-filter` to an empty string. The group filter must retain
+the escaped user-DN placeholder `{0}`.
+
+LDAP `GROUP` and `ATTRIBUTE` authorities are explicitly mapped through local external-authority
+mappings. Attribute authority values use `attribute=value`. The incremental entry point currently
+performs a full scan because generic LDAP provides no portable modified-since cursor. See
+[the LDAP integration guide](20-ldap-integration.md).
+
+If `source=ldap` is selected but the optional module/provider is absent, startup fails with the same
+actionable source guard used by Keycloak.
+
 ## Administration module
 
 These properties are active when the optional `authorization-admin` dependency is present:

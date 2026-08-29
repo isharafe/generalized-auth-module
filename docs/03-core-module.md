@@ -91,12 +91,15 @@ Core may define:
 ```text
 DATABASE
 KEYCLOAK
+LDAP
 ```
 
 but must contain no Keycloak client classes.
 
 If `source=keycloak` and the optional Keycloak integration is absent, fail startup with a clear message.
+The same guard applies to `source=ldap` when `authorization-ldap` is absent or invalid.
 
 ## Functional requirement
 
-Core must be independently useful. DB-only mode must run end-to-end without `authorization-keycloak` or `authorization-admin`.
+Core must be independently useful. DB-only mode must run end-to-end without
+`authorization-keycloak`, `authorization-ldap`, or `authorization-admin`.

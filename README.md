@@ -6,6 +6,7 @@ A reusable Spring Boot 4.1 authorization library with a functional DB-backed cor
 
 - `authorization-core`: published DB-backed engine, Spring Security integration, JPA/Flyway, seeds, cache, and audit.
 - `authorization-keycloak`: published optional Keycloak Admin API client and local identity/authority synchronization.
+- `authorization-ldap`: published optional LDAP directory client and local identity/authority synchronization.
 - `authorization-admin`: published optional management REST API, services, framework-admin seeds, and React/TypeScript SPA.
 - `examples/authorization-demo`: non-published runnable verification application.
 
@@ -127,6 +128,63 @@ targeted, and scheduled synchronization update status/audit data and invalidate 
 cache entries after commit. Normal authorization requests still use the local cache/database and
 never call Keycloak. See [the Keycloak integration guide](docs/09-keycloak-integration.md).
 
+## Optional LDAP module
+
+Add `authorization-ldap` when a standard LDAP directory supplies external users, groups, and user
+attributes. It depends on `authorization-core` and activates only when
+`authorization.source=ldap`:
+
+```xml
+<dependency>
+  <groupId>com.example.authorization</groupId>
+  <artifactId>authorization-ldap</artifactId>
+  <version>0.1.0-SNAPSHOT</version>
+</dependency>
+```
+
+```yaml
+authorization:
+  source: ldap
+  ldap:
+    urls: [ldaps://directory.example.com:636]
+    base-dn: dc=example,dc=com
+    bind-dn: cn=authorization-sync,ou=services,dc=example,dc=com
+    bind-password: ${AUTHORIZATION_LDAP_BIND_PASSWORD}
+    issuer: company-ldap
+
+    user:
+      base-dn: ou=people
+      search-filter: "(objectClass=inetOrgPerson)"
+      identity-attribute: entryUUID
+      username-attribute: uid
+      email-attribute: mail
+      member-of-attribute: memberOf
+      authority-attributes: [department, employeeType]
+
+    group:
+      base-dn: ou=groups
+      search-filter: "(member={0})"
+      name-attribute: cn
+
+    sync:
+      page-size: 500
+      full-cron: "0 0 2 * * *"
+      incremental-cron: "-"
+```
+
+LDAP group authorities use `source-system: LDAP` and `authority-type: GROUP`. Configured user
+attributes use `authority-type: ATTRIBUTE` and a value such as `department=Payroll`. Both map only
+to local Roles or PermissionGroups. Synchronization writes only `IDENTITY_SYNC` assignments and
+preserves `MANUAL` and `SEED` assignments. Full, targeted, and scheduled synchronization use local
+database locking, audit, and post-commit cache invalidation; request-time authorization remains
+local.
+
+For Active Directory, configure `identity-attribute: objectGUID` together with
+`identity-attribute-binary: true`. Binary IDs are represented locally as unpadded base64url. The
+application still owns Spring Security authentication and must resolve the authenticated principal
+to the same configured LDAP issuer and stable subject. See
+[the LDAP integration guide](docs/20-ldap-integration.md).
+
 ## Run and verify
 
 Requires Java 21. The repository-level Maven Wrapper pins Maven 3.9.11 for every module, so a separate Maven installation is not required.
@@ -171,4 +229,6 @@ application session and the Keycloak SSO session. See
 
 ## Current status
 
-Phases 1 through 4 are implemented. See [TASKS.md](TASKS.md) for the remaining phased work and [docs/19-phase-4-implementation.md](docs/19-phase-4-implementation.md) for the optional Keycloak synchronization implementation.
+Phases 1 through 5 are implemented. See [TASKS.md](TASKS.md) for the remaining phased work,
+[docs/19-phase-4-implementation.md](docs/19-phase-4-implementation.md) for Keycloak, and
+[docs/20-ldap-integration.md](docs/20-ldap-integration.md) for LDAP.

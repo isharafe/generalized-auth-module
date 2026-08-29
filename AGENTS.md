@@ -10,6 +10,7 @@ Keep the library intentionally small:
 authorization-parent
 ├── authorization-core
 ├── authorization-keycloak      # optional
+├── authorization-ldap          # optional
 └── authorization-admin         # optional
 ```
 
@@ -50,9 +51,20 @@ Optional. It contains only Keycloak-specific integration:
 
 It depends on `authorization-core`. `authorization-core` must never depend on Keycloak classes.
 
+### authorization-ldap
+
+Optional. It contains only LDAP-specific integration:
+
+- service-bind directory access
+- LDAP users, attributes, and groups retrieval
+- LDAP group and attribute authority mapping
+- periodic/full/targeted synchronization
+
+It depends on `authorization-core`. `authorization-core` must never depend on LDAP classes.
+
 ### authorization-admin
 
-Optional administration component. It contains the management REST API, DTOs, transactional management services, framework-admin seed definitions, and the React/TypeScript SPA packaged as JAR static resources. It depends on `authorization-core`, uses core repositories/SPIs, and contains no JPA entities, Flyway migrations, or Keycloak-specific logic.
+Optional administration component. It contains the management REST API, DTOs, transactional management services, framework-admin seed definitions, and the React/TypeScript SPA packaged as JAR static resources. It depends on `authorization-core`, uses core repositories/SPIs, and contains no JPA entities, Flyway migrations, Keycloak-specific logic, or LDAP-specific logic.
 
 ## Core model
 
@@ -97,7 +109,17 @@ authorization:
   source: keycloak
 ```
 
+or:
+
+```yaml
+authorization:
+  source: ldap
+```
+
 `source=keycloak` means Keycloak is the external identity/authority source. Application authorization semantics remain local. Keycloak groups/roles are explicitly mapped to application Roles/PermissionGroups and synchronized locally. Normal requests should still authorize from local cache/DB, not call Keycloak on every request.
+
+`source=ldap` follows the same boundary: LDAP users, groups, and configured user attributes are
+mapped to local Roles/PermissionGroups and synchronized locally. Normal requests must not query LDAP.
 
 ## Separate concerns
 
@@ -105,7 +127,7 @@ Keep these independent:
 
 1. **Authentication** — who is the caller? Normally Spring Security owns this.
 2. **Entitlement retrieval** — what application roles/groups/permissions does the caller have? Default DB provider.
-3. **Identity synchronization** — how external identities/authorities become local users/assignments? Keycloak module implements this when enabled.
+3. **Identity synchronization** — how external identities/authorities become local users/assignments? The selected optional Keycloak or LDAP module implements this when enabled.
 
 ## Application-owned authorization
 
@@ -123,6 +145,8 @@ External IAM may influence only local user assignments through mappings such as:
 ```text
 KEYCLOAK_GROUP /AD/Finance-Managers -> ROLE FINANCE_MANAGER
 KEYCLOAK_ROLE payroll-approver       -> ROLE PAYROLL_APPROVER
+LDAP_GROUP Finance-Managers          -> ROLE FINANCE_MANAGER
+LDAP_ATTRIBUTE department=Payroll    -> PERMISSION_GROUP PAYROLL_ACCESS
 ```
 
 Do not let external groups directly define URL permissions.

@@ -125,6 +125,10 @@ PUT    /external-mappings/{id}
 DELETE /external-mappings/{id}
 ```
 
+Supported provider authority conventions include `KEYCLOAK` `GROUP`/`ROLE` and LDAP
+`GROUP`/`ATTRIBUTE`. The contract remains open to custom source-system and authority-type strings;
+all targets are restricted to local Roles or PermissionGroups.
+
 ## Sync endpoints
 
 The status endpoint is always available for capability-driven clients. Action endpoints execute only when the selected provider reports synchronization support; otherwise they return HTTP 501:

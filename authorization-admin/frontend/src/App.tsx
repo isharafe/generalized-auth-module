@@ -241,7 +241,7 @@ function RouteContent({
     case "rules":
       return <RulesPage api={api} />;
     case "mappings":
-      return <MappingsPage api={api} />;
+      return <MappingsPage api={api} source={capabilities.source} />;
     case "explain":
       return <ExplainPage api={api} />;
     case "sync":
@@ -1149,9 +1149,9 @@ function AssignmentSection({
   );
 }
 
-function MappingsPage({ api }: { api: AdminApi }) {
+function MappingsPage({ api, source }: { api: AdminApi; source: string }) {
   const empty: ExternalMapping = {
-    sourceSystem: "KEYCLOAK",
+    sourceSystem: source === "LDAP" ? "LDAP" : "KEYCLOAK",
     authorityType: "GROUP",
     authorityValue: "",
     targetType: "ROLE",
@@ -1253,6 +1253,7 @@ function MappingsPage({ api }: { api: AdminApi }) {
             >
               <option>GROUP</option>
               <option>ROLE</option>
+              <option>ATTRIBUTE</option>
             </select>
           </Field>
           <Field label="Authority value">

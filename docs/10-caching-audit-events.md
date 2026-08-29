@@ -84,8 +84,8 @@ IDENTITY_SYNC_COMPLETED
 IDENTITY_SYNC_FAILED
 ```
 
-The Keycloak synchronization provider emits started/completed/failed change events without storing
-service-account credentials, access tokens, or authorization headers.
+The Keycloak and LDAP synchronization providers emit started/completed/failed change events without
+storing service-account credentials, access tokens, bind passwords, or authorization headers.
 
 ## Audit fields
 

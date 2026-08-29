@@ -10,6 +10,7 @@ Create repository layout:
 pom.xml
 authorization-core/
 authorization-keycloak/
+authorization-ldap/
 authorization-admin/
 examples/authorization-demo/
 ```
@@ -23,7 +24,7 @@ Only core + demo must be functional in Phase 1; optional modules may contain onl
 - [x] centralized Spring Boot version
 - [x] dependency/plugin management
 - [x] centralized Lombok version and explicit annotation processing
-- [x] three reusable module declarations
+- [x] four reusable module declarations
 - [x] demo build strategy documented/integrated
 
 ## Domain + SPI
@@ -252,7 +253,42 @@ KEYCLOAK_ROLE  -> PERMISSION_GROUP
 
 ---
 
-# Phase 5 — Optional event-driven refresh
+# Phase 5 — Optional LDAP source
+
+Inside `authorization-ldap`:
+
+## Auto-configuration
+
+- [x] activate when module present + `source=ldap`
+- [x] validate LDAP connection/search settings
+- [x] expose capabilities/sync provider
+
+## Client and mapping
+
+- [x] service-bind and anonymous-bind directory access
+- [x] LDAPS and multiple provider URLs
+- [x] user full/targeted retrieval and optional paging
+- [x] `memberOf` and group-search membership retrieval
+- [x] configured user attributes as explicit external authorities
+- [x] `LDAP GROUP -> ROLE/PERMISSION_GROUP`
+- [x] `LDAP ATTRIBUTE -> ROLE/PERMISSION_GROUP`
+- [x] stable `entryUUID` and binary `objectGUID` support
+- [x] filter escaping, timeouts, referrals, and typed failures
+
+## Synchronization and tests
+
+- [x] full, targeted, and correctness-preserving incremental full scan
+- [x] local user upsert and missing-user handling
+- [x] reconcile only IDENTITY_SYNC assignments
+- [x] preserve MANUAL/SEED and resolve pending assignments
+- [x] entitlement versioning, post-commit invalidation, audit/status, and DB lock
+- [x] properties/filter tests
+- [x] group/attribute mapping integration tests
+- [x] stale removal, MANUAL/SEED preservation, targeted sync, and failure tests
+
+---
+
+# Phase 6 — Optional event-driven refresh
 
 - [ ] provider-neutral IdentityChangeEvent
 - [ ] optional secure Keycloak event adapter/callback
@@ -262,7 +298,7 @@ KEYCLOAK_ROLE  -> PERMISSION_GROUP
 
 ---
 
-# Phase 6 — Production hardening
+# Phase 7 — Production hardening
 
 - [ ] metrics/observability
 - [ ] path bypass regression suite
