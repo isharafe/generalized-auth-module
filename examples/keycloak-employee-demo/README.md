@@ -314,9 +314,13 @@ Keycloak startup import skips an already-existing realm. To return to the
 original sample data:
 
 ```bash
-docker compose down -v
+./reset-demo-data.sh
 docker compose up -d
 ```
+
+The reset script can be run from any working directory. It removes only this Compose project's
+containers, network, and three persistent volumes; it does not remove downloaded Docker images or
+files in this directory.
 
 ## Security note
 

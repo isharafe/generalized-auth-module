@@ -209,7 +209,7 @@ If you edit `employee-demo-realm.json` instead of using the admin console, reset
 before starting it again because realm import does not overwrite an already imported realm:
 
 ```bash
-docker compose -f examples/keycloak-employee-demo/docker-compose.yml down -v
+examples/keycloak-employee-demo/reset-demo-data.sh
 docker compose -f examples/keycloak-employee-demo/docker-compose.yml up -d
 ```
 
@@ -314,7 +314,7 @@ Restarting only the Java application resets its in-memory H2 authorization data.
 PostgreSQL, and LDAP to the checked-in fixtures as well:
 
 ```bash
-docker compose -f examples/keycloak-employee-demo/docker-compose.yml down -v
+examples/keycloak-employee-demo/reset-demo-data.sh
 docker compose -f examples/keycloak-employee-demo/docker-compose.yml up -d
 ```
 

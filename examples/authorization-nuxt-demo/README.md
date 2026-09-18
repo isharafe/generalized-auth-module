@@ -85,7 +85,12 @@ button is visible.
 The Keycloak realm import is maintained in
 `../keycloak-employee-demo/keycloak/employee-demo-realm.json`. It registers both the original
 Spring-only callback on port 8080 and this demo's public callback on port 3000. When realm import
-data changes, recreate the demo Keycloak containers and volumes before starting them again.
+data changes, recreate the demo Keycloak containers and volumes before starting them again:
+
+```bash
+examples/keycloak-employee-demo/reset-demo-data.sh
+docker compose -f examples/keycloak-employee-demo/docker-compose.yml up -d
+```
 
 ## Runtime configuration
 
