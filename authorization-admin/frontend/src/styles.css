@@ -557,6 +557,7 @@ button:disabled {
 }
 
 .field > span,
+.field > label,
 .check span {
   color: #444b58;
   font-size: 12px;
@@ -598,6 +599,92 @@ button:disabled {
   color: var(--muted);
   font-size: 10px;
   line-height: 1.5;
+}
+
+.relationship-search {
+  position: relative;
+}
+
+.relationship-results {
+  position: absolute;
+  z-index: 10;
+  top: calc(100% + 5px);
+  right: 0;
+  left: 0;
+  max-height: 260px;
+  overflow: auto;
+  padding: 6px;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  box-shadow: 0 14px 32px rgba(20, 33, 61, 0.16);
+}
+
+.relationship-results > p {
+  margin: 0;
+  padding: 10px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.relationship-results > p.relationship-error {
+  color: var(--red);
+}
+
+.relationship-results ul {
+  display: grid;
+  gap: 3px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.relationship-results button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-radius: 7px;
+}
+
+.relationship-results button:hover:not(:disabled),
+.relationship-results button:focus-visible {
+  background: var(--teal-soft);
+  outline: none;
+}
+
+.relationship-results button > span:first-child {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.relationship-results code {
+  overflow-wrap: anywhere;
+  font-size: 10px;
+}
+
+.relationship-results strong {
+  color: #444b58;
+  font-size: 11px;
+}
+
+.relationship-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  min-height: 28px;
+}
+
+.relationship-empty {
+  align-self: center;
+  color: var(--muted);
+  font-size: 10px;
 }
 
 .check {

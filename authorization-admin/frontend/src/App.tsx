@@ -2,6 +2,7 @@ import {
   type FormEvent,
   type ReactNode,
   useEffect,
+  useId,
   useState
 } from "react";
 import { ApiError, AdminApi } from "./api";
@@ -384,7 +385,7 @@ function CodedCatalogPage({
     name: "",
     description: "",
     enabled: true,
-    relations: "",
+    relations: [] as string[],
     version: undefined as number | undefined
   };
   const [draft, setDraft] = useState(empty);
@@ -402,7 +403,7 @@ function CodedCatalogPage({
       name: item.name,
       description: item.description ?? "",
       enabled: item.enabled,
-      relations: (item[relationKey] ?? []).join(", "),
+      relations: item[relationKey] ?? [],
       version: item.version
     });
 
@@ -414,7 +415,7 @@ function CodedCatalogPage({
       name: draft.name.trim(),
       description: draft.description.trim() || null,
       enabled: draft.enabled,
-      [relationKey]: codes(draft.relations),
+      [relationKey]: draft.relations,
       ...(draft.version === undefined ? {} : { version: draft.version })
     };
     try {
@@ -507,18 +508,22 @@ function CodedCatalogPage({
               }
             />
           </Field>
-          <Field
+          <RelationshipPicker
+            key={
+              draft.version === undefined
+                ? "new"
+                : `${draft.code}:${draft.version}`
+            }
+            api={api}
+            endpoint={
+              relationKey === "permissionGroups"
+                ? "/permission-groups"
+                : "/permissions"
+            }
             label={relationLabel}
-            hint="Comma-separated stable codes; validated by the server."
-          >
-            <textarea
-              rows={3}
-              value={draft.relations}
-              onChange={(event) =>
-                setDraft({ ...draft, relations: event.target.value })
-              }
-            />
-          </Field>
+            value={draft.relations}
+            onChange={(relations) => setDraft({ ...draft, relations })}
+          />
           <Check
             checked={draft.enabled}
             onChange={(enabled) => setDraft({ ...draft, enabled })}
@@ -530,6 +535,156 @@ function CodedCatalogPage({
           />
         </form>
       </section>
+    </div>
+  );
+}
+
+function RelationshipPicker({
+  api,
+  endpoint,
+  label,
+  value,
+  onChange
+}: {
+  api: AdminApi;
+  endpoint: "/permission-groups" | "/permissions";
+  label: string;
+  value: string[];
+  onChange: (value: string[]) => void;
+}) {
+  const inputId = useId();
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<CatalogItem[]>([]);
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [lookupError, setLookupError] = useState("");
+
+  useEffect(() => {
+    if (!open) {
+      setLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setLoading(true);
+    setLookupError("");
+    const timeout = window.setTimeout(() => {
+      api
+        .page<CatalogItem>(endpoint, {
+          search: query.trim(),
+          size: 20,
+          sort: "code,asc"
+        })
+        .then((page) => {
+          if (!cancelled) setResults(page.content);
+        })
+        .catch((caught) => {
+          if (!cancelled) {
+            setResults([]);
+            setLookupError(message(caught));
+          }
+        })
+        .finally(() => {
+          if (!cancelled) setLoading(false);
+        });
+    }, 250);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeout);
+    };
+  }, [api, endpoint, open, query]);
+
+  const add = (item: CatalogItem) => {
+    if (!item.enabled || value.includes(item.code)) return;
+    onChange([...value, item.code]);
+    setQuery("");
+    setOpen(false);
+  };
+
+  const remove = (code: string) =>
+    onChange(value.filter((selected) => selected !== code));
+
+  return (
+    <div className="field relationship-picker">
+      <label htmlFor={inputId}>{label}</label>
+      <div
+        className="relationship-search"
+        onBlur={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false);
+        }}
+      >
+        <input
+          id={inputId}
+          autoComplete="off"
+          placeholder={`Search existing ${label.toLowerCase()}`}
+          value={query}
+          onFocus={() => setOpen(true)}
+          onChange={(event) => {
+            setQuery(event.target.value);
+            setOpen(true);
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "Escape") setOpen(false);
+          }}
+        />
+        {open && (
+          <div className="relationship-results">
+            {loading && <p role="status">Searching...</p>}
+            {!loading && lookupError && (
+              <p className="relationship-error" role="alert">{lookupError}</p>
+            )}
+            {!loading && !lookupError && results.length === 0 && (
+              <p>No matching {label.toLowerCase()}.</p>
+            )}
+            {!loading && !lookupError && results.length > 0 && (
+              <ul>
+                {results.map((item) => {
+                  const selected = value.includes(item.code);
+                  return (
+                    <li key={item.code}>
+                      <button
+                        type="button"
+                        disabled={!item.enabled || selected}
+                        onClick={() => add(item)}
+                        aria-label={`Add ${item.code} ${item.name}`}
+                      >
+                        <span>
+                          <code>{item.code}</code>
+                          <strong>{item.name}</strong>
+                        </span>
+                        <span className={`status ${item.enabled ? "enabled" : "disabled"}`}>
+                          {selected ? "Selected" : item.enabled ? "Add" : "Disabled"}
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+        )}
+      </div>
+      <div className="relationship-chips" aria-label={`Selected ${label.toLowerCase()}`}>
+        {value.map((code) => (
+          <span className="assignment-chip" key={code}>
+            {code}
+            <button
+              type="button"
+              aria-label={`Remove ${code}`}
+              onClick={() => remove(code)}
+            >
+              x
+            </button>
+          </span>
+        ))}
+        {value.length === 0 && (
+          <span className="relationship-empty">No {label.toLowerCase()} selected.</span>
+        )}
+      </div>
+      <small>
+        Search by code or name. Disabled items remain visible but cannot be added.
+      </small>
     </div>
   );
 }
@@ -1977,13 +2132,6 @@ function Detail({ label, value }: { label: string; value: string }) {
       <strong>{value}</strong>
     </div>
   );
-}
-
-function codes(value: string): string[] {
-  return value
-    .split(",")
-    .map((code) => code.trim())
-    .filter(Boolean);
 }
 
 function message(error: unknown): string {

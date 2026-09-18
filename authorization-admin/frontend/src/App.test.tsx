@@ -145,6 +145,157 @@ describe("Authorization admin UI", () => {
     expect(screen.getByText("URL:GET:/api/**")).toBeVisible();
   });
 
+  it("searches and selects existing permission groups when editing a role", async () => {
+    window.location.hash = "#/roles";
+    const role = {
+      code: "HR_MANAGER",
+      name: "HR manager",
+      description: null,
+      enabled: true,
+      permissionGroups: ["LEGACY_GROUP"],
+      version: 2
+    };
+    const fetchMock = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.endsWith("/capabilities"))
+        return response({
+          source: "DATABASE",
+          identitySynchronization: false,
+          externalAuthorityMapping: true,
+          syncProvider: null
+        });
+      if (url.includes("/permission-groups"))
+        return response(
+          page([
+            {
+              code: "EMPLOYEE_VIEWERS",
+              name: "Employee viewers",
+              enabled: true,
+              permissions: [],
+              version: 0
+            },
+            {
+              code: "RETIRED_ACCESS",
+              name: "Retired access",
+              enabled: false,
+              permissions: [],
+              version: 0
+            }
+          ])
+        );
+      if (url.includes("/roles/HR_MANAGER") && init?.method === "PUT")
+        return response(role);
+      if (url.includes("/roles")) return response(page([role]));
+      throw new Error(`Unexpected request ${url}`);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<App config={config} api={new AdminApi(config.apiBasePath)} />);
+
+    fireEvent.click(await screen.findByRole("button", { name: "Edit" }));
+    expect(screen.getByRole("button", { name: "Remove LEGACY_GROUP" })).toBeVisible();
+
+    const picker = screen.getByLabelText("Permission groups");
+    fireEvent.focus(picker);
+    fireEvent.change(picker, { target: { value: "employee" } });
+
+    const enabledOption = await screen.findByRole("button", {
+      name: "Add EMPLOYEE_VIEWERS Employee viewers"
+    });
+    const disabledOption = screen.getByRole("button", {
+      name: "Add RETIRED_ACCESS Retired access"
+    });
+    expect(disabledOption).toBeDisabled();
+    fireEvent.click(disabledOption);
+    expect(
+      screen.queryByRole("button", { name: "Remove RETIRED_ACCESS" })
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(enabledOption);
+    fireEvent.click(screen.getByRole("button", { name: "Remove LEGACY_GROUP" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+
+    await waitFor(() => {
+      const update = fetchMock.mock.calls.find(
+        ([input, init]) =>
+          String(input).includes("/roles/HR_MANAGER") && init?.method === "PUT"
+      );
+      expect(update).toBeDefined();
+      expect(JSON.parse(String(update?.[1]?.body))).toMatchObject({
+        code: "HR_MANAGER",
+        permissionGroups: ["EMPLOYEE_VIEWERS"],
+        version: 2
+      });
+    });
+  });
+
+  it("searches and selects existing permissions when editing a permission group", async () => {
+    window.location.hash = "#/groups";
+    const group = {
+      code: "EMPLOYEE_EDITORS",
+      name: "Employee editors",
+      description: null,
+      enabled: true,
+      permissions: [],
+      version: 1
+    };
+    const fetchMock = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.endsWith("/capabilities"))
+        return response({
+          source: "DATABASE",
+          identitySynchronization: false,
+          externalAuthorityMapping: true,
+          syncProvider: null
+        });
+      if (url.includes("/permissions"))
+        return response(
+          page([
+            {
+              code: "URL:EMPLOYEE_EDIT",
+              name: "Edit employees",
+              resourceType: "URL",
+              pattern: "PUT:/api/employees/**",
+              enabled: true,
+              version: 0
+            }
+          ])
+        );
+      if (url.includes("/permission-groups/EMPLOYEE_EDITORS") && init?.method === "PUT")
+        return response(group);
+      if (url.includes("/permission-groups")) return response(page([group]));
+      throw new Error(`Unexpected request ${url}`);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<App config={config} api={new AdminApi(config.apiBasePath)} />);
+
+    fireEvent.click(await screen.findByRole("button", { name: "Edit" }));
+    const picker = screen.getByLabelText("Permissions");
+    fireEvent.focus(picker);
+    fireEvent.change(picker, { target: { value: "edit employees" } });
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: "Add URL:EMPLOYEE_EDIT Edit employees"
+      })
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+
+    await waitFor(() => {
+      const update = fetchMock.mock.calls.find(
+        ([input, init]) =>
+          String(input).includes("/permission-groups/EMPLOYEE_EDITORS") &&
+          init?.method === "PUT"
+      );
+      expect(update).toBeDefined();
+      expect(JSON.parse(String(update?.[1]?.body))).toMatchObject({
+        code: "EMPLOYEE_EDITORS",
+        permissions: ["URL:EMPLOYEE_EDIT"],
+        version: 1
+      });
+    });
+  });
+
   it("shows the resource type for resource rules", async () => {
     window.location.hash = "#/rules";
     vi.stubGlobal("fetch", vi.fn((input: RequestInfo | URL) => {
