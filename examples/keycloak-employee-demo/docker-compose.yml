@@ -1,3 +1,5 @@
+name: keycloak-employee-demo
+
 services:
   postgres:
     image: postgres:17-alpine
@@ -77,6 +79,73 @@ services:
       ldap:
         condition: service_started
     restart: "no"
+
+  authorization-demo:
+    profiles: ["authorization-demo"]
+    image: authorization-demo:local
+    container_name: authorization-demo
+    build:
+      context: ../..
+      dockerfile: examples/authorization-demo/Dockerfile
+    environment:
+      SPRING_PROFILES_ACTIVE: keycloak-demo
+      AUTHORIZATION_KEYCLOAK_BASE_URL: http://keycloak:8080
+      AUTHORIZATION_KEYCLOAK_REALM: employee-demo
+      AUTHORIZATION_KEYCLOAK_ISSUER_URI: http://host.docker.internal:8081/realms/employee-demo
+      AUTHORIZATION_KEYCLOAK_CLIENT_ID: authorization-sync-service
+      AUTHORIZATION_KEYCLOAK_CLIENT_SECRET: authorization-sync-service-demo-secret
+      AUTHORIZATION_KEYCLOAK_LOGIN_CLIENT_ID: employee-demo
+      AUTHORIZATION_KEYCLOAK_LOGIN_CLIENT_SECRET: employee-demo-secret
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "8080:8080"
+    depends_on:
+      keycloak-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  authorization-nuxt-backend:
+    profiles: ["authorization-nuxt-demo"]
+    image: authorization-nuxt-demo-backend:local
+    container_name: authorization-nuxt-demo-backend
+    build:
+      context: ../..
+      dockerfile: examples/authorization-nuxt-demo/Dockerfile
+    environment:
+      SPRING_PROFILES_ACTIVE: keycloak-demo
+      AUTHORIZATION_KEYCLOAK_BASE_URL: http://keycloak:8080
+      AUTHORIZATION_KEYCLOAK_REALM: employee-demo
+      AUTHORIZATION_KEYCLOAK_ISSUER_URI: http://host.docker.internal:8081/realms/employee-demo
+      AUTHORIZATION_KEYCLOAK_CLIENT_ID: authorization-sync-service
+      AUTHORIZATION_KEYCLOAK_CLIENT_SECRET: authorization-sync-service-demo-secret
+      AUTHORIZATION_KEYCLOAK_LOGIN_CLIENT_ID: employee-demo
+      AUTHORIZATION_KEYCLOAK_LOGIN_CLIENT_SECRET: employee-demo-secret
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "8082:8082"
+    depends_on:
+      keycloak-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  authorization-nuxt-frontend:
+    profiles: ["authorization-nuxt-demo"]
+    image: authorization-nuxt-demo-frontend:local
+    container_name: authorization-nuxt-demo-frontend
+    build:
+      context: ../..
+      dockerfile: examples/authorization-nuxt-demo/frontend/Dockerfile
+    environment:
+      NUXT_AUTHORIZATION_NUXT_BACKEND_BASE_URL: http://authorization-nuxt-backend:8082
+      NUXT_AUTHORIZATION_NUXT_PUBLIC_BASE_URL: http://localhost:3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      authorization-nuxt-backend:
+        condition: service_started
+    restart: unless-stopped
 
 volumes:
   keycloak_postgres_data:

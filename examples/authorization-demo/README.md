@@ -45,6 +45,35 @@ The imported `employee-demo` browser client already allows the exact Spring Secu
 both `localhost:8080` and `127.0.0.1:8080`, including the post-logout redirect. Use one of those two
 application origins unless you also register the new origin's callback URLs in Keycloak.
 
+### Containerized quick start
+
+From the repository root, build and run this application together with its identity infrastructure:
+
+```bash
+docker compose -f examples/keycloak-employee-demo/docker-compose.yml \
+  --profile authorization-demo up -d --build
+```
+
+This builds [the demo Dockerfile](Dockerfile) from the repository root, starts the application on
+port 8080, and waits for the one-time Keycloak initialization job before starting Spring. Follow
+the initialization or application logs with:
+
+```bash
+docker compose -f examples/keycloak-employee-demo/docker-compose.yml logs -f keycloak-init
+docker compose -f examples/keycloak-employee-demo/docker-compose.yml logs -f authorization-demo
+```
+
+To build only the application image:
+
+```bash
+docker build -f examples/authorization-demo/Dockerfile -t authorization-demo:local .
+```
+
+The container uses `host.docker.internal:8081` as its Keycloak issuer. Docker Desktop resolves this
+name automatically. Native Linux users must map `host.docker.internal` to `127.0.0.1` in the host's
+`/etc/hosts` if the name is not already available. Compose supplies the container-side host-gateway
+mapping.
+
 An unauthenticated browser request to a protected HTML page redirects to Keycloak. After a
 successful login, the application synchronizes that user from Keycloak, stores the resulting local
 assignments, and redirects to the demo UI.

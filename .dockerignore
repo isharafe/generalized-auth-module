@@ -1,0 +1,13 @@
+.git
+.github
+.idea
+.vscode
+**/.DS_Store
+**/target
+**/node_modules
+**/dist
+**/.nuxt
+**/.output
+**/coverage
+authorization-admin/frontend/node
+*.log

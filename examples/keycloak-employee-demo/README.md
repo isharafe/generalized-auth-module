@@ -16,6 +16,33 @@ This demo contains:
 docker compose up -d
 ```
 
+This command starts only the identity infrastructure. To build and start the Spring-only demo as
+well, enable its Compose profile:
+
+```bash
+docker compose --profile authorization-demo up -d --build
+```
+
+To build and start the separate Spring backend and Nitro frontend for the Nuxt demo instead:
+
+```bash
+docker compose --profile authorization-nuxt-demo up -d --build
+```
+
+The Spring demo is then available at <http://localhost:8080/demo-ui/>. The Nuxt demo is available at
+<http://localhost:3000/> and its Spring backend remains exposed at <http://localhost:8082/> for
+diagnostics.
+
+Containerized applications use `host.docker.internal:8081` as the browser-visible Keycloak issuer.
+Docker Desktop supplies that hostname. On native Linux, if it does not already resolve on the host,
+add this entry to `/etc/hosts` before signing in:
+
+```text
+127.0.0.1 host.docker.internal
+```
+
+Compose separately maps the same hostname to the Docker host gateway inside the Spring containers.
+
 Watch the one-time federation bootstrap:
 
 ```bash
@@ -319,8 +346,8 @@ docker compose up -d
 ```
 
 The reset script can be run from any working directory. It removes only this Compose project's
-containers, network, and three persistent volumes; it does not remove downloaded Docker images or
-files in this directory.
+containers (including either application profile), network, and three persistent volumes; it does
+not remove downloaded Docker images or files in this directory.
 
 ## Security note
 

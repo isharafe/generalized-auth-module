@@ -17,7 +17,44 @@ Always open the demo through port `3000`. Nitro proxies OAuth2 callbacks, framew
 endpoints, application API requests, and `/authorization-admin/**` to Spring. Access and refresh
 tokens stay in Spring-managed HttpOnly cookies and are never exposed to Nuxt application code.
 
-## Run the demo
+## Containerized quick start
+
+From the repository root, build and start the Spring backend, Nitro frontend, and identity
+infrastructure:
+
+```bash
+docker compose -f examples/keycloak-employee-demo/docker-compose.yml \
+  --profile authorization-nuxt-demo up -d --build
+```
+
+Open <http://localhost:3000/>. The frontend proxies authentication and API traffic to the Spring
+container over the Compose network. Follow startup logs with:
+
+```bash
+docker compose -f examples/keycloak-employee-demo/docker-compose.yml logs -f keycloak-init
+docker compose -f examples/keycloak-employee-demo/docker-compose.yml logs -f authorization-nuxt-backend
+docker compose -f examples/keycloak-employee-demo/docker-compose.yml logs -f authorization-nuxt-frontend
+```
+
+The backend image is built from [the Spring Dockerfile](Dockerfile), while the browser application
+uses [the Nitro Dockerfile](frontend/Dockerfile). Both builds use the repository root as their
+Docker context because they depend on sibling framework modules.
+
+To build the images without starting Compose:
+
+```bash
+docker build -f examples/authorization-nuxt-demo/Dockerfile \
+  -t authorization-nuxt-demo-backend:local .
+docker build -f examples/authorization-nuxt-demo/frontend/Dockerfile \
+  -t authorization-nuxt-demo-frontend:local .
+```
+
+Containerized applications use `host.docker.internal:8081` as the browser-visible Keycloak issuer.
+Docker Desktop supplies that hostname. On native Linux, map `host.docker.internal` to `127.0.0.1`
+in the host's `/etc/hosts` if it does not already resolve; Compose provides the corresponding
+container-side host-gateway mapping.
+
+## Run from source
 
 Requirements are Java 21 or later, Docker Compose, and Node.js 22.19 or later.
 
@@ -101,6 +138,13 @@ frontend reads these optional variables (see `frontend/.env.example`):
 | --- | --- | --- |
 | `AUTHORIZATION_BACKEND_URL` | `http://localhost:8082` | Private Nitro-to-Spring origin |
 | `NUXT_PUBLIC_BASE_URL` | `http://localhost:3000` | Browser-visible origin used for OAuth redirects |
+
+The container uses Nuxt's runtime overrides instead:
+
+| Variable | Compose value | Meaning |
+| --- | --- | --- |
+| `NUXT_AUTHORIZATION_NUXT_BACKEND_BASE_URL` | `http://authorization-nuxt-backend:8082` | Private Compose-network Spring origin |
+| `NUXT_AUTHORIZATION_NUXT_PUBLIC_BASE_URL` | `http://localhost:3000` | Browser-visible origin |
 
 If the public host or port changes, update `NUXT_PUBLIC_BASE_URL` and add the matching login callback
 and post-logout URI to the Keycloak client. Spring uses trusted forwarded headers from Nitro to

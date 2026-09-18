@@ -294,6 +294,13 @@ docker compose -f examples/keycloak-employee-demo/docker-compose.yml up -d
 java -jar examples/authorization-demo/target/authorization-demo-0.1.0-SNAPSHOT.jar
 ```
 
+Alternatively, build and run the application in a container together with the identity services:
+
+```bash
+docker compose -f examples/keycloak-employee-demo/docker-compose.yml \
+  --profile authorization-demo up -d --build
+```
+
 Open:
 
 ```text
@@ -315,6 +322,13 @@ For the Nuxt/Nitro example, run the Spring backend on port 8082 and the browser-
 on port 3000. The same demo identities exercise permission-aware components, directives, route
 middleware, authorized requests, token refresh, and the proxied administration UI. Follow the
 [Nuxt demo quickstart](examples/authorization-nuxt-demo/README.md).
+
+Both Nuxt processes can also be built and launched as separate containers:
+
+```bash
+docker compose -f examples/keycloak-employee-demo/docker-compose.yml \
+  --profile authorization-nuxt-demo up -d --build
+```
 
 ## Current status
 
