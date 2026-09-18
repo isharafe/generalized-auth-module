@@ -314,3 +314,4 @@ Inside `authorization-ldap`:
 - [x] performance/load tests
 - [x] admin API security review
 - [x] docs/examples polish
+- [x] type-qualified permission codes and baseline schema validation

@@ -90,9 +90,14 @@ permission pattern (METHOD:/path)
 enabled
 ```
 
+On creation the editor accepts a local code and previews/submits the canonical
+`<RESOURCE_TYPE>:<LOCAL_CODE>` identifier. The complete code and resource type are read-only after
+creation.
+
 Show preview like:
 
 ```text
+URL:EMPLOYEE_EDIT
 URL:PUT:/api/employees/**
 ```
 

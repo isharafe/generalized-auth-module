@@ -42,8 +42,8 @@ DENY_ALL
 
 Fields:
 
-`Permission` is resource-type-neutral. Its `pattern` is opaque to the domain model and is
-interpreted only by the matcher for the corresponding `ResourceType`.
+`Permission` carries its resource type, while its `pattern` remains opaque to the domain model and
+is interpreted only by the matcher for the corresponding `ResourceType`.
 
 ```text
 code
@@ -60,7 +60,7 @@ The persistence entity adds an internal numeric `id` and optimistic `version`. T
 Example:
 
 ```text
-code            = EMPLOYEE_EDIT
+code            = URL:EMPLOYEE_EDIT
 resourceType    = URL
 pattern         = PUT:/api/employees/**
 ```
@@ -71,10 +71,10 @@ Logical collection of permissions.
 
 ```text
 EMPLOYEE_MANAGEMENT
-├── EMPLOYEE_VIEW
-├── EMPLOYEE_CREATE
-├── EMPLOYEE_EDIT
-└── EMPLOYEE_DELETE
+├── URL:EMPLOYEE_VIEW
+├── URL:EMPLOYEE_CREATE
+├── URL:EMPLOYEE_EDIT
+└── URL:EMPLOYEE_DELETE
 ```
 
 ## Role
@@ -203,3 +203,9 @@ Rules:
 - immutable by default after creation
 - seed/API references use code
 - DB numeric IDs stay internal
+
+Permission codes additionally use the canonical `<RESOURCE_TYPE>:<LOCAL_CODE>` form. The prefix
+must equal the permission's `resourceType`, the complete code is limited to 100 characters, and
+both code and type are immutable after creation. This allows `URL:VIEW` and `UI:VIEW` to coexist
+while preserving a single-string public identifier. `PermissionCode` provides shared composition
+and validation for Java consumers.

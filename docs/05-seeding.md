@@ -17,12 +17,12 @@ Both feed the same internal `AuthorizationSeedDefinition`.
 authorization:
   seed:
     permissions:
-      - code: EMPLOYEE_VIEW
+      - code: URL:EMPLOYEE_VIEW
         name: View employees
         type: URL
         pattern: GET:/demo/employees/**
 
-      - code: EMPLOYEE_EDIT
+      - code: URL:EMPLOYEE_EDIT
         name: Edit employees
         type: URL
         pattern: PUT:/demo/employees/**
@@ -30,12 +30,12 @@ authorization:
     permission-groups:
       - code: EMPLOYEE_VIEWER
         permissions:
-          - EMPLOYEE_VIEW
+          - URL:EMPLOYEE_VIEW
 
       - code: EMPLOYEE_MANAGER
         permissions:
-          - EMPLOYEE_VIEW
-          - EMPLOYEE_EDIT
+          - URL:EMPLOYEE_VIEW
+          - URL:EMPLOYEE_EDIT
 
     roles:
       - code: HR_VIEWER
@@ -78,6 +78,8 @@ mappings, users, and initial role/group assignments through logical codes. Permi
 `ResourceType`, so Java contributors can define URL or UI permissions. Use
 `externalAuthorityMapping(...)` for the same mapping contract available under
 `external-authority-mappings` in YAML. URL patterns use the canonical `METHOD:/path` form.
+Permission codes must use `<RESOURCE_TYPE>:<LOCAL_CODE>` and group references use that complete
+code; for example, `URL:EMPLOYEE_VIEW` and `UI:EMPLOYEE_VIEW` are independent permissions.
 
 ## Merge process
 
@@ -132,30 +134,30 @@ validator produce an `INDETERMINATE` authorization decision rather than an unsaf
 When `authorization-admin` is present, that module contributes built-in permissions such as:
 
 ```text
-AUTHZ_ADMIN_VIEW
-AUTHZ_ADMIN_CURRENT_USER
-AUTHZ_ADMIN_UI
-AUTHZ_ADMIN_UI_INDEX
-AUTHZ_ADMIN_UI_CONFIG
-AUTHZ_ADMIN_UI_ASSETS
-AUTHZ_USER_VIEW
-AUTHZ_USER_MANAGE
-AUTHZ_ROLE_VIEW
-AUTHZ_ROLE_MANAGE
-AUTHZ_PERMISSION_VIEW
-AUTHZ_PERMISSION_MANAGE
-AUTHZ_PERMISSION_GROUP_VIEW
-AUTHZ_PERMISSION_GROUP_MANAGE
-AUTHZ_RESOURCE_RULE_VIEW
-AUTHZ_RESOURCE_RULE_MANAGE
-AUTHZ_EXTERNAL_MAPPING_VIEW
-AUTHZ_EXTERNAL_MAPPING_MANAGE
-AUTHZ_SYNC_VIEW
-AUTHZ_SYNC_RUN
-AUTHZ_AUDIT_VIEW
-AUTHZ_AUTHORIZATION_TEST
-AUTHZ_DATA_EXPORT
-AUTHZ_DATA_IMPORT
+URL:AUTHZ_ADMIN_VIEW
+URL:AUTHZ_ADMIN_CURRENT_USER
+URL:AUTHZ_ADMIN_UI
+URL:AUTHZ_ADMIN_UI_INDEX
+URL:AUTHZ_ADMIN_UI_CONFIG
+URL:AUTHZ_ADMIN_UI_ASSETS
+URL:AUTHZ_USER_VIEW
+URL:AUTHZ_USER_MANAGE
+URL:AUTHZ_ROLE_VIEW
+URL:AUTHZ_ROLE_MANAGE
+URL:AUTHZ_PERMISSION_VIEW
+URL:AUTHZ_PERMISSION_MANAGE
+URL:AUTHZ_PERMISSION_GROUP_VIEW
+URL:AUTHZ_PERMISSION_GROUP_MANAGE
+URL:AUTHZ_RESOURCE_RULE_VIEW
+URL:AUTHZ_RESOURCE_RULE_MANAGE
+URL:AUTHZ_EXTERNAL_MAPPING_VIEW
+URL:AUTHZ_EXTERNAL_MAPPING_MANAGE
+URL:AUTHZ_SYNC_VIEW
+URL:AUTHZ_SYNC_RUN
+URL:AUTHZ_AUDIT_VIEW
+URL:AUTHZ_AUTHORIZATION_TEST
+URL:AUTHZ_DATA_EXPORT
+URL:AUTHZ_DATA_IMPORT
 ```
 
 Create framework groups/roles:

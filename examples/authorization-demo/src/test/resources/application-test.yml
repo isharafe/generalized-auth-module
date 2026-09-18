@@ -1,0 +1,9 @@
+authorization:
+  source: database
+  seed:
+    locations:
+      - classpath:authorization/demo-test-identities.yml
+      - classpath:authorization/demo-seed.yml
+  security:
+    cookie-oauth2:
+      enabled: false

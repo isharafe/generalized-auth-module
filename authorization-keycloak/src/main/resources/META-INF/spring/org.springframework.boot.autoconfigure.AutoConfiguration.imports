@@ -1,1 +1,1 @@
-com.example.authorization.keycloak.config.AuthorizationKeycloakAutoConfiguration
+io.github.isharafe.authorization.keycloak.config.AuthorizationKeycloakAutoConfiguration

@@ -1,2 +1,2 @@
-com.example.authorization.admin.config.AuthorizationAdminAutoConfiguration
-com.example.authorization.admin.ui.AuthorizationAdminUiAutoConfiguration
+io.github.isharafe.authorization.admin.config.AuthorizationAdminAutoConfiguration
+io.github.isharafe.authorization.admin.ui.AuthorizationAdminUiAutoConfiguration

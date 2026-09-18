@@ -60,13 +60,17 @@ A consuming application must define the applicable UI resource rule. The demo su
 
 ## Demo
 
-The demo includes the UI module. For browser use, the demo-only authentication filter accepts:
+The demo includes the UI module. Its current default profile uses the framework's generalized
+OAuth2/OIDC cookie security with the bundled `employee-demo` Keycloak realm. After signing in as
+`admin-user`, open:
 
 ```text
-/authorization-admin?demo-user=manager
+/authorization-admin/
 ```
 
-The demo filter authenticates the current request and sets a one-hour HttpOnly `DEMO_USER` cookie; the admin UI controller redirects the no-trailing-slash request to the clean trailing-slash URL. Header authentication remains supported for automated tests and curl. Neither demo mechanism is suitable for production.
+The SPA sends CSRF tokens on write requests, attempts a single token refresh on HTTP 401, and uses
+a CSRF-protected OIDC logout form. A lightweight header-based chain exists only in integration-test
+sources under the `test` profile; it is not packaged into the runnable application.
 
 ## Verification
 
@@ -78,7 +82,7 @@ preview, and the destructive import warning. Demo integration coverage verifies:
 - an authenticated user without admin UI permission receives 403
 - an authorized manager reaches the packaged index
 - the configured API/UI paths are returned at runtime
-- the demo browser cookie bootstrap loads the protected SPA
+- cookie-authenticated logout rejects requests without a CSRF token
 
 The full reactor build is the Phase 3 release gate:
 

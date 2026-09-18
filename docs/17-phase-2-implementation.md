@@ -22,7 +22,8 @@ The API includes:
 ## Write semantics
 
 Admin controllers delegate to `AuthorizationAdminService`; controllers never access repositories
-directly. Configuration codes are immutable. DELETE soft-disables coded configuration, while
+directly. Configuration codes are immutable. Permission codes are type-qualified, so their resource
+type is immutable as well. DELETE soft-disables coded configuration, while
 external mappings are deleted explicitly. Configuration-object PUT and DELETE operations require
 the current version, and stale versions return HTTP 409. Relationship and user-assignment mapping
 operations do not take a client version; assignment removal still enforces source ownership.

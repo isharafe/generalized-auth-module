@@ -215,12 +215,15 @@
       "authorizationServicesEnabled": true,
       "fullScopeAllowed": true,
       "redirectUris": [
-        "http://localhost:*/*",
-        "http://127.0.0.1:*/*"
+        "http://localhost:8080/login/oauth2/code/keycloak",
+        "http://127.0.0.1:8080/login/oauth2/code/keycloak"
       ],
       "webOrigins": [
         "+"
       ],
+      "attributes": {
+        "post.logout.redirect.uris": "http://localhost:8080/demo-ui/signed-out##http://127.0.0.1:8080/demo-ui/signed-out"
+      },
       "protocolMappers": [
         {
           "name": "employee-id",
@@ -463,7 +466,7 @@
       "enabled": true,
       "protocol": "openid-connect",
       "clientAuthenticatorType": "client-secret",
-      "secret": "Bbu2aby10Ov8LQ7uUvgU54B1wYHwF7Cm6RSK7vlqheLhj4WJgFZEGLx55B4G1F2rHFX9zz59goRpmtUtqmXtYY",
+      "secret": "authorization-sync-service-demo-secret",
       "publicClient": false,
       "bearerOnly": false,
       "standardFlowEnabled": false,
@@ -471,7 +474,7 @@
       "directAccessGrantsEnabled": false,
       "serviceAccountsEnabled": true,
       "authorizationServicesEnabled": false,
-      "fullScopeAllowed": false
+      "fullScopeAllowed": true
     }
   ],
   "components": {

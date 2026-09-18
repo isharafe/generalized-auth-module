@@ -165,7 +165,7 @@ export function App({
               <span>LOCAL DECISIONS</span>
               <small>{config.apiBasePath}</small>
             </div>
-            <CurrentUserSummary user={currentUser} />
+            <CurrentUserSummary user={currentUser} config={config} />
           </div>
         </header>
         <main className="content">
@@ -180,7 +180,13 @@ export function App({
   );
 }
 
-function CurrentUserSummary({ user }: { user: CurrentUser }) {
+function CurrentUserSummary({
+  user,
+  config
+}: {
+  user: CurrentUser;
+  config: RuntimeConfig;
+}) {
   const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ");
   const displayName = fullName || user.username || user.subject;
   const secondary = user.email || user.username || user.subject;
@@ -196,6 +202,21 @@ function CurrentUserSummary({ user }: { user: CurrentUser }) {
           {user.issuer} · {user.subject}
         </small>
       </div>
+      {config.cookieOauth2Enabled &&
+        config.logoutEndpoint &&
+        config.csrfParameterName &&
+        config.csrfToken && (
+          <form method="post" action={config.logoutEndpoint}>
+            <input
+              type="hidden"
+              name={config.csrfParameterName}
+              value={config.csrfToken}
+            />
+            <button type="submit">
+              {config.logoutMode === "OIDC" ? "Sign out everywhere" : "Sign out"}
+            </button>
+          </form>
+        )}
     </section>
   );
 }
@@ -541,6 +562,10 @@ function PermissionsPage({ api }: { api: AdminApi }) {
     draft.resourceType === "URL"
       ? `${draft.method.toUpperCase()}:${draft.resource}`
       : draft.resource;
+  const permissionCode =
+    draft.version === undefined
+      ? `${draft.resourceType}:${draft.code}`
+      : draft.code;
 
   const edit = (item: Permission) => {
     const separator = item.pattern.indexOf(":");
@@ -563,7 +588,7 @@ function PermissionsPage({ api }: { api: AdminApi }) {
   const save = async (event: FormEvent) => {
     event.preventDefault();
     const body = {
-      code: draft.code,
+      code: permissionCode,
       name: draft.name,
       description: draft.description || null,
       resourceType: draft.resourceType,
@@ -637,10 +662,12 @@ function PermissionsPage({ api }: { api: AdminApi }) {
         />
         {error && <Notice tone="error">{error}</Notice>}
         <form onSubmit={save}>
-          <Field label="Code">
+          <Field label={draft.version === undefined ? "Local code" : "Code"}>
             <input
               required
               disabled={draft.version !== undefined}
+              pattern="[A-Za-z0-9][A-Za-z0-9_.-]*"
+              maxLength={100 - draft.resourceType.length - 1}
               value={draft.code}
               onChange={(event) => setDraft({ ...draft, code: event.target.value })}
             />
@@ -654,6 +681,7 @@ function PermissionsPage({ api }: { api: AdminApi }) {
           </Field>
           <Field label="Resource type">
             <select
+              disabled={draft.version !== undefined}
               value={draft.resourceType}
               onChange={(event) =>
                 setDraft({
@@ -689,6 +717,8 @@ function PermissionsPage({ api }: { api: AdminApi }) {
             />
           </Field>
           <div className="pattern-preview">
+            <small>Canonical code</small>
+            <code>{permissionCode}</code>
             <small>Permission preview</small>
             <code>{draft.resourceType}:{pattern}</code>
           </div>

@@ -33,7 +33,7 @@ The module does not register a `SecurityFilterChain` or replace Spring Security 
 
 ```xml
 <dependency>
-  <groupId>com.example.authorization</groupId>
+  <groupId>io.github.isharafe</groupId>
   <artifactId>authorization-ldap</artifactId>
   <version>0.1.0-SNAPSHOT</version>
 </dependency>

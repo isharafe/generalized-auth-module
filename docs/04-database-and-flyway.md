@@ -120,7 +120,8 @@ authorization V1
 both execute and are recorded in separate history tables.
 
 It also migrates an existing V1 database through V2/V3, verifies existing authorization data is
-preserved, and asserts the final lock/invalidation schema.
+preserved, and asserts the final lock/invalidation schema. The V1 baseline requires each permission
+code to start with its stored resource type.
 
 ## Demo database
 

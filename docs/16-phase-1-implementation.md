@@ -8,7 +8,7 @@ The demo proves public, authenticated-only, permission-view, permission-edit, qu
 
 ## Persistence layout
 
-Each entity and embeddable ID is a top-level class in `com.example.authorization.persistence.entity`. This keeps imports, logs, tests, and future entity evolution straightforward. Numeric IDs stay internal and stable logical codes remain the configuration/API identifiers.
+Each entity and embeddable ID is a top-level class in `io.github.isharafe.authorization.persistence.entity`. This keeps imports, logs, tests, and future entity evolution straightforward. Numeric IDs stay internal and stable logical codes remain the configuration/API identifiers.
 
 Mechanical Java boilerplate is generated with Lombok. The parent POM centralizes the Lombok
 version and compiler annotation-processor path, while `authorization-core` declares Lombok as an

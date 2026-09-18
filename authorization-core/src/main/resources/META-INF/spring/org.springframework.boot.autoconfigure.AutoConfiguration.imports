@@ -1,2 +1,4 @@
-com.example.authorization.config.AuthorizationAutoConfiguration
-com.example.authorization.config.AuthorizationAssignmentAutoConfiguration
+io.github.isharafe.authorization.config.AuthorizationAutoConfiguration
+io.github.isharafe.authorization.config.AuthorizationAssignmentAutoConfiguration
+io.github.isharafe.authorization.config.AuthorizationSecurityAutoConfiguration
+io.github.isharafe.authorization.config.AuthorizationSecurityRequirementAutoConfiguration

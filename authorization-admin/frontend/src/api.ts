@@ -3,7 +3,8 @@ import type {
   AuthorizationDataImportResult,
   Capabilities,
   CurrentUser,
-  Page
+  Page,
+  RuntimeConfig
 } from "./types";
 
 export class ApiError extends Error {
@@ -18,7 +19,12 @@ export class ApiError extends Error {
 }
 
 export class AdminApi {
-  constructor(private readonly basePath: string) {}
+  private refreshInFlight: Promise<boolean> | null = null;
+
+  constructor(
+    private readonly basePath: string,
+    private readonly security?: RuntimeConfig
+  ) {}
 
   capabilities(): Promise<Capabilities> {
     return this.get<Capabilities>("/capabilities");
@@ -72,16 +78,38 @@ export class AdminApi {
     return this.request<T>(path, { method: "DELETE" });
   }
 
-  private async request<T>(path: string, init: RequestInit = {}): Promise<T> {
+  private async request<T>(
+    path: string,
+    init: RequestInit = {},
+    allowRefresh = true
+  ): Promise<T> {
+    const method = (init.method ?? "GET").toUpperCase();
+    const csrfHeaders =
+      this.security?.cookieOauth2Enabled &&
+      !["GET", "HEAD", "OPTIONS", "TRACE"].includes(method) &&
+      this.security.csrfToken &&
+      this.security.csrfHeaderName
+        ? { [this.security.csrfHeaderName]: this.security.csrfToken }
+        : {};
     const response = await fetch(this.basePath + path, {
       ...init,
       credentials: "same-origin",
       headers: {
         Accept: "application/json",
         ...(init.body ? { "Content-Type": "application/json" } : {}),
+        ...csrfHeaders,
         ...init.headers
       }
     });
+    if (
+      response.status === 401 &&
+      allowRefresh &&
+      this.security?.cookieOauth2Enabled &&
+      this.security.refreshEndpoint
+    ) {
+      if (await this.refreshAuthentication())
+        return this.request<T>(path, init, false);
+    }
     if (!response.ok) {
       const problem = await response.json().catch(() => ({}));
       throw new ApiError(
@@ -93,5 +121,30 @@ export class AdminApi {
     }
     if (response.status === 204) return undefined as T;
     return response.json() as Promise<T>;
+  }
+
+  private async refreshAuthentication(): Promise<boolean> {
+    if (!this.refreshInFlight) {
+      this.refreshInFlight = this.performRefresh().finally(() => {
+        this.refreshInFlight = null;
+      });
+    }
+    return this.refreshInFlight;
+  }
+
+  private async performRefresh(): Promise<boolean> {
+    const security = this.security;
+    if (!security?.refreshEndpoint) return false;
+    const headers: Record<string, string> = { Accept: "application/json" };
+    if (security.csrfHeaderName && security.csrfToken)
+      headers[security.csrfHeaderName] = security.csrfToken;
+    const response = await fetch(security.refreshEndpoint, {
+      method: "POST",
+      credentials: "same-origin",
+      headers
+    });
+    if (response.ok) return true;
+    if (security.loginUri) window.location.assign(security.loginUri);
+    return false;
   }
 }

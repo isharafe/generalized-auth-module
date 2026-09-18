@@ -24,9 +24,10 @@ delegate load occurs. Assignment version increments now happen only for real ass
 Migration V3 adds `AUTH_SYNC_STATE.GLOBAL_SEED_INITIALIZATION` and the database invalidation table.
 Seed initialization pessimistically locks that row before applying the fully validated combined
 seed. Concurrent transaction tests verify serialization, idempotent history, and a single result.
-Upgrade tests migrate an existing V1 schema through V2/V3 while preserving stored authorization
-data. Seed-upgrade tests verify membership replacement, descriptive changes, checksum history, and
-rollback before mutation for invalid input.
+Upgrade tests migrate an existing V1 schema through all current migrations while preserving stored
+authorization data. The baseline schema validates type-qualified permission codes without changing
+the numeric-ID membership model. Seed-upgrade tests verify membership replacement, descriptive
+changes, checksum history, and rollback before mutation for invalid input.
 
 ## Security and load regression coverage
 

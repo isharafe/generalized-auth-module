@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { AdminApi } from "./api";
+import type { RuntimeConfig } from "./types";
 
 describe("AdminApi", () => {
   it("exports and replaces complete authorization data", async () => {
@@ -130,5 +131,115 @@ describe("AdminApi", () => {
         message: "The resource changed"
       })
     );
+  });
+
+  it("sends the runtime CSRF token on unsafe requests", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(null, { status: 204 })
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const security: RuntimeConfig = {
+      apiBasePath: "/api",
+      uiBasePath: "/ui",
+      cookieOauth2Enabled: true,
+      csrfToken: "csrf-value",
+      csrfHeaderName: "X-XSRF-TOKEN"
+    };
+
+    await new AdminApi("/api", security).post("/roles", { code: "MANAGER" });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/roles",
+      expect.objectContaining({
+        method: "POST",
+        headers: expect.objectContaining({ "X-XSRF-TOKEN": "csrf-value" })
+      })
+    );
+  });
+
+  it("serializes refresh and retries concurrent requests once", async () => {
+    let apiCalls = 0;
+    let refreshCalls = 0;
+    let releaseRefresh!: (response: Response) => void;
+    const refreshResponse = new Promise<Response>((resolve) => {
+      releaseRefresh = resolve;
+    });
+    const fetchMock = vi.fn((input: RequestInfo | URL) => {
+      const uri = String(input);
+      if (uri === "/authorization/security/token/refresh") {
+        refreshCalls += 1;
+        return refreshResponse;
+      }
+      apiCalls += 1;
+      if (apiCalls <= 2)
+        return Promise.resolve(new Response(null, { status: 401 }));
+      return Promise.resolve(
+        new Response(
+          JSON.stringify({
+            issuer: "local",
+            subject: "manager",
+            username: "manager"
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } }
+        )
+      );
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const security: RuntimeConfig = {
+      apiBasePath: "/api",
+      uiBasePath: "/ui",
+      cookieOauth2Enabled: true,
+      refreshEndpoint: "/authorization/security/token/refresh",
+      csrfToken: "csrf-value",
+      csrfHeaderName: "X-XSRF-TOKEN"
+    };
+    const api = new AdminApi("/api", security);
+
+    const first = api.currentUser();
+    const second = api.currentUser();
+    await vi.waitFor(() => expect(refreshCalls).toBe(1));
+    releaseRefresh(new Response(null, { status: 204 }));
+
+    await expect(Promise.all([first, second])).resolves.toEqual([
+      { issuer: "local", subject: "manager", username: "manager" },
+      { issuer: "local", subject: "manager", username: "manager" }
+    ]);
+    expect(refreshCalls).toBe(1);
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/authorization/security/token/refresh",
+      expect.objectContaining({
+        method: "POST",
+        credentials: "same-origin",
+        headers: expect.objectContaining({ "X-XSRF-TOKEN": "csrf-value" })
+      })
+    );
+  });
+
+  it("does not retry the API request when refresh fails", async () => {
+    const fetchMock = vi.fn((_input: RequestInfo | URL) =>
+      Promise.resolve(new Response(null, { status: 401 }))
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const security: RuntimeConfig = {
+      apiBasePath: "/api",
+      uiBasePath: "/ui",
+      cookieOauth2Enabled: true,
+      refreshEndpoint: "/authorization/security/token/refresh",
+      csrfToken: "csrf-value",
+      csrfHeaderName: "X-XSRF-TOKEN"
+    };
+
+    await expect(new AdminApi("/api", security).currentUser()).rejects.toEqual(
+      expect.objectContaining({ status: 401 })
+    );
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls.filter(([input]) => String(input) === "/api/current-user"))
+      .toHaveLength(1);
+    expect(
+      fetchMock.mock.calls.filter(
+        ([input]) => String(input) === "/authorization/security/token/refresh"
+      )
+    ).toHaveLength(1);
   });
 });

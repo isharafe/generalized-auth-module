@@ -68,6 +68,41 @@ describe("Authorization admin UI", () => {
     expect(screen.getByRole("link", { name: /External mappings/ })).toBeVisible();
   });
 
+  it("renders a CSRF-protected OIDC logout action when cookie security is enabled", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.endsWith("/capabilities"))
+          return response({
+            source: "KEYCLOAK",
+            identitySynchronization: true,
+            externalAuthorityMapping: true,
+            syncProvider: "keycloak"
+          });
+        if (url.includes("/audit")) return response(page([]));
+        return response(page([]));
+      })
+    );
+    const secureConfig = {
+      ...config,
+      cookieOauth2Enabled: true,
+      logoutEndpoint: "/authorization/security/logout",
+      logoutMode: "OIDC" as const,
+      csrfParameterName: "_csrf",
+      csrfToken: "csrf-value"
+    };
+
+    const { container } = render(
+      <App config={secureConfig} api={new AdminApi(config.apiBasePath)} />
+    );
+
+    const button = await screen.findByRole("button", { name: "Sign out everywhere" });
+    const form = button.closest("form");
+    expect(form).toHaveAttribute("action", "/authorization/security/logout");
+    expect(container.querySelector('input[name="_csrf"]')).toHaveValue("csrf-value");
+  });
+
   it("shows the structured URL permission editor and preview", async () => {
     window.location.hash = "#/permissions";
     vi.stubGlobal(
@@ -85,7 +120,7 @@ describe("Authorization admin UI", () => {
           return response(
             page([
               {
-                code: "EMPLOYEE_VIEW",
+                code: "URL:EMPLOYEE_VIEW",
                 name: "View employees",
                 resourceType: "URL",
                 pattern: "GET:/employees/**",
@@ -100,7 +135,12 @@ describe("Authorization admin UI", () => {
 
     render(<App config={config} api={new AdminApi(config.apiBasePath)} />);
 
-    expect(await screen.findByText("EMPLOYEE_VIEW")).toBeVisible();
+    expect(await screen.findByText("URL:EMPLOYEE_VIEW")).toBeVisible();
+    expect(screen.getByText("Canonical code")).toBeVisible();
+    fireEvent.change(screen.getByLabelText("Local code"), {
+      target: { value: "EMPLOYEE_EDIT" }
+    });
+    expect(screen.getByText("URL:EMPLOYEE_EDIT")).toBeVisible();
     expect(screen.getByText("Permission preview")).toBeVisible();
     expect(screen.getByText("URL:GET:/api/**")).toBeVisible();
   });

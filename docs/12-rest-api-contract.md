@@ -84,7 +84,7 @@ Page response:
 
 ```json
 {
-  "code": "EMPLOYEE_EDIT",
+  "code": "URL:EMPLOYEE_EDIT",
   "name": "Edit employees",
   "resourceType": "URL",
   "pattern": "PUT:/demo/employees/**",
@@ -129,7 +129,8 @@ including assignment source/reference.
 
 `POST /data/import` requires the complete bundle and replaces portable authorization data in one
 transaction after validation. It is not a partial or merge contract. The current format version is
-`1`.
+`1`, and all permission codes and permission-group references use the canonical
+`<RESOURCE_TYPE>:<LOCAL_CODE>` form.
 
 ## Deletion
 

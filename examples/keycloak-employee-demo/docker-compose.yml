@@ -68,6 +68,7 @@ services:
       KEYCLOAK_REALM: "employee-demo"
       KEYCLOAK_ADMIN: "admin"
       KEYCLOAK_ADMIN_PASSWORD: "admin"
+      AUTHORIZATION_SYNC_CLIENT_SECRET: "authorization-sync-service-demo-secret"
     volumes:
       - ./keycloak/sync-ldap.sh:/config/sync-ldap.sh:ro
     depends_on:

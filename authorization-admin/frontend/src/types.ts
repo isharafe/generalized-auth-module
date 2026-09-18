@@ -4,6 +4,15 @@ export type AssignmentSource = "SEED" | "MANUAL" | "IDENTITY_SYNC";
 export interface RuntimeConfig {
   apiBasePath: string;
   uiBasePath: string;
+  cookieOauth2Enabled?: boolean;
+  csrfEndpoint?: string;
+  refreshEndpoint?: string;
+  logoutEndpoint?: string;
+  loginUri?: string | null;
+  logoutMode?: "LOCAL" | "OIDC";
+  csrfToken?: string;
+  csrfHeaderName?: string;
+  csrfParameterName?: string;
 }
 
 export interface Page<T> {

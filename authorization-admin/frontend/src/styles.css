@@ -204,7 +204,7 @@ code,
 
 .current-user {
   display: grid;
-  grid-template-columns: 36px minmax(0, 1fr);
+  grid-template-columns: 36px minmax(0, 1fr) auto;
   align-items: center;
   gap: 10px;
   min-width: 220px;
@@ -255,6 +255,22 @@ code,
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   font-size: 8px;
 }
+.current-user form {
+  margin: 0;
+}
+
+.current-user button {
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  color: var(--teal);
+  background: var(--teal-soft);
+  cursor: pointer;
+  font: inherit;
+  font-size: 9px;
+  font-weight: 700;
+}
+
 
 .environment span {
   padding: 5px 8px;

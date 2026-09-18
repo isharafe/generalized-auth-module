@@ -25,12 +25,13 @@ docker compose logs -f keycloak-init
 It should finish with:
 
 ```text
+Authorization synchronization Admin API access verified.
 LDAP federation demo is ready.
 ```
 
-Open Keycloak:
+Open Keycloak (Docker Compose exposes the container's port `8080` as host port `8081`):
 
-- http://localhost:8080/admin/
+- http://localhost:8081/admin/
 
 Admin login:
 
@@ -195,10 +196,13 @@ inside the one-time `keycloak-init` service.
 The script uses Keycloak's bundled `kcadm.sh` to:
 
 1. wait for Keycloak,
-2. test LDAP authentication,
-3. synchronize LDAP groups,
-4. synchronize all LDAP users,
-5. refresh group memberships.
+2. enforce the authorization sync service account's read-only `view-users` grant,
+3. authenticate as that service account and verify the user, group-membership, and realm-role Admin
+   API endpoints used by the authorization demo,
+4. test LDAP authentication,
+5. synchronize LDAP groups,
+6. synchronize all LDAP users,
+7. refresh group memberships.
 
 You can rerun the same automatic group + user synchronization after
 changing LDAP data with:
@@ -251,7 +255,7 @@ Because `Function-Managers` has Keycloak role mappings, Bob inherits
 ## Obtain a JWT using an LDAP password
 
 ```bash
-curl -s   -X POST http://localhost:8080/realms/employee-demo/protocol/openid-connect/token   -H "Content-Type: application/x-www-form-urlencoded"   -d "client_id=employee-demo"   -d "client_secret=employee-demo-secret"   -d "grant_type=password"   -d "username=bob"   -d "password=demo"
+curl -s   -X POST http://localhost:8081/realms/employee-demo/protocol/openid-connect/token   -H "Content-Type: application/x-www-form-urlencoded"   -d "client_id=employee-demo"   -d "client_secret=employee-demo-secret"   -d "grant_type=password"   -d "username=bob"   -d "password=demo"
 ```
 
 The access token should contain LDAP-derived claims such as:

@@ -154,7 +154,7 @@ POST /sync/users/{subject}?issuer={issuer}
 
 The `issuer` query parameter defaults to `external` when omitted.
 
-Protect execution with `AUTHZ_SYNC_RUN`.
+Protect execution with `URL:AUTHZ_SYNC_RUN`.
 
 ## Data transfer
 
@@ -169,7 +169,8 @@ accepts only a complete supported-version bundle, validates it before mutation, 
 replaces all portable authorization data. It is deliberately not a merge. Audit events, migration
 and seed history, synchronization state, invalidation events, caches, and credentials are excluded.
 
-Protect export with `AUTHZ_DATA_EXPORT` and replacement import with `AUTHZ_DATA_IMPORT`.
+Protect export with `URL:AUTHZ_DATA_EXPORT` and replacement import with
+`URL:AUTHZ_DATA_IMPORT`.
 
 ## Explain/test authorization
 
@@ -198,12 +199,12 @@ Response should show safe explanation:
   "decision": "GRANTED",
   "reason": "MATCHING_PERMISSION",
   "matchedRule": "DEMO_API",
-  "matchedPermission": "EMPLOYEE_EDIT",
+  "matchedPermission": "URL:EMPLOYEE_EDIT",
   "assignmentPath": [
     "USER:manager",
     "ROLE:HR_MANAGER",
     "PERMISSION_GROUP:EMPLOYEE_MANAGER",
-    "PERMISSION:EMPLOYEE_EDIT"
+    "PERMISSION:URL:EMPLOYEE_EDIT"
   ]
 }
 ```

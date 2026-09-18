@@ -10,41 +10,35 @@ This example is not a published reusable framework module. It proves the framewo
 
 ## Default profile
 
-Use:
+The runnable application activates `keycloak-demo` by default and uses
+`authorization.source=keycloak`. H2 still stores application authorization data and synchronized
+identity assignments.
 
-```text
-H2
-authorization.source=database
-```
+It uses core's generalized cookie OAuth2 security:
 
-## Demo-only authentication
+- OAuth2/OIDC browser login and JWT validation
+- stateless normal requests with HttpOnly bearer-token cookies
+- targeted synchronization after login
+- OIDC logout selected by property
 
-Provide a clearly development-only authentication mechanism enabled only under a `demo` profile.
+This Keycloak-first default intentionally supersedes the repository's original Phase 1 requirement
+for a DB-only runnable default. The shipped application contains no demo header or query-parameter
+authentication. The integration suite retains a test-only local header chain under the `test`
+profile so the DB-backed path is verified without external services; that chain is never packaged
+as runtime authentication.
 
-A simple option is a custom demo filter/header:
+## Seed and identity data
 
-```text
-X-Demo-User: viewer
-X-Demo-User: manager
-```
-
-Map to stable identities:
-
-```text
-local | viewer
-local | manager
-```
-
-This impersonation mechanism must never be part of production framework behavior.
-
-## Seed data
-
-Users:
+The bundled Keycloak realm provides these login identities (all use password `demo`):
 
 ```text
 viewer
 manager
+admin-user
 ```
+
+The application seed deliberately does not create or assign users. Targeted synchronization maps
+the external authorities for those identities onto the following application-owned model.
 
 Roles:
 
@@ -63,18 +57,20 @@ EMPLOYEE_MANAGER
 Permissions:
 
 ```text
-EMPLOYEE_VIEW | GET:/demo/employees/**
-EMPLOYEE_EDIT | PUT:/demo/employees/**
+URL:EMPLOYEE_VIEW | GET:/demo/employees/**
+URL:EMPLOYEE_EDIT | PUT:/demo/employees/**
 ```
 
 Mappings:
 
 ```text
-viewer  -> HR_VIEWER  -> EMPLOYEE_VIEWER -> EMPLOYEE_VIEW
-manager -> HR_MANAGER -> EMPLOYEE_MANAGER -> EMPLOYEE_VIEW + EMPLOYEE_EDIT
+viewer  -> HR_VIEWER  -> EMPLOYEE_VIEWER -> URL:EMPLOYEE_VIEW
+manager -> HR_MANAGER -> EMPLOYEE_MANAGER -> URL:EMPLOYEE_VIEW + URL:EMPLOYEE_EDIT
+admin-user -> AUTHZ_SYSTEM_ADMIN
 ```
 
-For demo administration, manager may also receive framework role `AUTHZ_SYSTEM_ADMIN` through application seed data.
+The isolated integration-test profile loads a second seed file with local `viewer`, `manager`, and
+`admin` identities; this is test fixture data, not runtime demo authentication.
 
 ## Resource rules
 
@@ -130,30 +126,36 @@ PUT /demo/employees/1      -> 200
 
 ## Admin API
 
-Manager/admin can manage data through admin REST APIs according to seeded framework admin permissions.
+`admin-user` can manage data through the admin REST APIs according to the seeded framework admin
+permissions.
 
 ## Admin UI
 
-The demo includes `authorization-admin` and serves it from `/authorization-admin/`. Open:
+The demo includes `authorization-admin` and serves it from `/authorization-admin/`. Sign in as
+`admin-user` through the normal Keycloak login flow, then open:
 
 ```text
-http://localhost:8080/authorization-admin?demo-user=manager
+http://localhost:8080/authorization-admin/
 ```
 
-The demo-only authentication filter authenticates the request and converts that query parameter into a one-hour HttpOnly cookie. The admin UI controller then redirects the no-trailing-slash URL to the clean `/authorization-admin/` URL, allowing same-origin API requests to remain authenticated. Header authentication remains available for curl and tests. Neither demo mechanism is suitable for production.
+The SPA uses the access-token cookie for same-origin API calls. It supplies the framework CSRF
+token on writes, performs one refresh-token exchange after an expired access token, and offers a
+CSRF-protected logout form. The local header chain used by integration tests is active only under
+the `test` profile and is not part of the packaged application.
 
 ## Keycloak profile
 
-The `keycloak-demo` profile replaces demo header authentication with:
+The default `keycloak-demo` profile provides:
 
 - Spring Security OAuth2/OIDC browser login
-- JWT Resource Server support for bearer-token API calls
+- JWT Resource Server support for bearer-header and HttpOnly-cookie API calls
 - `authorization.source=keycloak`
 - targeted identity synchronization after successful browser login
+- access-token refresh and local/OIDC logout endpoints protected by CSRF
 
 ### Keycloak clients
 
-Create two confidential clients in realm `authorization-demo`.
+The bundled `employee-demo` realm already defines two confidential clients.
 
 Synchronization client:
 
@@ -164,12 +166,14 @@ Service accounts: Enabled
 ```
 
 Grant its service account the narrow `realm-management` permissions needed to query users, groups,
-and realm-role mappings.
+and realm-role mappings. The bundled realm assigns only `view-users`. Its one-time initialization
+job enforces that assignment on Keycloak's generated service-account user and enables full scope for
+this local client so the assigned role is present in its client-credentials token.
 
 Browser-login client:
 
 ```text
-Client ID: authorization-demo-web
+Client ID: employee-demo
 Client authentication: On
 Standard flow: Enabled
 Valid redirect URI: http://localhost:8080/login/oauth2/code/keycloak
@@ -188,7 +192,8 @@ UI:seePage1
 UI:seePage2
 ```
 
-`EMPLOYEE_VIEWER` contains `UI:seePage1`. `EMPLOYEE_MANAGER` contains both permissions. Existing
+`EMPLOYEE_VIEWER` contains `UI:DEMO_SEE_PAGE_1` (pattern `seePage1`). `EMPLOYEE_MANAGER` contains
+that permission and `UI:DEMO_SEE_PAGE_2` (pattern `seePage2`). Existing
 Keycloak group/realm-role mappings therefore produce this browser behavior:
 
 ```text
@@ -196,39 +201,41 @@ viewer  -> page 1 only
 manager -> page 1 and page 2
 ```
 
-Assign a test user to `/authorization-demo/viewers` (or realm role
-`authorization-demo-viewer`) for page 1 only. Assign another user to
-`/authorization-demo/employee-managers` (or realm role `authorization-demo-manager`) for both
-pages. The login-time synchronization converts those external authorities into the local seeded
-roles; Keycloak does not define the UI permissions directly.
+The imported realm provides `viewer` in `/authorization-demo/viewers` with realm role
+`authorization-demo-viewer`, `manager` in `/authorization-demo/employee-managers` with realm role
+`authorization-demo-manager`, and `admin-user` in `/authorization-demo/admins`. Their password is
+`demo`. The login-time synchronization converts those external authorities into the local seeded
+roles; Keycloak does not define the application permissions directly.
 
 The landing page hides unavailable links, and each page checks its UI permission again on direct
 navigation. The containing `/demo-ui/**` URL resource remains `AUTHENTICATED`, demonstrating that
-URL access and UI-component authorization are independent concerns.
+URL access and UI-component authorization are independent concerns. The controller injects core's
+provider-neutral `AuthorizationService`; the demo contains no Keycloak-specific authorization
+adapter.
 
 ### Run
 
-Build/install the reactor dependencies first:
+Build the demo and start the bundled Keycloak, PostgreSQL, and LDAP services:
 
 ```bash
-./mvnw -pl examples/authorization-demo -am install -DskipTests
+./mvnw -pl examples/authorization-demo -am package
+docker compose -f examples/keycloak-employee-demo/docker-compose.yml up -d
 ```
 
-Then run only the application module so Maven does not try to execute the parent POM:
+Then run the packaged application (the `keycloak-demo` profile is active by default):
 
 ```bash
-SPRING_PROFILES_ACTIVE=keycloak-demo \
-AUTHORIZATION_KEYCLOAK_CLIENT_SECRET='<synchronization-client-secret>' \
-AUTHORIZATION_KEYCLOAK_LOGIN_CLIENT_SECRET='<browser-login-client-secret>' \
-./mvnw -pl examples/authorization-demo spring-boot:run
+java -jar examples/authorization-demo/target/authorization-demo-0.1.0-SNAPSHOT.jar
 ```
 
-Defaults expect Keycloak at `http://localhost:8081`, realm `authorization-demo`, synchronization
-client `authorization-sync-service`, browser client `authorization-demo-web`, and issuer
-`http://localhost:8081/realms/authorization-demo`. Override these with
+The checked-in credentials are deliberately local-demo values. Defaults expect Keycloak at
+`http://localhost:8081`, realm `employee-demo`, synchronization client
+`authorization-sync-service`, browser client `employee-demo`, and issuer
+`http://localhost:8081/realms/employee-demo`. Override these with
 `AUTHORIZATION_KEYCLOAK_BASE_URL`, `AUTHORIZATION_KEYCLOAK_REALM`,
 `AUTHORIZATION_KEYCLOAK_CLIENT_ID`, `AUTHORIZATION_KEYCLOAK_LOGIN_CLIENT_ID`, and
-`AUTHORIZATION_KEYCLOAK_ISSUER_URI`.
+`AUTHORIZATION_KEYCLOAK_ISSUER_URI`; the corresponding client-secret variables are documented in
+`examples/authorization-demo/demo.env`.
 
 Open:
 
@@ -236,13 +243,15 @@ Open:
 http://localhost:8080/demo-ui/
 ```
 
-An unauthenticated HTML request redirects to Keycloak. After login, the success handler synchronizes
-that exact `(issuer, subject)` before redirecting to the demo landing page, so no curl/bootstrap sync
-is required. A synchronization failure returns HTTP 503 instead of treating the user as having no
-permissions.
+An unauthenticated HTML request redirects to Keycloak. Sign in as `viewer`, `manager`, or
+`admin-user` with password `demo`. After login, the success handler synchronizes that exact
+`(issuer, subject)` before placing tokens in scoped HttpOnly cookies and redirecting to the demo
+landing page. No curl/bootstrap sync is required. A synchronization failure returns HTTP 503
+instead of treating the user as having no permissions.
 
-The Sign out link performs OIDC RP-initiated logout, ending both the local application session and
-the Keycloak SSO session before returning to the public `/demo-ui/signed-out` page.
+The Sign out action submits a CSRF-protected POST to the framework logout endpoint. It clears the
+local cookies, optionally revokes the refresh token, performs OIDC RP-initiated logout, and returns
+to the public `/demo-ui/signed-out` page after ending the Keycloak SSO session.
 
-The default demo query/header authentication is unavailable in this profile. Bearer-token curl or
-Postman calls remain supported for API testing, but are not required for the sample pages.
+Bearer-token curl or Postman calls remain supported for API testing, but are not required for the
+sample pages. Query-parameter and runtime header authentication are not available.

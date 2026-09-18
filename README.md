@@ -14,7 +14,7 @@ A reusable Spring Boot 4.1 authorization library with a functional DB-backed cor
 
 ```xml
 <dependency>
-  <groupId>com.example.authorization</groupId>
+  <groupId>io.github.isharafe</groupId>
   <artifactId>authorization-core</artifactId>
   <version>0.1.0-SNAPSHOT</version>
 </dependency>
@@ -29,24 +29,34 @@ authorization:
       - classpath:authorization/seed.yml
 ```
 
-The application owns authentication and wires `DynamicRequestAuthorizationManager` into its `SecurityFilterChain`. The manager maps Spring `Authentication` to `(issuer, subject)`, selects the most-specific resource rule, and checks effective local permissions. No matching rule denies access. Provider failures are indeterminate and map to HTTP 503 through `AuthorizationServiceUnavailableHandler`.
+Core always supplies `DynamicRequestAuthorizationManager`. It maps Spring `Authentication` to
+`(issuer, subject)`, selects the most-specific resource rule, and checks effective local
+permissions. No matching rule denies access; provider failures are indeterminate and map to HTTP
+503.
+
+For OAuth2/OIDC browser applications, enable
+`authorization.security.cookie-oauth2.enabled=true` and core supplies the login and application
+`SecurityFilterChain` beans, stateless bearer-cookie authentication, CSRF support, serialized
+refresh support for the admin SPA, and local or provider logout. When this mode is disabled, the
+application must declare its own `SecurityFilterChain`. Declaring any chain also makes the default
+core chains back off, so applications retain a complete override.
 
 ## Seed data
 
-YAML and Java `AuthorizationSeedContributor` inputs are combined, fully validated, and then merged transactionally. Repeated identical seeds are skipped using their checksum. Seeds reference stable logical codes rather than database IDs or SQL. For a supplied permission group or role, its membership list replaces the stored membership; omitting a top-level object does not delete that object. URL permissions and resource rules store the HTTP method and path together as `METHOD:/path`. UI patterns are opaque identifiers matched exactly.
+YAML and Java `AuthorizationSeedContributor` inputs are combined, fully validated, and then merged transactionally. Repeated identical seeds are skipped using their checksum. Seeds reference stable logical codes rather than database IDs or SQL. Permission codes are type-qualified as `<RESOURCE_TYPE>:<LOCAL_CODE>`, so `URL:VIEW` and `UI:VIEW` are distinct keys. For a supplied permission group or role, its membership list replaces the stored membership; omitting a top-level object does not delete that object. URL permissions and resource rules store the HTTP method and path together as `METHOD:/path`. UI patterns are opaque identifiers matched exactly.
 
 ```yaml
 authorization:
   seed:
     permissions:
-      - code: EMPLOYEE_VIEW
+      - code: URL:EMPLOYEE_VIEW
         name: View employees
         type: URL
         pattern: GET:/employees/**
     permission-groups:
       - code: EMPLOYEE_VIEWERS
         name: Employee viewers
-        permissions: [EMPLOYEE_VIEW]
+        permissions: [URL:EMPLOYEE_VIEW]
     roles:
       - code: HR_VIEWER
         name: HR viewer
@@ -59,6 +69,10 @@ authorization:
 ```
 
 Java contributors use `AuthorizationSeedBuilder` to define the same concepts. When present, `authorization-admin` contributes its management permissions and the `AUTHZ_SYSTEM_VIEWER` and `AUTHZ_SYSTEM_ADMIN` roles, but assigns no user to them.
+
+Permission codes and their resource types are immutable after creation. The baseline schema enforces
+that a permission code starts with its stored resource type. Consumer-owned seed files and API
+clients and version-1 administration exports use canonical codes such as `URL:EMPLOYEE_VIEW`.
 
 ## Database and Flyway
 
@@ -76,7 +90,7 @@ Add `authorization-admin` when the application needs management APIs or the buil
 
 ```xml
 <dependency>
-  <groupId>com.example.authorization</groupId>
+  <groupId>io.github.isharafe</groupId>
   <artifactId>authorization-admin</artifactId>
   <version>0.1.0-SNAPSHOT</version>
 </dependency>
@@ -121,7 +135,7 @@ Add `authorization-keycloak` when Keycloak supplies external identities and auth
 
 ```xml
 <dependency>
-  <groupId>com.example.authorization</groupId>
+  <groupId>io.github.isharafe</groupId>
   <artifactId>authorization-keycloak</artifactId>
   <version>0.1.0-SNAPSHOT</version>
 </dependency>
@@ -148,7 +162,7 @@ attributes. It depends on `authorization-core` and activates only when
 
 ```xml
 <dependency>
-  <groupId>com.example.authorization</groupId>
+  <groupId>io.github.isharafe</groupId>
   <artifactId>authorization-ldap</artifactId>
   <version>0.1.0-SNAPSHOT</version>
 </dependency>
@@ -230,39 +244,32 @@ Requires Java 21. The repository-level Maven Wrapper pins Maven 3.9.11 for every
 ```bash
 ./mvnw clean verify
 ./mvnw -pl examples/authorization-demo -am package
-java -jar examples/authorization-demo/target/authorization-demo-0.1.0-SNAPSHOT.jar
 ```
 
 On Windows, use `mvnw.cmd` in place of `./mvnw`. Run the wrapper from the repository root so all modules use the same reactor and Maven version.
 
-The demo profile is active by default. Open the Phase 3 UI as the seeded demo manager:
-
-```text
-http://localhost:8080/authorization-admin?demo-user=manager
-```
-
-The query parameter is accepted only by the demo authentication filter, sets a one-hour HttpOnly demo cookie, and redirects to the protected UI. It is not a production authentication design.
-
-Header authentication remains available for curl:
+The runnable demo uses the bundled `employee-demo` Keycloak realm by default. Start its supporting
+services, then launch the application:
 
 ```bash
-curl -i http://localhost:8080/demo/public
-curl -i -H 'X-Demo-User: viewer' http://localhost:8080/demo/employees
-curl -i -X PUT -H 'X-Demo-User: manager' http://localhost:8080/demo/employees/1
+docker compose -f examples/keycloak-employee-demo/docker-compose.yml up -d
+java -jar examples/authorization-demo/target/authorization-demo-0.1.0-SNAPSHOT.jar
 ```
 
-Never copy the demo query/cookie or `X-Demo-User` authentication mechanism into production. A consuming application should use its normal Spring Security authentication mechanism.
-
-For a real browser authentication demonstration, run the `keycloak-demo` profile and open:
+Open:
 
 ```text
 http://localhost:8080/demo-ui/
 ```
 
-The browser redirects to Keycloak using Authorization Code/OIDC login. On success, the demo performs
-a targeted identity synchronization and renders links to sample pages according to
-`UI:seePage1` and `UI:seePage2`. Sign out uses OIDC RP-initiated logout to end both the local
-application session and the Keycloak SSO session. See
+Sign in as `viewer`, `manager`, or `admin-user` with password `demo`. The browser redirects
+to Keycloak using Authorization Code/OIDC login. On success, core places access and refresh tokens
+in HttpOnly cookies, removes the temporary login session, performs targeted identity
+synchronization, and authorizes from the local database/cache. The demo page checks the opaque UI
+resources `seePage1` and `seePage2`; `admin-user` can open `/authorization-admin/`.
+
+Sign out is a CSRF-protected POST and uses OIDC RP-initiated logout to clear local cookies and end
+the Keycloak SSO session. See
 [the demo Keycloak setup](docs/14-demo-application.md#keycloak-profile).
 
 ## Current status

@@ -38,7 +38,7 @@ Test:
 Test:
 
 - identity lookup by issuer+subject
-- unique codes
+- unique canonical permission codes, including identical local codes across different resource types
 - relationships
 - assignment source
 - optimistic locking
@@ -122,7 +122,8 @@ The current suite covers:
   missing/stale removal, MANUAL/SEED preservation, pending assignment resolution, failure status,
   audit, and cache invalidation
 - demo OIDC browser redirection, login-triggered targeted synchronization, `UI:seePage1`/`UI:seePage2` link visibility, and direct-page denial
-- V1-to-current Flyway upgrade with existing data preserved and final schema validation
+- V1-to-current Flyway upgrade with existing data preserved, type-qualified permission/audit codes,
+  and final schema validation
 - seed definition upgrades, invalid-seed rollback, idempotency, and concurrent lock-protected startup
 - concurrent cache-miss collapse, concurrent event claims, and a bounded sustained cached-decision load
 - cross-instance database invalidation delivery with origin-echo suppression and Micrometer registration

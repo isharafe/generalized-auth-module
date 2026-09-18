@@ -197,7 +197,67 @@ enabled to function. The UI base path is normalized without a trailing slash. Th
 loads relative assets and obtains the configured API/UI paths from `<ui-base-path>/config`. The
 admin module uses both paths when contributing its management permissions.
 
-## Authentication remains separate
+## Framework-managed cookie OAuth2
+
+To let core own standard browser authentication, configure the matching Spring Security OAuth2
+client and resource-server settings:
+
+```yaml
+spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          keycloak:
+            provider: keycloak
+            client-id: application-web
+            client-secret: ${OAUTH_CLIENT_SECRET}
+            authorization-grant-type: authorization_code
+            scope: openid,profile,email
+        provider:
+          keycloak:
+            issuer-uri: https://keycloak.example.com/realms/COMPANY
+      resourceserver:
+        jwt:
+          issuer-uri: https://keycloak.example.com/realms/COMPANY
+
+authorization:
+  security:
+    cookie-oauth2:
+      enabled: true
+      registration-id: keycloak
+      login-success-uri: /
+      csrf-endpoint: /authorization/security/csrf
+      refresh-endpoint: /authorization/security/token/refresh
+      logout-endpoint: /authorization/security/logout
+      access-token-cookie:
+        secure: true
+      refresh-token-cookie:
+        path: /authorization/security
+        secure: true
+      id-token-cookie:
+        secure: true
+      csrf:
+        secure: true
+      logout:
+        mode: LOCAL
+        revoke-refresh-token: true
+        post-logout-redirect-uri: "{baseUrl}/"
+```
+
+Production HTTPS deployments should keep every cookie's `secure` setting true. Local HTTP demos
+must explicitly turn it off.
+
+`LOCAL` logout clears this application's cookies and leaves the identity-provider SSO session.
+`OIDC` also redirects through the provider's RP-initiated logout endpoint and therefore requires
+provider `end_session_endpoint` metadata. Refresh-token revocation is independently controlled by
+`revoke-refresh-token` and runs only when the provider advertises `revocation_endpoint`.
+
+The endpoint and cookie-path relationships are startup-validated. Cookie OAuth2 mode remains
+disabled by default because it requires a concrete client registration. With it disabled, the
+application must supply a `SecurityFilterChain`; an application-defined chain is also the complete
+override when cookie OAuth2 is enabled.
+
 
 Example consuming application JWT authentication:
 

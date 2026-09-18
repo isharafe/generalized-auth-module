@@ -1,1 +1,1 @@
-com.example.authorization.ldap.config.AuthorizationLdapAutoConfiguration
+io.github.isharafe.authorization.ldap.config.AuthorizationLdapAutoConfiguration

@@ -5,7 +5,7 @@ This module contains the complete default DB-backed implementation.
 Suggested packages:
 
 ```text
-com.example.authorization
+io.github.isharafe.authorization
 ├── domain
 ├── engine
 ├── spi

@@ -292,9 +292,14 @@ Create a non-published sample app:
 examples/authorization-demo/
 ```
 
-Default profile: H2 + database source + demo-only authentication.
+Default profile: H2 local authorization storage + Keycloak identity source using the bundled
+`examples/keycloak-employee-demo` services and framework-managed cookie OAuth2. The isolated test
+profile uses database source plus test-only authentication so DB-backed authorization remains
+covered without external services.
 
-It must demonstrate public, authenticated-only, authorized-view, authorized-edit, admin API, and later optional UI/Keycloak profiles.
+It must demonstrate public, authenticated-only, authorized-view, authorized-edit, admin API, UI,
+and Keycloak-backed synchronization. Demo credentials must be clearly marked as local-only and
+must not resemble production secrets.
 
 ## Technical baseline
 
@@ -320,7 +325,7 @@ dependency and configure its annotation processor explicitly. Do not use broad a
 Default replaceable package root:
 
 ```text
-com.example.authorization
+io.github.isharafe.authorization
 ```
 
 ## Codex working method

@@ -51,7 +51,11 @@ and authorization headers are never written to audit details.
 
 Use a dedicated confidential client such as `authorization-sync-service` and grant its service
 account only the realm-management permissions needed to query users, group memberships, and
-realm-role mappings.
+realm-role mappings. Keycloak issues the effective service-account roles as the intersection of the
+roles assigned to the service account and the roles allowed by the client's scope. When
+`fullScopeAllowed` is false, explicitly add every required `realm-management` role to the client's
+dedicated scope; assigning the role only to the service-account user produces a token without that
+role and Admin API requests fail with HTTP 403.
 
 ## Explicit authority mappings
 
