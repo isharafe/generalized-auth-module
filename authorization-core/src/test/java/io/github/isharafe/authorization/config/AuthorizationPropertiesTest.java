@@ -65,6 +65,21 @@ class AuthorizationPropertiesTest {
   }
 
   @Test
+  void bindsUiApiConfiguration() {
+    AuthorizationProperties properties =
+        new Binder(
+                new MapConfigurationPropertySource(
+                    Map.of(
+                        "authorization.ui-api.enabled", "false",
+                        "authorization.ui-api.endpoint", "/api/my-ui-permissions")))
+            .bind("authorization", Bindable.of(AuthorizationProperties.class))
+            .get();
+
+    assertThat(properties.getUiApi().isEnabled()).isFalse();
+    assertThat(properties.getUiApi().getEndpoint()).isEqualTo("/api/my-ui-permissions");
+  }
+
+  @Test
   void disablesTheEntitlementCacheWhenConfigured() {
     AuthorizationProperties properties = new AuthorizationProperties();
     properties.getCache().getEntitlements().setEnabled(false);

@@ -1,0 +1,47 @@
+{
+  "name": "@isharafe/authorization-nuxt",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "Apache-2.0",
+  "exports": {
+    ".": {
+      "types": "./dist/types.d.mts",
+      "import": "./dist/module.mjs"
+    },
+    "./runtime": {
+      "types": "./dist/runtime/types.d.ts",
+      "import": "./dist/runtime/types.js"
+    }
+  },
+  "main": "./dist/module.mjs",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "nuxt-module-build build",
+    "dev": "nuxi dev playground",
+    "test": "vitest run",
+    "typecheck": "nuxt-module-build build --stub && nuxi typecheck --cwd playground"
+  },
+  "dependencies": {
+    "@nuxt/kit": "^4.5.2",
+    "h3": "^1.15.11",
+    "ofetch": "^1.5.1"
+  },
+  "devDependencies": {
+    "@nuxt/module-builder": "^1.0.3",
+    "@nuxt/test-utils": "^4.3.2",
+    "@vue/test-utils": "^2.4.6",
+    "happy-dom": "^20.0.10",
+    "nuxt": "^4.5.2",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.10",
+    "vue": "^3.5.43",
+    "vue-tsc": "^3.3.11"
+  },
+  "peerDependencies": {
+    "nuxt": "^3.21.0 || ^4.0.0",
+    "vue": "^3.5.0"
+  }
+}

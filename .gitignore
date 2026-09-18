@@ -3,5 +3,6 @@
 target/
 node_modules/
 dist/
+.nuxt/
 coverage/
 authorization-admin/frontend/node/

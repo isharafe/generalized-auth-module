@@ -37,6 +37,10 @@ authorization:
   identity-events:
     processing-timeout: 5m
 
+  ui-api:
+    enabled: true
+    endpoint: /authorization/ui/permissions
+
   distributed-invalidation:
     enabled: false
     instance-id: ${HOSTNAME:replace-with-a-unique-instance-id}
@@ -54,6 +58,12 @@ must exceed the longest expected instance outage when retained invalidations nee
 
 Micrometer collection activates automatically when the application provides a `MeterRegistry`.
 Spring Boot Actuator plus the selected registry implementation controls how the metrics are exposed.
+
+The UI API returns only enabled permissions whose resource type is `UI`, together with the current
+entitlement version. It requires authentication when core supplies the cookie OAuth2 security
+chain, sends `Cache-Control: no-store`, returns 401 without an authenticated stable identity, and
+returns 503 when entitlement infrastructure is unavailable. Applications that provide their own
+`SecurityFilterChain` must require authentication for the configured endpoint themselves.
 
 ## Keycloak source
 
@@ -257,6 +267,31 @@ The endpoint and cookie-path relationships are startup-validated. Cookie OAuth2 
 disabled by default because it requires a concrete client registration. With it disabled, the
 application must supply a `SecurityFilterChain`; an application-defined chain is also the complete
 override when cookie OAuth2 is enabled.
+
+## Nuxt/Nitro client
+
+The source-only module under `integrations/authorization-nuxt` uses these server endpoints through
+a same-origin Nitro proxy. The minimal module configuration is:
+
+```ts
+export default defineNuxtConfig({
+  modules: ['@isharafe/authorization-nuxt'],
+  authorizationNuxt: {
+    backendBaseUrl: process.env.AUTHORIZATION_BACKEND_URL!,
+    publicBaseUrl: process.env.NUXT_PUBLIC_BASE_URL!,
+    loginEndpoint: '/oauth2/authorization/keycloak'
+  }
+})
+```
+
+Keep `backendBaseUrl` server-only. `publicBaseUrl` is the browser-visible Nuxt origin used for
+trusted forwarded headers; enable `server.forward-headers-strategy=framework` in Spring so OAuth2
+redirect URIs use that origin. Override endpoint paths in both Spring and Nuxt when changing a
+default. The refresh-token cookie can remain scoped to `/authorization/security`: SSR fails closed
+when the access token has expired, then the browser performs refresh during hydration.
+
+See [the Nuxt/Nitro integration guide](23-nuxt-integration.md) for the full option and usage
+reference.
 
 
 Example consuming application JWT authentication:

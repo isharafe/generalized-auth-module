@@ -9,6 +9,7 @@ A reusable Spring Boot 4.1 authorization library with a functional DB-backed cor
 - `authorization-ldap`: published optional LDAP directory client and local identity/authority synchronization.
 - `authorization-admin`: published optional management REST API, services, framework-admin seeds, and React/TypeScript SPA.
 - `examples/authorization-demo`: non-published runnable verification application.
+- `integrations/authorization-nuxt`: source-only Nuxt 3/4 module for permission-aware UI and secure backend requests.
 
 ## Add the DB-backed core
 
@@ -40,6 +41,41 @@ For OAuth2/OIDC browser applications, enable
 refresh support for the admin SPA, and local or provider logout. When this mode is disabled, the
 application must declare its own `SecurityFilterChain`. Declaring any chain also makes the default
 core chains back off, so applications retain a complete override.
+
+Core also exposes the authenticated user's enabled `UI:*` permission codes at
+`/authorization/ui/permissions`. The response is marked `no-store`, contains the entitlement
+version, and never includes URL/API permissions. Set `authorization.ui-api.enabled=false` when the
+application does not need a browser permission snapshot.
+
+## Nuxt/Nitro integration
+
+The source package in `integrations/authorization-nuxt` provides `<Authorized>`,
+`v-authorization`, `useAuthorization()`, protected route middleware, and an authorized fetch client.
+Its Nitro proxy keeps OAuth tokens in Spring-managed HttpOnly cookies, lazily attaches CSRF headers
+to unsafe requests, serializes access-token refresh, retries a rejected request once, and reloads
+the UI permission snapshot after refresh.
+
+```ts
+export default defineNuxtConfig({
+  modules: ['@isharafe/authorization-nuxt'],
+  authorizationNuxt: {
+    backendBaseUrl: 'http://localhost:8080',
+    publicBaseUrl: 'http://localhost:3000',
+    loginEndpoint: '/oauth2/authorization/keycloak'
+  }
+})
+```
+
+```vue
+<Authorized permission="UI:EMPLOYEE_VIEW">
+  <EmployeeTable />
+</Authorized>
+
+<button v-authorization.disable="'UI:EMPLOYEE_EDIT'">Save</button>
+```
+
+UI controls fail closed and are presentation-only; Spring Security must still protect every
+backend operation. See [the Nuxt/Nitro integration guide](docs/23-nuxt-integration.md).
 
 ## Seed data
 
@@ -274,8 +310,9 @@ the Keycloak SSO session. See
 
 ## Current status
 
-Phases 1 through 7 are implemented. See [TASKS.md](TASKS.md) for the phased record,
+Phases 1 through 8 are implemented. See [TASKS.md](TASKS.md) for the phased record,
 [docs/19-phase-4-implementation.md](docs/19-phase-4-implementation.md) for Keycloak, and
 [docs/20-ldap-integration.md](docs/20-ldap-integration.md) for LDAP. Phase 6 event refresh is
 summarized in [docs/21-phase-6-implementation.md](docs/21-phase-6-implementation.md), and production
-hardening in [docs/22-phase-7-implementation.md](docs/22-phase-7-implementation.md).
+hardening in [docs/22-phase-7-implementation.md](docs/22-phase-7-implementation.md). The Nuxt/Nitro
+client is documented in [docs/23-nuxt-integration.md](docs/23-nuxt-integration.md).

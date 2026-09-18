@@ -187,6 +187,19 @@ public class AuthorizationAutoConfiguration {
   }
 
   @Bean
+  @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
+  @ConditionalOnProperty(
+      prefix = "authorization.ui-api",
+      name = "enabled",
+      havingValue = "true",
+      matchIfMissing = true)
+  @ConditionalOnMissingBean
+  CurrentUserUiPermissionsEndpoint currentUserUiPermissionsEndpoint(
+      SpringAuthenticationIdentityResolver identities, EntitlementProvider entitlements) {
+    return new CurrentUserUiPermissionsEndpoint(identities, entitlements);
+  }
+
+  @Bean
   @ConditionalOnMissingBean
   AuthorizationSeedValidator authorizationSeedValidator(PermissionMatcher matcher) {
     return new AuthorizationSeedValidator(matcher);

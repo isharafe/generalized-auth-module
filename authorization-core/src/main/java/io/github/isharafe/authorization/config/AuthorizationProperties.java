@@ -21,6 +21,7 @@ public class AuthorizationProperties {
   private final IdentityEvents identityEvents = new IdentityEvents();
   private final DistributedInvalidation distributedInvalidation = new DistributedInvalidation();
   private final Security security = new Security();
+  private final UiApi uiApi = new UiApi();
 
   @Getter
   public static class Database {
@@ -80,6 +81,13 @@ public class AuthorizationProperties {
     private Duration retention = Duration.ofHours(24);
     private int batchSize = 500;
     private String instanceId = UUID.randomUUID().toString();
+  }
+
+  @Getter
+  @Setter
+  public static class UiApi {
+    private boolean enabled = true;
+    private String endpoint = "/authorization/ui/permissions";
   }
 
   @Getter

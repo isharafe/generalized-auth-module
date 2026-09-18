@@ -315,3 +315,16 @@ Inside `authorization-ldap`:
 - [x] admin API security review
 - [x] docs/examples polish
 - [x] type-qualified permission codes and baseline schema validation
+
+---
+
+# Phase 8 — Nuxt/Nitro client integration
+
+- [x] authenticated current-user UI permission endpoint in core
+- [x] source-only Nuxt 3/4 module and Nitro same-origin proxy
+- [x] fail-closed component, directive, composable, and route middleware
+- [x] CSRF-aware authorized fetch and serialized refresh-token recovery
+- [x] login/logout helpers and typed request/authentication errors
+- [x] traversal-safe fixed upstream proxy and trusted forwarded headers
+- [x] permission, request lifecycle, and proxy tests
+- [x] package typecheck/build and integration documentation

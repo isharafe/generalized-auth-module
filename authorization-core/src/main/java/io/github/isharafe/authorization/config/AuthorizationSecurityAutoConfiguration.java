@@ -338,15 +338,21 @@ public class AuthorizationSecurityAutoConfiguration {
                       .bearerTokenResolver(bearerTokens)
                       .jwt(Customizer.withDefaults()))
           .authorizeHttpRequests(
-              requests ->
+              requests -> {
+                if (properties.getUiApi().isEnabled()) {
                   requests
-                      .requestMatchers(
-                          configured.getCsrfEndpoint(),
-                          configured.getRefreshEndpoint(),
-                          configured.getLogoutEndpoint())
-                      .permitAll()
-                      .anyRequest()
-                      .access(authorization))
+                      .requestMatchers(properties.getUiApi().getEndpoint())
+                      .authenticated();
+                }
+                requests
+                    .requestMatchers(
+                        configured.getCsrfEndpoint(),
+                        configured.getRefreshEndpoint(),
+                        configured.getLogoutEndpoint())
+                    .permitAll()
+                    .anyRequest()
+                    .access(authorization);
+              })
           .exceptionHandling(
               errors ->
                   errors
