@@ -24,7 +24,7 @@ import org.springframework.test.web.servlet.MockMvc;
 @AutoConfigureMockMvc
 class AdminApiIntegrationTest {
   private static final String BASE = "/authorization-admin/api";
-  private static final String ADMIN = "manager";
+  private static final String ADMIN = "olivia";
 
   @Autowired MockMvc mvc;
   @Autowired JdbcTemplate jdbc;
@@ -32,7 +32,7 @@ class AdminApiIntegrationTest {
   @Test
   void adminApiIsProtectedAndCapabilitiesAreProviderAware() throws Exception {
     mvc.perform(get(BASE + "/capabilities")).andExpect(status().isUnauthorized());
-    mvc.perform(get(BASE + "/capabilities").header("X-Demo-User", "viewer"))
+    mvc.perform(get(BASE + "/capabilities").header("X-Demo-User", "emma"))
         .andExpect(status().isForbidden());
     mvc.perform(get(BASE + "/capabilities").header("X-Demo-User", ADMIN))
         .andExpect(status().isOk())
@@ -62,7 +62,7 @@ class AdminApiIntegrationTest {
             "/sync/status",
             "/audit")) {
       mvc.perform(get(BASE + path)).andExpect(status().isUnauthorized());
-      mvc.perform(get(BASE + path).header("X-Demo-User", "viewer"))
+      mvc.perform(get(BASE + path).header("X-Demo-User", "emma"))
           .andExpect(status().isForbidden());
     }
     for (String path :
@@ -73,7 +73,7 @@ class AdminApiIntegrationTest {
             "/data/export",
             "/data/import")) {
       mvc.perform(post(BASE + path)).andExpect(status().isUnauthorized());
-      mvc.perform(post(BASE + path).header("X-Demo-User", "viewer"))
+      mvc.perform(post(BASE + path).header("X-Demo-User", "emma"))
           .andExpect(status().isForbidden());
     }
   }
@@ -163,7 +163,7 @@ class AdminApiIntegrationTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.content[0].eventKind", is("CHANGE")))
         .andExpect(jsonPath("$.content[0].target", is("ROLE:PHASE2_TEST_ROLE")))
-        .andExpect(jsonPath("$.content[0].actorSubject", is("manager")));
+        .andExpect(jsonPath("$.content[0].actorSubject", is(ADMIN)));
   }
 
   @Test
@@ -531,9 +531,10 @@ class AdminApiIntegrationTest {
 
   @Test
   void userAssignmentsEffectivePermissionsAndExplainAreFunctional() throws Exception {
-    Long viewerId =
+    Long analystId =
         jdbc.queryForObject(
-            "select ID from AUTH_USER where EXTERNAL_ISSUER = 'local' and EXTERNAL_SUBJECT = 'viewer'",
+            "select ID from AUTH_USER where EXTERNAL_ISSUER = 'local' and EXTERNAL_SUBJECT ="
+                + " 'emma'",
             Long.class);
 
 
@@ -554,7 +555,7 @@ class AdminApiIntegrationTest {
         .andExpect(status().isCreated());
 
     mvc.perform(
-            put(BASE + "/users/" + viewerId + "/roles/PHASE2_USER_ROLE")
+            put(BASE + "/users/" + analystId + "/roles/PHASE2_USER_ROLE")
                 .header("X-Demo-User", ADMIN))
         .andExpect(status().isOk())
         .andExpect(
@@ -566,10 +567,10 @@ class AdminApiIntegrationTest {
             get(BASE + "/roles/PHASE2_USER_ROLE/users")
                 .header("X-Demo-User", ADMIN))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$[*].id", hasItem(viewerId.intValue())));
+        .andExpect(jsonPath("$[*].id", hasItem(analystId.intValue())));
 
     mvc.perform(
-            delete(BASE + "/users/" + viewerId + "/roles/PHASE2_USER_ROLE")
+            delete(BASE + "/users/" + analystId + "/roles/PHASE2_USER_ROLE")
                 .header("X-Demo-User", ADMIN))
         .andExpect(status().isOk());
 
@@ -579,30 +580,30 @@ class AdminApiIntegrationTest {
                 .param("version", "0"))
         .andExpect(status().isNoContent());
     mvc.perform(
-            put("/demo/employees/123").header("X-Demo-User", "viewer"))
+            put("/demo/employees/123").header("X-Demo-User", "emma"))
         .andExpect(status().isForbidden());
 
     mvc.perform(
-            put(BASE + "/users/" + viewerId + "/permission-groups/EMPLOYEE_MANAGER")
+            put(BASE + "/users/" + analystId + "/permission-groups/EMPLOYEE_MANAGEMENT_ACCESS")
                 .header("X-Demo-User", ADMIN))
         .andExpect(status().isOk())
         .andExpect(
             jsonPath(
-                "$.permissionGroups[?(@.code == 'EMPLOYEE_MANAGER')].source",
+                "$.permissionGroups[?(@.code == 'EMPLOYEE_MANAGEMENT_ACCESS')].source",
                 hasItem("MANUAL")));
 
     mvc.perform(
-            put("/demo/employees/123").header("X-Demo-User", "viewer"))
+            put("/demo/employees/123").header("X-Demo-User", "emma"))
         .andExpect(status().isOk());
 
     mvc.perform(
-            get(BASE + "/users/" + viewerId + "/effective-permissions")
+            get(BASE + "/users/" + analystId + "/effective-permissions")
                 .header("X-Demo-User", ADMIN))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.permissions[*].code", hasItem("URL:EMPLOYEE_EDIT")));
 
     mvc.perform(
-            delete(BASE + "/users/" + viewerId + "/roles/HR_VIEWER")
+            delete(BASE + "/users/" + analystId + "/roles/HR_ANALYST")
                 .header("X-Demo-User", ADMIN))
         .andExpect(status().isConflict())
         .andExpect(jsonPath("$.code", is("AUTHZ_ASSIGNMENT_SOURCE_CONFLICT")));
@@ -616,8 +617,8 @@ class AdminApiIntegrationTest {
                     {
                       "identity": {
                         "issuer": "local",
-                        "subject": "manager",
-                        "username": "manager"
+                        "subject": "michael",
+                        "username": "michael"
                       },
                       "resourceType": "URL",
                       "method": "PUT",
@@ -630,12 +631,12 @@ class AdminApiIntegrationTest {
         .andExpect(jsonPath("$.assignmentPath", hasItem("ROLE:HR_MANAGER")));
 
     mvc.perform(
-            delete(BASE + "/users/" + viewerId + "/permission-groups/EMPLOYEE_MANAGER")
+            delete(BASE + "/users/" + analystId + "/permission-groups/EMPLOYEE_MANAGEMENT_ACCESS")
                 .header("X-Demo-User", ADMIN))
         .andExpect(status().isOk());
 
     mvc.perform(
-            put("/demo/employees/123").header("X-Demo-User", "viewer"))
+            put("/demo/employees/123").header("X-Demo-User", "emma"))
         .andExpect(status().isForbidden());
   }
 

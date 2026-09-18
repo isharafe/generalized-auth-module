@@ -61,13 +61,13 @@ echo "Verifying authorization synchronization Admin API access..."
 SYNC_TEST_USER_ID=$("$KCADM" get users \
   --config "$SYNC_KCADM_CONFIG" \
   -r "$REALM" \
-  -q username=viewer \
+  -q username=emma \
   -q exact=true \
   --fields id \
   --format csv \
   --noquotes)
 if [[ -z "$SYNC_TEST_USER_ID" || "$SYNC_TEST_USER_ID" == *$'\n'* ]]; then
-  echo "Expected exactly one viewer user, got: '$SYNC_TEST_USER_ID'" >&2
+  echo "Expected exactly one Emma demo user, got: '$SYNC_TEST_USER_ID'" >&2
   exit 1
 fi
 "$KCADM" get "users/$SYNC_TEST_USER_ID" \

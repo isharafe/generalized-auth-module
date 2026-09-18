@@ -62,7 +62,7 @@ A consuming application must define the applicable UI resource rule. The demo su
 
 The demo includes the UI module. Its current default profile uses the framework's generalized
 OAuth2/OIDC cookie security with the bundled `employee-demo` Keycloak realm. After signing in as
-`admin-user`, open:
+`olivia`, open:
 
 ```text
 /authorization-admin/
@@ -80,7 +80,7 @@ preview, and the destructive import warning. Demo integration coverage verifies:
 
 - unauthenticated UI access returns 401
 - an authenticated user without admin UI permission receives 403
-- an authorized manager reaches the packaged index
+- an authorization administrator reaches the packaged index
 - the configured API/UI paths are returned at runtime
 - cookie-authenticated logout rejects requests without a CSRF token
 

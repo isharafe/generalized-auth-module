@@ -75,7 +75,7 @@ Page response:
   "name": "HR Manager",
   "description": "Manages employees",
   "enabled": true,
-  "permissionGroups": ["EMPLOYEE_MANAGER"],
+  "permissionGroups": ["EMPLOYEE_READ_ACCESS", "EMPLOYEE_MANAGEMENT_ACCESS"],
   "version": 3
 }
 ```
@@ -112,9 +112,9 @@ Do not silently allow deleting an `IDENTITY_SYNC` assignment as if it were manua
 ```json
 {
   "issuer": "local",
-  "subject": "manager",
-  "username": "manager",
-  "email": "manager@example.com",
+  "subject": "michael",
+  "username": "michael",
+  "email": "michael@example.com",
   "firstName": "Demo",
   "lastName": "Manager"
 }

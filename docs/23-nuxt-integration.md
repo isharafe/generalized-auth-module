@@ -186,7 +186,8 @@ rule and permission enforced by Spring Security.
 
 `examples/authorization-nuxt-demo` combines the module with a Spring Boot backend, the Keycloak
 identity synchronization module, and the optional packaged administration UI. It demonstrates the
-viewer, manager, and administrator behaviors against the repository's existing Keycloak realm.
+HR analyst, HR manager, and authorization-administrator behaviors against the repository's existing
+Keycloak realm.
 See the [demo README](../examples/authorization-nuxt-demo/README.md) for the user matrix, startup
 commands, and configuration walkthrough.
 

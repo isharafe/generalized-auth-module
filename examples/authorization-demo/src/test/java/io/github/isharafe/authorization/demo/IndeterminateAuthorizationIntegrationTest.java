@@ -23,7 +23,7 @@ class IndeterminateAuthorizationIntegrationTest {
 
   @Test
   void providerFailureMapsToServiceUnavailable() throws Exception {
-    mvc.perform(get("/demo/public").header("X-Demo-User", "manager"))
+    mvc.perform(get("/demo/public").header("X-Demo-User", "michael"))
         .andExpect(status().isServiceUnavailable());
   }
 

@@ -17,11 +17,11 @@ function signIn() {
       </NuxtLink>
       <nav class="site-nav" aria-label="Primary navigation">
         <NuxtLink to="/">Dashboard</NuxtLink>
-        <Authorized permission="UI:DEMO_PAGE_1">
-          <NuxtLink to="/page-one">Page one</NuxtLink>
+        <Authorized permission="UI:EMPLOYEE_DIRECTORY">
+          <NuxtLink to="/employee-directory">Employee directory</NuxtLink>
         </Authorized>
-        <Authorized permission="UI:DEMO_PAGE_2">
-          <NuxtLink to="/page-two">Page two</NuxtLink>
+        <Authorized permission="UI:MANAGER_WORKSPACE">
+          <NuxtLink to="/manager-workspace">Manager workspace</NuxtLink>
         </Authorized>
         <Authorized permission="UI:AUTHORIZATION_ADMIN">
           <a href="/authorization-admin/">Admin UI</a>

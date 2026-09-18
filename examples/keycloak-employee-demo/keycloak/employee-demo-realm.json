@@ -11,48 +11,24 @@
   "roles": {
     "realm": [
       {
-        "name": "VIEW_SELF",
-        "description": "Can view own employee profile"
+        "name": "employee",
+        "description": "Employee with access to their own profile"
       },
       {
-        "name": "VIEW_TEAM",
-        "description": "Can view direct/team employee records"
+        "name": "people-manager",
+        "description": "Manager responsible for a team of employees"
       },
       {
-        "name": "VIEW_DEPARTMENT",
-        "description": "Can view department employee records"
+        "name": "department-head",
+        "description": "Leader responsible for an employee department"
       },
       {
-        "name": "VIEW_LOCATION",
-        "description": "Can view employee records for a location"
+        "name": "hr-administrator",
+        "description": "Human resources administrator"
       },
       {
-        "name": "VIEW_ALL",
-        "description": "Can view all employee records"
-      },
-      {
-        "name": "EDIT_SELF",
-        "description": "Can edit own employee profile"
-      },
-      {
-        "name": "EDIT_TEAM",
-        "description": "Can edit team employee records"
-      },
-      {
-        "name": "EDIT_ALL",
-        "description": "Can edit all employee records"
-      },
-      {
-        "name": "APPROVE",
-        "description": "Can approve employee-related requests"
-      },
-      {
-        "name": "authorization-demo-viewer",
-        "description": "Generalized authorization demo viewer authority"
-      },
-      {
-        "name": "authorization-demo-manager",
-        "description": "Generalized authorization demo manager authority"
+        "name": "request-approver",
+        "description": "Business approver for employee-related requests"
       }
     ]
   },
@@ -78,39 +54,32 @@
     {
       "name": "Function-Employees",
       "realmRoles": [
-        "VIEW_SELF",
-        "EDIT_SELF"
+        "employee"
       ]
     },
     {
       "name": "Function-Managers",
       "realmRoles": [
-        "VIEW_SELF",
-        "EDIT_SELF",
-        "VIEW_TEAM",
-        "EDIT_TEAM",
-        "APPROVE"
+        "employee",
+        "people-manager",
+        "request-approver"
       ]
     },
     {
       "name": "Function-Department-Heads",
       "realmRoles": [
-        "VIEW_SELF",
-        "EDIT_SELF",
-        "VIEW_TEAM",
-        "EDIT_TEAM",
-        "VIEW_DEPARTMENT",
-        "APPROVE"
+        "employee",
+        "people-manager",
+        "department-head",
+        "request-approver"
       ]
     },
     {
       "name": "Function-HR-Admins",
       "realmRoles": [
-        "VIEW_SELF",
-        "EDIT_SELF",
-        "VIEW_ALL",
-        "EDIT_ALL",
-        "APPROVE"
+        "employee",
+        "hr-administrator",
+        "request-approver"
       ]
     },
     {
@@ -123,20 +92,31 @@
       "name": "authorization-demo",
       "subGroups": [
         {
-          "name": "viewers"
+          "name": "hr-analysts",
+          "realmRoles": [
+            "employee"
+          ]
         },
         {
-          "name": "employee-managers"
+          "name": "hr-managers",
+          "realmRoles": [
+            "employee",
+            "people-manager",
+            "request-approver"
+          ]
         },
         {
-          "name": "admins"
+          "name": "authorization-administrators"
         }
       ]
     }
   ],
   "users": [
     {
-      "username": "viewer",
+      "username": "emma",
+      "firstName": "Emma",
+      "lastName": "Davis",
+      "email": "emma@example.com",
       "enabled": true,
       "emailVerified": true,
       "credentials": [
@@ -147,14 +127,14 @@
         }
       ],
       "groups": [
-        "/authorization-demo/viewers"
-      ],
-      "realmRoles": [
-        "authorization-demo-viewer"
+        "/authorization-demo/hr-analysts"
       ]
     },
     {
-      "username": "manager",
+      "username": "michael",
+      "firstName": "Michael",
+      "lastName": "Brown",
+      "email": "michael@example.com",
       "enabled": true,
       "emailVerified": true,
       "credentials": [
@@ -165,14 +145,14 @@
         }
       ],
       "groups": [
-        "/authorization-demo/employee-managers"
-      ],
-      "realmRoles": [
-        "authorization-demo-manager"
+        "/authorization-demo/hr-managers"
       ]
     },
     {
-      "username": "admin-user",
+      "username": "olivia",
+      "firstName": "Olivia",
+      "lastName": "Wilson",
+      "email": "olivia@example.com",
       "enabled": true,
       "emailVerified": true,
       "credentials": [
@@ -183,7 +163,7 @@
         }
       ],
       "groups": [
-        "/authorization-demo/admins"
+        "/authorization-demo/authorization-administrators"
       ]
     },
     {
@@ -349,52 +329,52 @@
         "policies": [
           {
             "name": "Employee Policy",
-            "description": "Users with VIEW_SELF",
+            "description": "Employees accessing their own profile",
             "type": "role",
             "logic": "POSITIVE",
             "decisionStrategy": "UNANIMOUS",
             "config": {
-              "roles": "[{\"id\":\"VIEW_SELF\",\"required\":true}]"
+              "roles": "[{\"id\":\"employee\",\"required\":true}]"
             }
           },
           {
             "name": "Manager Policy",
-            "description": "Users with VIEW_TEAM",
+            "description": "People managers accessing their team",
             "type": "role",
             "logic": "POSITIVE",
             "decisionStrategy": "UNANIMOUS",
             "config": {
-              "roles": "[{\"id\":\"VIEW_TEAM\",\"required\":true}]"
+              "roles": "[{\"id\":\"people-manager\",\"required\":true}]"
             }
           },
           {
             "name": "Department Head Policy",
-            "description": "Users with VIEW_DEPARTMENT",
+            "description": "Department heads accessing their department",
             "type": "role",
             "logic": "POSITIVE",
             "decisionStrategy": "UNANIMOUS",
             "config": {
-              "roles": "[{\"id\":\"VIEW_DEPARTMENT\",\"required\":true}]"
+              "roles": "[{\"id\":\"department-head\",\"required\":true}]"
             }
           },
           {
             "name": "HR Admin Policy",
-            "description": "Users with VIEW_ALL",
+            "description": "HR administrators accessing all employee records",
             "type": "role",
             "logic": "POSITIVE",
             "decisionStrategy": "UNANIMOUS",
             "config": {
-              "roles": "[{\"id\":\"VIEW_ALL\",\"required\":true}]"
+              "roles": "[{\"id\":\"hr-administrator\",\"required\":true}]"
             }
           },
           {
             "name": "Approver Policy",
-            "description": "Users with APPROVE",
+            "description": "Business approvers accessing approval queues",
             "type": "role",
             "logic": "POSITIVE",
             "decisionStrategy": "UNANIMOUS",
             "config": {
-              "roles": "[{\"id\":\"APPROVE\",\"required\":true}]"
+              "roles": "[{\"id\":\"request-approver\",\"required\":true}]"
             }
           },
           {

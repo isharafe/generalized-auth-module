@@ -9,6 +9,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
 import java.util.Set;
+
+import org.jspecify.annotations.NonNull;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -30,7 +32,7 @@ class DemoTestSecurityConfiguration {
       HttpSecurity http,
       DynamicRequestAuthorizationManager authorization,
       AuthorizationServiceUnavailableHandler deniedHandler)
-      throws Exception {
+  {
     return http.csrf(csrf -> csrf.disable())
         .sessionManagement(
             session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -46,11 +48,12 @@ class DemoTestSecurityConfiguration {
   }
 
   private static final class HeaderAuthenticationFilter extends OncePerRequestFilter {
-    private static final Set<String> USERS = Set.of("viewer", "manager");
+    private static final Set<String> USERS =
+        Set.of("emma", "michael", "olivia");
 
     @Override
     protected void doFilterInternal(
-        HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+            HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain chain)
         throws ServletException, IOException {
       String user = request.getHeader("X-Demo-User");
       if (user != null

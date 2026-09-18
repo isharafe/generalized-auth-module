@@ -28,23 +28,23 @@ authorization:
         pattern: PUT:/demo/employees/**
 
     permission-groups:
-      - code: EMPLOYEE_VIEWER
+      - code: EMPLOYEE_READ_ACCESS
         permissions:
           - URL:EMPLOYEE_VIEW
 
-      - code: EMPLOYEE_MANAGER
+      - code: EMPLOYEE_MANAGEMENT_ACCESS
         permissions:
-          - URL:EMPLOYEE_VIEW
           - URL:EMPLOYEE_EDIT
 
     roles:
-      - code: HR_VIEWER
+      - code: HR_ANALYST
         permission-groups:
-          - EMPLOYEE_VIEWER
+          - EMPLOYEE_READ_ACCESS
 
       - code: HR_MANAGER
         permission-groups:
-          - EMPLOYEE_MANAGER
+          - EMPLOYEE_READ_ACCESS
+          - EMPLOYEE_MANAGEMENT_ACCESS
 
     resource-rules:
       - code: DEMO_PUBLIC

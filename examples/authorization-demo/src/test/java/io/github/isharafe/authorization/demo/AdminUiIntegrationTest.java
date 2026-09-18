@@ -20,14 +20,14 @@ import org.springframework.test.web.servlet.MockMvc;
 @AutoConfigureMockMvc
 class AdminUiIntegrationTest {
   private static final String BASE = "/authorization-admin";
-  private static final String ADMIN = "manager";
+  private static final String ADMIN = "olivia";
 
   @Autowired MockMvc mvc;
 
   @Test
   void adminUiIsProtectedByFrameworkPermissions() throws Exception {
     mvc.perform(get(BASE)).andExpect(status().isUnauthorized());
-    mvc.perform(get(BASE).header("X-Demo-User", "viewer"))
+    mvc.perform(get(BASE).header("X-Demo-User", "emma"))
         .andExpect(status().isForbidden());
     mvc.perform(get(BASE).header("X-Demo-User", ADMIN))
         .andExpect(status().is3xxRedirection())

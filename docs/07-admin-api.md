@@ -182,7 +182,7 @@ Request:
 
 ```json
 {
-  "identity": {"issuer": "local", "subject": "manager"},
+  "identity": {"issuer": "local", "subject": "michael"},
   "method": "PUT",
   "path": "/demo/employees/1"
 }
@@ -201,9 +201,9 @@ Response should show safe explanation:
   "matchedRule": "DEMO_API",
   "matchedPermission": "URL:EMPLOYEE_EDIT",
   "assignmentPath": [
-    "USER:manager",
+    "USER:michael",
     "ROLE:HR_MANAGER",
-    "PERMISSION_GROUP:EMPLOYEE_MANAGER",
+    "PERMISSION_GROUP:EMPLOYEE_MANAGEMENT_ACCESS",
     "PERMISSION:URL:EMPLOYEE_EDIT"
   ]
 }

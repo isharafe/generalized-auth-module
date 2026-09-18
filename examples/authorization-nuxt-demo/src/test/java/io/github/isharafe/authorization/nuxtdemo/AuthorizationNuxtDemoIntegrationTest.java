@@ -31,54 +31,57 @@ class AuthorizationNuxtDemoIntegrationTest {
   }
 
   @Test
-  void viewerCanReadButCannotEditOrAdminister() throws Exception {
-    mvc.perform(get("/authorization/ui/permissions").header("X-Demo-User", "viewer"))
+  void hrAnalystCanReadButCannotEditOrAdminister() throws Exception {
+    mvc.perform(get("/authorization/ui/permissions").header("X-Demo-User", "emma"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.permissions", containsInAnyOrder("UI:DEMO_PAGE_1")))
+        .andExpect(jsonPath("$.permissions", containsInAnyOrder("UI:EMPLOYEE_DIRECTORY")))
         .andExpect(jsonPath("$.permissions", everyItem(startsWith("UI:"))));
-    mvc.perform(get("/demo/employees").header("X-Demo-User", "viewer"))
+    mvc.perform(get("/demo/employees").header("X-Demo-User", "emma"))
         .andExpect(status().isOk());
     mvc.perform(
             put("/demo/employees/1")
-                .header("X-Demo-User", "viewer")
+                .header("X-Demo-User", "emma")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"name\":\"Viewer update\"}"))
+                .content("{\"name\":\"Analyst update\"}"))
         .andExpect(status().isForbidden());
-    mvc.perform(get("/authorization-admin/").header("X-Demo-User", "viewer"))
+    mvc.perform(get("/authorization-admin/").header("X-Demo-User", "emma"))
         .andExpect(status().isForbidden());
   }
 
   @Test
-  void managerCanReadAndEditButCannotAdminister() throws Exception {
-    mvc.perform(get("/authorization/ui/permissions").header("X-Demo-User", "manager"))
+  void hrManagerCanReadAndEditButCannotAdminister() throws Exception {
+    mvc.perform(get("/authorization/ui/permissions").header("X-Demo-User", "michael"))
         .andExpect(status().isOk())
         .andExpect(
             jsonPath(
                 "$.permissions",
                 containsInAnyOrder(
-                    "UI:DEMO_PAGE_1", "UI:DEMO_PAGE_2", "UI:EMPLOYEE_EDIT")));
+                    "UI:EMPLOYEE_DIRECTORY", "UI:MANAGER_WORKSPACE", "UI:EMPLOYEE_EDIT")));
     mvc.perform(
             put("/demo/employees/1")
-                .header("X-Demo-User", "manager")
+                .header("X-Demo-User", "michael")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"name\":\"Ada Byron\"}"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.name").value("Ada Byron"));
-    mvc.perform(get("/authorization-admin/").header("X-Demo-User", "manager"))
+    mvc.perform(get("/authorization-admin/").header("X-Demo-User", "michael"))
         .andExpect(status().isForbidden());
   }
 
   @Test
   void administratorGetsAdminNavigationAndFrameworkAdministrationAccess() throws Exception {
-    mvc.perform(get("/authorization/ui/permissions").header("X-Demo-User", "admin-user"))
+    mvc.perform(
+            get("/authorization/ui/permissions")
+                .header("X-Demo-User", "olivia"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.permissions", containsInAnyOrder("UI:AUTHORIZATION_ADMIN")));
-    mvc.perform(get("/demo/employees").header("X-Demo-User", "admin-user"))
+    mvc.perform(get("/demo/employees").header("X-Demo-User", "olivia"))
         .andExpect(status().isForbidden());
-    mvc.perform(get("/authorization-admin/").header("X-Demo-User", "admin-user"))
+    mvc.perform(get("/authorization-admin/").header("X-Demo-User", "olivia"))
         .andExpect(status().isOk());
     mvc.perform(
-            get("/authorization-admin/api/capabilities").header("X-Demo-User", "admin-user"))
+            get("/authorization-admin/api/capabilities")
+                .header("X-Demo-User", "olivia"))
         .andExpect(status().isOk());
   }
 }

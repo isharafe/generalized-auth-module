@@ -79,7 +79,7 @@ p { color: #5a687d; line-height: 1.65; }
 .empty-state { padding: 1rem; border-radius: 12px; background: #f2f4f7; }
 .narrow-page { max-width: 820px; min-height: calc(100vh - 150px); }
 .narrow-page h1 { font-size: clamp(3rem, 8vw, 6rem); }
-.manager-page { border-top: 8px solid #7476df; }
+.manager-workspace { border-top: 8px solid #7476df; }
 .error-page { border-top: 8px solid #d45d51; }
 .site-footer { display: flex; justify-content: space-between; gap: 1rem; margin-top: auto; padding: 1.25rem clamp(1rem, 4vw, 4rem);
   border-top: 1px solid #dbe2ec; color: #738096; font-size: .82rem; }

@@ -52,9 +52,9 @@ browser login, JWT resource-server security, separate browser/service-account cl
 and seeded group/realm-role mappings. Successful browser login triggers targeted synchronization
 before redirecting to `/demo-ui/`.
 
-The seed also demonstrates opaque UI resources. `UI:seePage1` is granted to viewers, while
-`UI:seePage1` and `UI:seePage2` are granted to managers. The server-rendered landing page hides
-unavailable links, and direct page navigation repeats the authorization check. The default
+The seed also demonstrates opaque UI resources. `UI:employeeDirectory` is granted to HR analysts,
+while HR managers receive that resource and `UI:managerWorkspace`. The server-rendered landing page
+hides unavailable links, and direct workspace navigation repeats the authorization check. The default
 H2/database/demo-authentication profile remains unchanged.
 
 ## Verification

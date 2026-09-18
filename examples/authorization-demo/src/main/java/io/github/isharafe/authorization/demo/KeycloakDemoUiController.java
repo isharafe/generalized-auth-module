@@ -17,8 +17,8 @@ import org.springframework.web.bind.annotation.ResponseBody;
 @Profile("keycloak-demo")
 @RequestMapping("/demo-ui")
 public final class KeycloakDemoUiController {
-  private static final String PAGE_1 = "seePage1";
-  private static final String PAGE_2 = "seePage2";
+  private static final String EMPLOYEE_DIRECTORY = "employeeDirectory";
+  private static final String MANAGER_WORKSPACE = "managerWorkspace";
 
   private final AuthorizationService authorization;
 
@@ -70,23 +70,25 @@ public final class KeycloakDemoUiController {
   @ResponseBody
   public String index(Authentication authentication, CsrfToken csrfToken) {
     StringBuilder cards = new StringBuilder();
-    if (authorization.isGranted(authentication, ResourceType.UI, PAGE_1))
+    if (authorization.isGranted(authentication, ResourceType.UI, EMPLOYEE_DIRECTORY))
       cards.append(
           card(
-              "Sample page 1",
-              "Visible because this user has UI:seePage1.",
-              "/demo-ui/page-1"));
-    if (authorization.isGranted(authentication, ResourceType.UI, PAGE_2))
+              "01",
+              "Employee directory",
+              "Visible because this user has UI:EMPLOYEE_DIRECTORY.",
+              "/demo-ui/employee-directory"));
+    if (authorization.isGranted(authentication, ResourceType.UI, MANAGER_WORKSPACE))
       cards.append(
           card(
-              "Sample page 2",
-              "Visible because this user has UI:seePage2.",
-              "/demo-ui/page-2"));
+              "02",
+              "Manager workspace",
+              "Visible because this user has UI:MANAGER_WORKSPACE.",
+              "/demo-ui/manager-workspace"));
     if (cards.isEmpty())
       cards.append(
           """
           <section class="empty">
-            <h2>No sample pages are available</h2>
+            <h2>No application workspaces are available</h2>
             <p>The login is valid, but this identity has neither demo UI permission.</p>
           </section>
           """);
@@ -97,7 +99,7 @@ public final class KeycloakDemoUiController {
         """
         <section class="hero">
           <p class="eyebrow">KEYCLOAK + LOCAL AUTHORIZATION</p>
-          <h1>Permission-aware sample pages</h1>
+          <h1>Permission-aware employee workspaces</h1>
           <p>Authentication came from Keycloak. Page visibility is decided from synchronized local
              permissions using the framework's <code>UI</code> resource strategy.</p>
         </section>
@@ -107,43 +109,43 @@ public final class KeycloakDemoUiController {
             + "</main>");
   }
 
-  @GetMapping(value = "/page-1", produces = MediaType.TEXT_HTML_VALUE)
+  @GetMapping(value = "/employee-directory", produces = MediaType.TEXT_HTML_VALUE)
   @ResponseBody
-  public String page1(Authentication authentication, CsrfToken csrfToken) {
-    authorization.requireGranted(authentication, ResourceType.UI, PAGE_1);
+  public String employeeDirectory(Authentication authentication, CsrfToken csrfToken) {
+    authorization.requireGranted(authentication, ResourceType.UI, EMPLOYEE_DIRECTORY);
     return layout(
-        "Sample page 1",
+        "Employee directory",
         authentication,
         csrfToken,
         """
-        <main class="sample page-one">
-          <p class="eyebrow">UI:seePage1</p>
-          <h1>Sample page 1</h1>
+        <main class="sample employee-directory">
+          <p class="eyebrow">UI:EMPLOYEE_DIRECTORY</p>
+          <h1>Employee directory</h1>
           <p>This route was rendered only after a server-side UI authorization decision.</p>
           <a class="button" href="/demo-ui/">Back to available pages</a>
         </main>
         """);
   }
 
-  @GetMapping(value = "/page-2", produces = MediaType.TEXT_HTML_VALUE)
+  @GetMapping(value = "/manager-workspace", produces = MediaType.TEXT_HTML_VALUE)
   @ResponseBody
-  public String page2(Authentication authentication, CsrfToken csrfToken) {
-    authorization.requireGranted(authentication, ResourceType.UI, PAGE_2);
+  public String managerWorkspace(Authentication authentication, CsrfToken csrfToken) {
+    authorization.requireGranted(authentication, ResourceType.UI, MANAGER_WORKSPACE);
     return layout(
-        "Sample page 2",
+        "Manager workspace",
         authentication,
         csrfToken,
         """
-        <main class="sample page-two">
-          <p class="eyebrow">UI:seePage2</p>
-          <h1>Sample page 2</h1>
+        <main class="sample manager-workspace">
+          <p class="eyebrow">UI:MANAGER_WORKSPACE</p>
+          <h1>Manager workspace</h1>
           <p>Hiding the navigation link is only presentation; this direct route is checked again.</p>
           <a class="button" href="/demo-ui/">Back to available pages</a>
         </main>
         """);
   }
 
-  private String card(String title, String description, String href) {
+  private String card(String number, String title, String description, String href) {
     return """
         <a class="card" href="%s">
           <span class="card-number">%s</span>
@@ -154,7 +156,7 @@ public final class KeycloakDemoUiController {
         """
         .formatted(
             href,
-            title.endsWith("1") ? "01" : "02",
+            number,
             HtmlUtils.htmlEscape(title),
             HtmlUtils.htmlEscape(description));
   }
@@ -203,8 +205,8 @@ public final class KeycloakDemoUiController {
             .sample, .empty { max-width: 760px; padding: clamp(2rem, 6vw, 5rem);
                               border-radius: 28px; background: rgba(255,255,255,.92);
                               box-shadow: 0 28px 70px rgba(42,58,82,.12); }
-            .page-one { border-top: 8px solid #39a58f; }
-            .page-two { border-top: 8px solid #6769d4; }
+            .employee-directory { border-top: 8px solid #39a58f; }
+            .manager-workspace { border-top: 8px solid #6769d4; }
             .button { display: inline-block; margin-top: 2rem; padding: .8rem 1.1rem;
                       border-radius: 999px; background: #172033; color: white;
                       text-decoration: none; font-weight: 750; }

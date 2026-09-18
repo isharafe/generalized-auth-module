@@ -65,39 +65,39 @@ class KeycloakDemoUiIntegrationTest {
   }
 
   @Test
-  void viewerSeesAndCanOpenOnlyPageOne() throws Exception {
-    mvc.perform(get("/demo-ui/").with(user("viewer")))
+  void hrAnalystSeesTheEmployeeDirectoryButNotTheManagerWorkspace() throws Exception {
+    mvc.perform(get("/demo-ui/").with(user("emma")))
         .andExpect(status().isOk())
-        .andExpect(content().string(containsString("Sample page 1")))
-        .andExpect(content().string(not(containsString("Sample page 2"))));
+        .andExpect(content().string(containsString("Employee directory")))
+        .andExpect(content().string(not(containsString("Manager workspace"))));
 
-    mvc.perform(get("/demo-ui/page-1").with(user("viewer")))
+    mvc.perform(get("/demo-ui/employee-directory").with(user("emma")))
         .andExpect(status().isOk())
-        .andExpect(content().string(containsString("UI:seePage1")));
+        .andExpect(content().string(containsString("UI:EMPLOYEE_DIRECTORY")));
 
-    mvc.perform(get("/demo-ui/page-2").with(user("viewer")))
+    mvc.perform(get("/demo-ui/manager-workspace").with(user("emma")))
         .andExpect(status().isForbidden());
   }
 
   @Test
-  void managerSeesAndCanOpenBothPages() throws Exception {
-    mvc.perform(get("/demo-ui/").with(user("manager")))
+  void hrManagerSeesTheDirectoryAndManagerWorkspace() throws Exception {
+    mvc.perform(get("/demo-ui/").with(user("michael")))
         .andExpect(status().isOk())
-        .andExpect(content().string(containsString("Sample page 1")))
-        .andExpect(content().string(containsString("Sample page 2")));
+        .andExpect(content().string(containsString("Employee directory")))
+        .andExpect(content().string(containsString("Manager workspace")));
 
-    mvc.perform(get("/demo-ui/page-1").with(user("manager")))
+    mvc.perform(get("/demo-ui/employee-directory").with(user("michael")))
         .andExpect(status().isOk());
-    mvc.perform(get("/demo-ui/page-2").with(user("manager")))
+    mvc.perform(get("/demo-ui/manager-workspace").with(user("michael")))
         .andExpect(status().isOk())
-        .andExpect(content().string(containsString("UI:seePage2")));
+        .andExpect(content().string(containsString("UI:MANAGER_WORKSPACE")));
   }
 
   @Test
   void logoutEndsKeycloakSessionAndReturnsToPublicPage() throws Exception {
     mvc.perform(
             post("/authorization/security/logout")
-                .with(user("viewer"))
+                .with(user("emma"))
                 .with(csrf())
                 .cookie(
                     new Cookie("AUTHORIZATION_ACCESS_TOKEN", "access-token"),
@@ -121,7 +121,7 @@ class KeycloakDemoUiIntegrationTest {
   void cookieAuthenticatedLogoutRequiresCsrf() throws Exception {
     mvc.perform(
             post("/authorization/security/logout")
-                .with(user("viewer"))
+                .with(user("emma"))
                 .cookie(
                     new Cookie("AUTHORIZATION_ACCESS_TOKEN", "access-token"),
                     new Cookie("AUTHORIZATION_ID_TOKEN", "id-token")))
@@ -169,7 +169,7 @@ class KeycloakDemoUiIntegrationTest {
           Jwt.withTokenValue(token)
               .header("alg", "RS256")
               .issuer("local")
-              .subject("viewer")
+              .subject("emma")
               .issuedAt(Instant.now().minusSeconds(60))
               .expiresAt(Instant.now().plusSeconds(300))
               .build();

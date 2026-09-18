@@ -26,12 +26,15 @@ class DemoAuthorizationIntegrationTest {
     mvc.perform(get("/demo/public")).andExpect(status().isOk());
     mvc.perform(get("/demo/profile")).andExpect(status().isUnauthorized());
     mvc.perform(get("/demo/employees")).andExpect(status().isUnauthorized());
-    mvc.perform(get("/demo/profile").header("X-Demo-User", "viewer")).andExpect(status().isOk());
-    mvc.perform(get("/demo/employees").header("X-Demo-User", "viewer")).andExpect(status().isOk());
-    mvc.perform(put("/demo/employees/1").header("X-Demo-User", "viewer"))
+    mvc.perform(get("/demo/profile").header("X-Demo-User", "emma"))
+        .andExpect(status().isOk());
+    mvc.perform(get("/demo/employees").header("X-Demo-User", "emma"))
+        .andExpect(status().isOk());
+    mvc.perform(put("/demo/employees/1").header("X-Demo-User", "emma"))
         .andExpect(status().isForbidden());
-    mvc.perform(get("/demo/employees").header("X-Demo-User", "manager")).andExpect(status().isOk());
-    mvc.perform(put("/demo/employees/1").header("X-Demo-User", "manager"))
+    mvc.perform(get("/demo/employees").header("X-Demo-User", "michael"))
+        .andExpect(status().isOk());
+    mvc.perform(put("/demo/employees/1").header("X-Demo-User", "michael"))
         .andExpect(status().isOk());
   }
 
@@ -61,7 +64,7 @@ class DemoAuthorizationIntegrationTest {
         .andExpect(status().isBadRequest());
     mvc.perform(
             post("/demo/employees")
-                .header("X-Demo-User", "viewer")
+                .header("X-Demo-User", "emma")
                 .header("X-HTTP-Method-Override", "GET"))
         .andExpect(status().isForbidden());
   }

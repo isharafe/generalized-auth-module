@@ -121,7 +121,8 @@ The current suite covers:
 - LDAP settings and filter escaping, group/attribute mapping, full and targeted synchronization,
   missing/stale removal, MANUAL/SEED preservation, pending assignment resolution, failure status,
   audit, and cache invalidation
-- demo OIDC browser redirection, login-triggered targeted synchronization, `UI:seePage1`/`UI:seePage2` link visibility, and direct-page denial
+- demo OIDC browser redirection, login-triggered targeted synchronization,
+  `UI:employeeDirectory`/`UI:managerWorkspace` link visibility, and direct-page denial
 - V1-to-current Flyway upgrade with existing data preserved, type-qualified permission/audit codes,
   and final schema validation
 - seed definition upgrades, invalid-seed rollback, idempotency, and concurrent lock-protected startup

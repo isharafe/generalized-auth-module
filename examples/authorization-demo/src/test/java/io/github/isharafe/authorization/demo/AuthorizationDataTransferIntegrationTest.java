@@ -24,7 +24,7 @@ import org.springframework.test.web.servlet.MockMvc;
 @AutoConfigureMockMvc
 class AuthorizationDataTransferIntegrationTest {
   private static final String BASE = "/authorization-admin/api";
-  private static final String ADMIN = "manager";
+  private static final String ADMIN = "olivia";
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
   @Autowired MockMvc mvc;
@@ -32,7 +32,7 @@ class AuthorizationDataTransferIntegrationTest {
   @Test
   void fullSnapshotRestoresTheExportedAuthorizationData() throws Exception {
     mvc.perform(post(BASE + "/data/export")).andExpect(status().isUnauthorized());
-    mvc.perform(post(BASE + "/data/export").header("X-Demo-User", "viewer"))
+    mvc.perform(post(BASE + "/data/export").header("X-Demo-User", "emma"))
         .andExpect(status().isForbidden());
 
     String snapshot =

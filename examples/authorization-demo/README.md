@@ -56,93 +56,93 @@ Their password is `demo`.
 
 | Username | Effective application access |
 |---|---|
-| `viewer` | Profile, employee list, demo page 1 |
-| `manager` | Profile, employee list and update, demo pages 1 and 2 |
-| `admin-user` | Profile and authorization admin UI/API; no employee or demo sample-page permission |
+| `emma` | Profile, employee list, and employee directory |
+| `michael` | Profile, employee update, employee directory, and manager workspace |
+| `olivia` | Profile and authorization admin UI/API; no employee access |
 
 The resulting behavior is:
 
-| Request or page | No login | `viewer` | `manager` | `admin-user` |
+| Request or page | No login | `emma` | `michael` | `olivia` |
 |---|---:|---:|---:|---:|
 | `GET /demo/public` | 200 | 200 | 200 | 200 |
 | `GET /demo/profile` | 401 | 200 | 200 | 200 |
 | `GET /demo/employees` | 401 | 200 | 200 | 403 |
 | `PUT /demo/employees/1` | 401 | 403 | 200 | 403 |
-| `/demo-ui/` landing page | Login | Page 1 | Pages 1 and 2 | No sample pages |
+| `/demo-ui/` landing page | Login | Employee directory | Directory and manager workspace | No workspaces |
 | `/authorization-admin/` | Login | 403 | 403 | Allowed |
 
 For HTML requests, an unauthenticated response may be represented by a redirect to Keycloak rather
-than a literal 401 page. Direct navigation to `/demo-ui/page-1` and `/demo-ui/page-2` is checked on
-the server; hiding a link on the landing page is not the security boundary.
+than a literal 401 page. Direct navigation to `/demo-ui/employee-directory` and
+`/demo-ui/manager-workspace` is checked on the server; hiding a link on the landing page is not the
+security boundary.
 
 ### Why each user behaves differently
 
 The realm gives the users these external authorities:
 
 ```text
-viewer
-  group /authorization-demo/viewers
-  realm role authorization-demo-viewer
+emma
+  group /authorization-demo/hr-analysts
 
-manager
-  group /authorization-demo/employee-managers
-  realm role authorization-demo-manager
+michael
+  group /authorization-demo/hr-managers
+  inherited realm role people-manager
 
-admin-user
-  group /authorization-demo/admins
+olivia
+  group /authorization-demo/authorization-administrators
 ```
 
 `src/main/resources/authorization/demo-seed.yml` maps those authorities to application-owned
 authorization objects:
 
 ```text
-/authorization-demo/viewers           -> HR_VIEWER
-authorization-demo-viewer              -> EMPLOYEE_VIEWER
-/authorization-demo/employee-managers  -> EMPLOYEE_MANAGER
-authorization-demo-manager             -> HR_MANAGER
-/authorization-demo/admins             -> AUTHZ_SYSTEM_ADMIN
+/authorization-demo/hr-analysts                  -> HR_ANALYST
+people-manager                                   -> HR_MANAGER
+/authorization-demo/authorization-administrators -> AUTHORIZATION_ADMINISTRATOR
 ```
 
-`HR_VIEWER` contains `EMPLOYEE_VIEWER`; `HR_MANAGER` contains `EMPLOYEE_MANAGER`. The permission
-groups ultimately grant these type-qualified permissions:
+The analyst demonstrates a Keycloak group mapping. The manager group grants `people-manager`, so
+the manager demonstrates a Keycloak realm-role mapping. Local roles compose capability-oriented
+permission groups:
 
 ```text
-EMPLOYEE_VIEWER
-  URL:EMPLOYEE_VIEW    GET:/demo/employees/**
-  UI:DEMO_SEE_PAGE_1   seePage1
+HR_ANALYST
+  EMPLOYEE_READ_ACCESS
+    URL:EMPLOYEE_VIEW       GET:/demo/employees/**
+    UI:EMPLOYEE_DIRECTORY   employeeDirectory
 
-EMPLOYEE_MANAGER
-  URL:EMPLOYEE_VIEW    GET:/demo/employees/**
-  URL:EMPLOYEE_EDIT    PUT:/demo/employees/**
-  UI:DEMO_SEE_PAGE_1   seePage1
-  UI:DEMO_SEE_PAGE_2   seePage2
+HR_MANAGER
+  EMPLOYEE_READ_ACCESS
+  EMPLOYEE_MANAGEMENT_ACCESS
+    URL:EMPLOYEE_EDIT       PUT:/demo/employees/**
+    UI:MANAGER_WORKSPACE    managerWorkspace
 ```
 
-The admin module contributes the permissions contained by `AUTHZ_SYSTEM_ADMIN`; it does not assign
-that role to anyone. This demo explicitly maps `/authorization-demo/admins` to that role.
+The admin module contributes the `AUTHZ_SYSTEM_ADMIN` permission group but assigns no user. The
+demo's `AUTHORIZATION_ADMINISTRATOR` role contains that group.
 
 ## LDAP-backed employee users
 
 The same Keycloak demo federates users from OpenLDAP. After `keycloak-init` has completed, all of
 these users can log in to this application with password `demo`:
 
-| Username | Job/function | LDAP-derived Keycloak group |
-|---|---|---|
-| `alice` | Department head | `/Function-Department-Heads` |
-| `bob` | Manager | `/Function-Managers` |
-| `john` | Employee | `/Function-Employees` |
-| `mary` | Employee | `/Function-Employees` |
-| `susan` | HR administrator | `/Function-HR-Admins` |
-| `david` | Employee | `/Function-Employees` |
+| Username | Job/function | LDAP-derived Keycloak group | Effective application access |
+|---|---|---|---|
+| `alice` | Department head | `/Function-Department-Heads` | HR manager |
+| `bob` | Manager | `/Function-Managers` | HR manager |
+| `john` | Employee | `/Function-Employees` | Authentication only |
+| `mary` | Employee | `/Function-Employees` | Authentication only |
+| `susan` | HR administrator | `/Function-HR-Admins` | Authentication only |
+| `david` | Employee | `/Function-Employees` | Authentication only |
 
-These users intentionally have **authentication only** in the authorization application as shipped.
-They can open `/demo/profile` and the `/demo-ui/` landing page, but the landing page shows no sample
-pages. Employee operations and the authorization admin UI return 403.
+Alice and Bob inherit the `people-manager` role, which the shipped seed maps to local `HR_MANAGER`.
+The remaining LDAP identities can open `/demo/profile`, but employee operations and the
+authorization admin UI return 403.
 
-Although their LDAP groups produce Keycloak roles such as `VIEW_SELF`, `VIEW_TEAM`, and `VIEW_ALL`,
-the application seed does not map those external authorities. Keycloak roles never become URL or UI
-permissions implicitly. This demonstrates the boundary between external identity data and local
-application authorization.
+LDAP groups produce business roles such as `employee`, `people-manager`, and `hr-administrator`,
+but the application seed maps only `people-manager` by default.
+Keycloak roles never become URL or UI permissions implicitly. This demonstrates the boundary
+between external identity data and local application authorization.
 
 ## Changing behavior
 
@@ -151,7 +151,8 @@ There are three useful ways to change access in this demo.
 ### 1. Map another Keycloak group or role in the seed
 
 Edit `src/main/resources/authorization/demo-seed.yml`. For example, these mappings make regular
-LDAP employees viewers, Bob a manager, and Susan an authorization administrator:
+LDAP employees HR analysts and Susan an authorization administrator. Bob and Alice already receive
+`HR_MANAGER` through the shipped `people-manager` role mapping.
 
 ```yaml
 authorization:
@@ -163,21 +164,14 @@ authorization:
         authority: /Function-Employees
         target:
           type: ROLE
-          code: HR_VIEWER
-
-      - source-system: KEYCLOAK
-        authority-type: GROUP
-        authority: /Function-Managers
-        target:
-          type: ROLE
-          code: HR_MANAGER
+          code: HR_ANALYST
 
       - source-system: KEYCLOAK
         authority-type: GROUP
         authority: /Function-HR-Admins
         target:
           type: ROLE
-          code: AUTHZ_SYSTEM_ADMIN
+          code: AUTHORIZATION_ADMINISTRATOR
 ```
 
 External authority values are exact and Keycloak group paths include the leading `/`. Keep the
@@ -188,9 +182,9 @@ Restart the application to reapply the seed, then sign out and sign back in as t
 login-time targeted synchronization recalculates `IDENTITY_SYNC` assignments. Because the demo uses
 an in-memory H2 database, every application restart begins with a fresh local authorization store.
 
-Realm roles can be mapped in the same way by using `authority-type: ROLE`. For example,
-`authority: VIEW_TEAM` could target `HR_MANAGER`. Prefer group mappings in this demo when the group
-expresses the business function more clearly.
+Realm roles can be mapped in the same way by using `authority-type: ROLE`. The shipped
+`authority: people-manager` mapping targets `HR_MANAGER`. Use whichever authority most accurately
+represents the responsibility managed by the identity provider.
 
 ### 2. Change a user's Keycloak authorities
 
@@ -201,14 +195,15 @@ Open <http://localhost:8081/admin/>, sign in with Keycloak administrator credent
 Useful built-in groups are:
 
 ```text
-/authorization-demo/viewers
-/authorization-demo/employee-managers
-/authorization-demo/admins
+/authorization-demo/hr-analysts
+/authorization-demo/hr-managers
+/authorization-demo/authorization-administrators
 ```
 
-For example, adding `viewer` to `/authorization-demo/employee-managers` grants the locally mapped
-manager permission group after the next synchronization. Removing a mapped authority removes only
-the corresponding `IDENTITY_SYNC` assignment; manual and seed-owned assignments are preserved.
+For example, adding `emma` to `/authorization-demo/hr-managers` grants the inherited
+`people-manager` role and therefore the local `HR_MANAGER` role after the next synchronization.
+Removing a mapped authority removes only the corresponding `IDENTITY_SYNC` assignment; manual and
+seed-owned assignments are preserved.
 
 If you edit `employee-demo-realm.json` instead of using the admin console, reset the Keycloak data
 before starting it again because realm import does not overwrite an already imported realm:
@@ -224,9 +219,9 @@ fixtures.
 ### 3. Assign local access in the admin UI
 
 First log in once as the target user so targeted synchronization creates the local user. Then sign
-in as `admin-user`, open <http://localhost:8080/authorization-admin/>, select the user, and assign a
-local role or permission group such as `HR_VIEWER`, `HR_MANAGER`, `EMPLOYEE_VIEWER`, or
-`EMPLOYEE_MANAGER`.
+in as `olivia`, open <http://localhost:8080/authorization-admin/>, select the user,
+and assign a local role or permission group such as `HR_ANALYST`, `HR_MANAGER`,
+`EMPLOYEE_READ_ACCESS`, or `EMPLOYEE_MANAGEMENT_ACCESS`.
 
 Admin-created assignments have source `MANUAL`. Later Keycloak synchronization does not delete
 them. In this demo they last only for the life of the application process because H2 is in-memory.
@@ -246,24 +241,25 @@ Current rules include:
 *:/demo/profile                   AUTHENTICATED
 *:/demo/employees/**              AUTHORIZED
 *:/demo-ui/**                     AUTHENTICATED
-seePage1                          AUTHORIZED (UI resource)
-seePage2                          AUTHORIZED (UI resource)
+employeeDirectory                AUTHORIZED (UI resource)
+managerWorkspace                 AUTHORIZED (UI resource)
 *:/authorization-admin/api/**     AUTHORIZED
 *:/authorization-admin/**         AUTHORIZED
 ```
 
 Examples of configuration changes:
 
-- Add `URL:EMPLOYEE_EDIT` to `EMPLOYEE_VIEWER` to let `viewer` update employees.
-- Remove `UI:DEMO_SEE_PAGE_2` from `EMPLOYEE_MANAGER` to hide and deny page 2 for `manager`.
+- Add `URL:EMPLOYEE_EDIT` to `EMPLOYEE_READ_ACCESS` to let `emma` update employees.
+- Remove `UI:MANAGER_WORKSPACE` from `EMPLOYEE_MANAGEMENT_ACCESS` to hide and deny the manager
+  workspace for `michael`.
 - Change the `/demo/profile` rule from `AUTHENTICATED` to `AUTHORIZED` and define/grant a matching
   URL permission if a login alone should no longer be enough.
 - Add a new type-qualified UI permission and UI resource rule to demonstrate another component.
 
 Permission group and role membership in a seed is replacement-oriented: the listed members become
 the stored membership for that object. Permission codes must remain type-qualified, such as
-`URL:EMPLOYEE_VIEW` or `UI:DEMO_SEE_PAGE_1`. URL permission patterns include the HTTP method, while
-UI patterns such as `seePage1` are exact opaque identifiers.
+`URL:EMPLOYEE_VIEW` or `UI:EMPLOYEE_DIRECTORY`. URL permission patterns include the HTTP method,
+while UI patterns such as `employeeDirectory` are exact opaque identifiers.
 
 No matching resource rule is denied by default. For example, `/demo/public/` is different from the
 seeded exact `/demo/public` route and is not automatically public.

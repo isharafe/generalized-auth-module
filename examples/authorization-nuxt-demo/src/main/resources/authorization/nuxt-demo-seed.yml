@@ -9,14 +9,14 @@ authorization:
         name: Edit employees
         type: URL
         pattern: PUT:/demo/employees/**
-      - code: UI:DEMO_PAGE_1
-        name: See demo page one
+      - code: UI:EMPLOYEE_DIRECTORY
+        name: Open the employee directory
         type: UI
-        pattern: demoPage1
-      - code: UI:DEMO_PAGE_2
-        name: See demo page two
+        pattern: employeeDirectory
+      - code: UI:MANAGER_WORKSPACE
+        name: Open the manager workspace
         type: UI
-        pattern: demoPage2
+        pattern: managerWorkspace
       - code: UI:EMPLOYEE_EDIT
         name: Use employee edit controls
         type: UI
@@ -26,25 +26,25 @@ authorization:
         type: UI
         pattern: authorizationAdmin
     permission-groups:
-      - code: EMPLOYEE_VIEWER
-        name: Employee viewer
-        permissions: [URL:EMPLOYEE_VIEW, UI:DEMO_PAGE_1]
-      - code: EMPLOYEE_MANAGER
-        name: Employee manager
-        permissions: [URL:EMPLOYEE_VIEW, URL:EMPLOYEE_EDIT, UI:DEMO_PAGE_1, UI:DEMO_PAGE_2, UI:EMPLOYEE_EDIT]
-      - code: DEMO_ADMIN_ACCESS
-        name: Demo administration navigation
+      - code: EMPLOYEE_READ_ACCESS
+        name: Employee read access
+        permissions: [URL:EMPLOYEE_VIEW, UI:EMPLOYEE_DIRECTORY]
+      - code: EMPLOYEE_MANAGEMENT_ACCESS
+        name: Employee management access
+        permissions: [URL:EMPLOYEE_EDIT, UI:MANAGER_WORKSPACE, UI:EMPLOYEE_EDIT]
+      - code: AUTHORIZATION_ADMIN_UI_ACCESS
+        name: Authorization administration navigation access
         permissions: [UI:AUTHORIZATION_ADMIN]
     roles:
-      - code: HR_VIEWER
-        name: HR viewer
-        permission-groups: [EMPLOYEE_VIEWER]
+      - code: HR_ANALYST
+        name: HR analyst
+        permission-groups: [EMPLOYEE_READ_ACCESS]
       - code: HR_MANAGER
         name: HR manager
-        permission-groups: [EMPLOYEE_MANAGER]
-      - code: DEMO_AUTHORIZATION_ADMIN
-        name: Demo authorization administrator
-        permission-groups: [AUTHZ_SYSTEM_ADMIN, DEMO_ADMIN_ACCESS]
+        permission-groups: [EMPLOYEE_READ_ACCESS, EMPLOYEE_MANAGEMENT_ACCESS]
+      - code: AUTHORIZATION_ADMINISTRATOR
+        name: Authorization administrator
+        permission-groups: [AUTHZ_SYSTEM_ADMIN, AUTHORIZATION_ADMIN_UI_ACCESS]
     resource-rules:
       - code: DEMO_PUBLIC
         type: URL
@@ -58,13 +58,13 @@ authorization:
         type: URL
         pattern: "*:/demo/employees/**"
         access-mode: AUTHORIZED
-      - code: DEMO_PAGE_1
+      - code: DEMO_EMPLOYEE_DIRECTORY
         type: UI
-        pattern: demoPage1
+        pattern: employeeDirectory
         access-mode: AUTHORIZED
-      - code: DEMO_PAGE_2
+      - code: DEMO_MANAGER_WORKSPACE
         type: UI
-        pattern: demoPage2
+        pattern: managerWorkspace
         access-mode: AUTHORIZED
       - code: DEMO_EMPLOYEE_EDIT
         type: UI
@@ -85,31 +85,19 @@ authorization:
     external-authority-mappings:
       - source-system: KEYCLOAK
         authority-type: GROUP
-        authority: /authorization-demo/viewers
+        authority: /authorization-demo/hr-analysts
         target:
           type: ROLE
-          code: HR_VIEWER
+          code: HR_ANALYST
       - source-system: KEYCLOAK
         authority-type: ROLE
-        authority: authorization-demo-viewer
-        target:
-          type: PERMISSION_GROUP
-          code: EMPLOYEE_VIEWER
-      - source-system: KEYCLOAK
-        authority-type: GROUP
-        authority: /authorization-demo/employee-managers
-        target:
-          type: PERMISSION_GROUP
-          code: EMPLOYEE_MANAGER
-      - source-system: KEYCLOAK
-        authority-type: ROLE
-        authority: authorization-demo-manager
+        authority: people-manager
         target:
           type: ROLE
           code: HR_MANAGER
       - source-system: KEYCLOAK
         authority-type: GROUP
-        authority: /authorization-demo/admins
+        authority: /authorization-demo/authorization-administrators
         target:
           type: ROLE
-          code: DEMO_AUTHORIZATION_ADMIN
+          code: AUTHORIZATION_ADMINISTRATOR

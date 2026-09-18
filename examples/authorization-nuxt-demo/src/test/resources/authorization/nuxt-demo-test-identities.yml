@@ -2,27 +2,27 @@ authorization:
   seed:
     users:
       - issuer: local
-        subject: viewer
-        username: viewer
+        subject: emma
+        username: emma
       - issuer: local
-        subject: manager
-        username: manager
+        subject: michael
+        username: michael
       - issuer: local
-        subject: admin-user
-        username: admin-user
+        subject: olivia
+        username: olivia
     user-assignments:
       - issuer: local
-        subject: viewer
+        subject: emma
         target-type: ROLE
-        target-code: HR_VIEWER
+        target-code: HR_ANALYST
         source: SEED
       - issuer: local
-        subject: manager
+        subject: michael
         target-type: ROLE
         target-code: HR_MANAGER
         source: SEED
       - issuer: local
-        subject: admin-user
+        subject: olivia
         target-type: ROLE
-        target-code: DEMO_AUTHORIZATION_ADMIN
+        target-code: AUTHORIZATION_ADMINISTRATOR
         source: SEED

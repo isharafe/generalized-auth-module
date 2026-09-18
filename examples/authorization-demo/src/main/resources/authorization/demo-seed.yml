@@ -9,28 +9,31 @@ authorization:
         name: Edit employees
         type: URL
         pattern: PUT:/demo/employees/**
-      - code: UI:DEMO_SEE_PAGE_1
-        name: See demo page 1
+      - code: UI:EMPLOYEE_DIRECTORY
+        name: Open the employee directory
         type: UI
-        pattern: seePage1
-      - code: UI:DEMO_SEE_PAGE_2
-        name: See demo page 2
+        pattern: employeeDirectory
+      - code: UI:MANAGER_WORKSPACE
+        name: Open the manager workspace
         type: UI
-        pattern: seePage2
+        pattern: managerWorkspace
     permission-groups:
-      - code: EMPLOYEE_VIEWER
-        name: Employee viewer
-        permissions: [URL:EMPLOYEE_VIEW, UI:DEMO_SEE_PAGE_1]
-      - code: EMPLOYEE_MANAGER
-        name: Employee manager
-        permissions: [URL:EMPLOYEE_VIEW, URL:EMPLOYEE_EDIT, UI:DEMO_SEE_PAGE_1, UI:DEMO_SEE_PAGE_2]
+      - code: EMPLOYEE_READ_ACCESS
+        name: Employee read access
+        permissions: [URL:EMPLOYEE_VIEW, UI:EMPLOYEE_DIRECTORY]
+      - code: EMPLOYEE_MANAGEMENT_ACCESS
+        name: Employee management access
+        permissions: [URL:EMPLOYEE_EDIT, UI:MANAGER_WORKSPACE]
     roles:
-      - code: HR_VIEWER
-        name: HR viewer
-        permission-groups: [EMPLOYEE_VIEWER]
+      - code: HR_ANALYST
+        name: HR analyst
+        permission-groups: [EMPLOYEE_READ_ACCESS]
       - code: HR_MANAGER
         name: HR manager
-        permission-groups: [EMPLOYEE_MANAGER]
+        permission-groups: [EMPLOYEE_READ_ACCESS, EMPLOYEE_MANAGEMENT_ACCESS]
+      - code: AUTHORIZATION_ADMINISTRATOR
+        name: Authorization administrator
+        permission-groups: [AUTHZ_SYSTEM_ADMIN]
     resource-rules:
       - code: DEMO_PUBLIC
         type: URL
@@ -52,13 +55,13 @@ authorization:
         type: URL
         pattern: "*:/demo-ui/**"
         access-mode: AUTHENTICATED
-      - code: DEMO_UI_PAGE_1
+      - code: DEMO_UI_EMPLOYEE_DIRECTORY
         type: UI
-        pattern: seePage1
+        pattern: employeeDirectory
         access-mode: AUTHORIZED
-      - code: DEMO_UI_PAGE_2
+      - code: DEMO_UI_MANAGER_WORKSPACE
         type: UI
-        pattern: seePage2
+        pattern: managerWorkspace
         access-mode: AUTHORIZED
       - code: AUTHZ_ADMIN_API
         type: URL
@@ -71,31 +74,19 @@ authorization:
     external-authority-mappings:
       - source-system: KEYCLOAK
         authority-type: GROUP
-        authority: /authorization-demo/viewers
+        authority: /authorization-demo/hr-analysts
         target:
           type: ROLE
-          code: HR_VIEWER
+          code: HR_ANALYST
       - source-system: KEYCLOAK
         authority-type: GROUP
-        authority: /authorization-demo/employee-managers
-        target:
-          type: PERMISSION_GROUP
-          code: EMPLOYEE_MANAGER
-      - source-system: KEYCLOAK
-        authority-type: GROUP
-        authority: /authorization-demo/admins
+        authority: /authorization-demo/authorization-administrators
         target:
           type: ROLE
-          code: AUTHZ_SYSTEM_ADMIN
+          code: AUTHORIZATION_ADMINISTRATOR
       - source-system: KEYCLOAK
         authority-type: ROLE
-        authority: authorization-demo-manager
+        authority: people-manager
         target:
           type: ROLE
           code: HR_MANAGER
-      - source-system: KEYCLOAK
-        authority-type: ROLE
-        authority: authorization-demo-viewer
-        target:
-          type: PERMISSION_GROUP
-          code: EMPLOYEE_VIEWER

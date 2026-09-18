@@ -30,7 +30,7 @@ async function loadProtectedData() {
   requestError.value = null;
   try {
     profile.value = await authorization.request<Profile>("/demo/profile");
-    if (!access.value.pageOne) {
+    if (!access.value.employeeDirectory) {
       employees.value = [];
       return;
     }
@@ -109,27 +109,27 @@ async function save(employee: Employee) {
     </section>
 
     <section class="showcase-grid">
-      <Authorized permission="UI:DEMO_PAGE_1">
+      <Authorized permission="UI:EMPLOYEE_DIRECTORY">
         <article class="feature-card mint">
           <span class="card-number">01</span>
-          <h2>Viewer content</h2>
-          <p>Rendered by <code>&lt;Authorized&gt;</code> for users with UI:DEMO_PAGE_1.</p>
-          <NuxtLink class="inline-link" to="/page-one">Open protected page →</NuxtLink>
+          <h2>Employee directory</h2>
+          <p>Rendered by <code>&lt;Authorized&gt;</code> for users with UI:EMPLOYEE_DIRECTORY.</p>
+          <NuxtLink class="inline-link" to="/employee-directory">Open directory →</NuxtLink>
         </article>
         <template #fallback>
           <article class="feature-card locked">
             <span class="card-number">01</span>
-            <h2>Viewer content is hidden</h2>
+            <h2>Employee directory is hidden</h2>
             <p>The component fallback renders while the required permission is unavailable.</p>
           </article>
         </template>
       </Authorized>
 
-      <article v-authorization="'UI:DEMO_PAGE_2'" class="feature-card violet">
+      <article v-authorization="'UI:MANAGER_WORKSPACE'" class="feature-card violet">
         <span class="card-number">02</span>
-        <h2>Manager content</h2>
+        <h2>Manager workspace</h2>
         <p>This entire card is controlled by the <code>v-authorization</code> directive.</p>
-        <NuxtLink class="inline-link" to="/page-two">Open manager page →</NuxtLink>
+        <NuxtLink class="inline-link" to="/manager-workspace">Open workspace →</NuxtLink>
       </article>
 
       <Authorized permission="UI:AUTHORIZATION_ADMIN">

@@ -32,9 +32,9 @@ as runtime authentication.
 The bundled Keycloak realm provides these login identities (all use password `demo`):
 
 ```text
-viewer
-manager
-admin-user
+emma
+michael
+olivia
 ```
 
 The application seed deliberately does not create or assign users. Targeted synchronization maps
@@ -43,15 +43,16 @@ the external authorities for those identities onto the following application-own
 Roles:
 
 ```text
-HR_VIEWER
+HR_ANALYST
 HR_MANAGER
+AUTHORIZATION_ADMINISTRATOR
 ```
 
 Permission groups:
 
 ```text
-EMPLOYEE_VIEWER
-EMPLOYEE_MANAGER
+EMPLOYEE_READ_ACCESS
+EMPLOYEE_MANAGEMENT_ACCESS
 ```
 
 Permissions:
@@ -64,13 +65,13 @@ URL:EMPLOYEE_EDIT | PUT:/demo/employees/**
 Mappings:
 
 ```text
-viewer  -> HR_VIEWER  -> EMPLOYEE_VIEWER -> URL:EMPLOYEE_VIEW
-manager -> HR_MANAGER -> EMPLOYEE_MANAGER -> URL:EMPLOYEE_VIEW + URL:EMPLOYEE_EDIT
-admin-user -> AUTHZ_SYSTEM_ADMIN
+emma -> HR_ANALYST -> EMPLOYEE_READ_ACCESS -> URL:EMPLOYEE_VIEW
+michael -> HR_MANAGER -> EMPLOYEE_READ_ACCESS + EMPLOYEE_MANAGEMENT_ACCESS
+olivia -> AUTHORIZATION_ADMINISTRATOR -> AUTHZ_SYSTEM_ADMIN
 ```
 
-The isolated integration-test profile loads a second seed file with local `viewer`, `manager`, and
-`admin` identities; this is test fixture data, not runtime demo authentication.
+The isolated integration-test profile loads a second seed file with matching local test identities;
+this is test fixture data, not runtime demo authentication.
 
 ## Resource rules
 
@@ -109,7 +110,7 @@ GET /demo/profile      -> 401
 GET /demo/employees    -> 401
 ```
 
-Viewer:
+HR analyst:
 
 ```text
 GET /demo/profile          -> 200
@@ -117,7 +118,7 @@ GET /demo/employees        -> 200
 PUT /demo/employees/1      -> 403
 ```
 
-Manager:
+HR manager:
 
 ```text
 GET /demo/employees        -> 200
@@ -126,13 +127,13 @@ PUT /demo/employees/1      -> 200
 
 ## Admin API
 
-`admin-user` can manage data through the admin REST APIs according to the seeded framework admin
+`olivia` can manage data through the admin REST APIs according to the seeded framework admin
 permissions.
 
 ## Admin UI
 
 The demo includes `authorization-admin` and serves it from `/authorization-admin/`. Sign in as
-`admin-user` through the normal Keycloak login flow, then open:
+`olivia` through the normal Keycloak login flow, then open:
 
 ```text
 http://localhost:8080/authorization-admin/
@@ -185,27 +186,27 @@ administrative service-account privileges.
 
 ### Demo permissions
 
-The seed defines two opaque UI resources:
+The seed defines two opaque UI resource identifiers:
 
 ```text
-UI:seePage1
-UI:seePage2
+employeeDirectory
+managerWorkspace
 ```
 
-`EMPLOYEE_VIEWER` contains `UI:DEMO_SEE_PAGE_1` (pattern `seePage1`). `EMPLOYEE_MANAGER` contains
-that permission and `UI:DEMO_SEE_PAGE_2` (pattern `seePage2`). Existing
+`EMPLOYEE_READ_ACCESS` contains `UI:EMPLOYEE_DIRECTORY` (pattern `employeeDirectory`).
+`EMPLOYEE_MANAGEMENT_ACCESS` contains `UI:MANAGER_WORKSPACE` (pattern `managerWorkspace`). Existing
 Keycloak group/realm-role mappings therefore produce this browser behavior:
 
 ```text
-viewer  -> page 1 only
-manager -> page 1 and page 2
+emma -> employee directory only
+michael -> employee directory and manager workspace
 ```
 
-The imported realm provides `viewer` in `/authorization-demo/viewers` with realm role
-`authorization-demo-viewer`, `manager` in `/authorization-demo/employee-managers` with realm role
-`authorization-demo-manager`, and `admin-user` in `/authorization-demo/admins`. Their password is
-`demo`. The login-time synchronization converts those external authorities into the local seeded
-roles; Keycloak does not define the application permissions directly.
+The imported realm provides `emma` in `/authorization-demo/hr-analysts`, `michael` in
+`/authorization-demo/hr-managers` with inherited realm role `people-manager`, and
+`olivia` in `/authorization-demo/authorization-administrators`. Their password is
+`demo`. Login-time synchronization converts those external authorities into local seeded roles;
+Keycloak does not define application permissions directly.
 
 The landing page hides unavailable links, and each page checks its UI permission again on direct
 navigation. The containing `/demo-ui/**` URL resource remains `AUTHENTICATED`, demonstrating that
@@ -243,8 +244,8 @@ Open:
 http://localhost:8080/demo-ui/
 ```
 
-An unauthenticated HTML request redirects to Keycloak. Sign in as `viewer`, `manager`, or
-`admin-user` with password `demo`. After login, the success handler synchronizes that exact
+An unauthenticated HTML request redirects to Keycloak. Sign in as `emma`, `michael`, or
+`olivia` with password `demo`. After login, the success handler synchronizes that exact
 `(issuer, subject)` before placing tokens in scoped HttpOnly cookies and redirecting to the demo
 landing page. No curl/bootstrap sync is required. A synchronization failure returns HTTP 503
 instead of treating the user as having no permissions.
@@ -259,6 +260,7 @@ sample pages. Query-parameter and runtime header authentication are not availabl
 ## Nuxt/Nitro companion demo
 
 The separate `examples/authorization-nuxt-demo` application reuses this realm and the same
-`viewer`, `manager`, and `admin-user` identities. It runs Spring on port 8082 and exposes the
-browser application, OAuth2 callbacks, and optional administration UI through Nuxt on port 3000.
+`emma`, `michael`, and `olivia` identities. It runs Spring on port 8082 and
+exposes the browser application, OAuth2 callbacks, and optional administration UI through Nuxt on
+port 3000.
 See its [README](../examples/authorization-nuxt-demo/README.md) for startup and behavior details.

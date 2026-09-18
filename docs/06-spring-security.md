@@ -121,11 +121,11 @@ Applications can inject core's provider-neutral `AuthorizationService` for non-r
 component-level checks. The current-user overload reads Spring Security's active authentication:
 
 ```java
-if (authorization.isGranted(ResourceType.UI, "seePage1")) {
+if (authorization.isGranted(ResourceType.UI, "employeeDirectory")) {
   // render the component
 }
 
-authorization.requireGranted(ResourceType.UI, "seePage1");
+authorization.requireGranted(ResourceType.UI, "employeeDirectory");
 ```
 
 Overloads accepting an explicit `Authentication` are available for asynchronous code and tests.
@@ -194,8 +194,8 @@ After login it synchronizes the authenticated `(issuer, subject)`, then evaluate
 resources through the core `AuthorizationService`:
 
 ```text
-UI:seePage1
-UI:seePage2
+UI:employeeDirectory
+UI:managerWorkspace
 ```
 
 The `/demo-ui/**` URL rule requires authentication. Separately, the landing page renders only links

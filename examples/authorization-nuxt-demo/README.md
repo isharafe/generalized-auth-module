@@ -46,11 +46,11 @@ passwords are `demo`.
 
 | User | UI behavior | Backend behavior |
 | --- | --- | --- |
-| `viewer` | Page one is visible; edit inputs are disabled | Can view employees; cannot edit or administer |
-| `manager` | Pages one and two are visible; edit inputs are enabled | Can view and edit employees; cannot administer |
-| `admin-user` | Administration card/link is visible | Can use `/authorization-admin/`; has no employee access |
+| `emma` | Employee directory is visible; edit inputs are disabled | Can view employees; cannot edit or administer |
+| `michael` | Directory and manager workspace are visible; edit inputs are enabled | Can view and edit employees; cannot administer |
+| `olivia` | Administration card/link is visible | Can use `/authorization-admin/`; has no employee access |
 
-The admin UI is available, after signing in as `admin-user`, at
+The admin UI is available, after signing in as `olivia`, at
 `http://localhost:3000/authorization-admin/`. Both its static assets and REST calls remain on the
 Nuxt origin and are proxied to the `authorization-admin` dependency in Spring.
 
@@ -59,12 +59,18 @@ Nuxt origin and are proxied to the `authorization-admin` dependency in Spring.
 The application-owned authorization model is in
 `src/main/resources/authorization/nuxt-demo-seed.yml`:
 
-- `UI:DEMO_PAGE_1` controls the viewer card, navigation link, and page-one route.
-- `UI:DEMO_PAGE_2` controls the manager card, navigation link, and page-two route.
+- `UI:EMPLOYEE_DIRECTORY` controls the directory card, navigation link, and route.
+- `UI:MANAGER_WORKSPACE` controls the manager card, navigation link, and route.
 - `UI:EMPLOYEE_EDIT` enables or disables employee inputs and buttons.
 - `UI:AUTHORIZATION_ADMIN` shows the administration navigation.
 - `URL:EMPLOYEE_VIEW` and `URL:EMPLOYEE_EDIT` independently protect Spring endpoints.
 - `AUTHZ_SYSTEM_ADMIN`, supplied by `authorization-admin`, protects the management UI and API.
+
+The local `HR_ANALYST` and `HR_MANAGER` roles compose `EMPLOYEE_READ_ACCESS` and
+`EMPLOYEE_MANAGEMENT_ACCESS` permission groups. The analyst is mapped through the Keycloak
+`/authorization-demo/hr-analysts` group, while the manager is mapped through the inherited
+`people-manager` realm role. This intentionally demonstrates both supported external-authority
+mapping types without naming permissions as roles.
 
 The seed maps the existing Keycloak groups and realm roles to local roles or permission groups.
 Keycloak does not define application URL or UI permissions. To try different behavior, change group

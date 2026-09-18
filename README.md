@@ -92,13 +92,13 @@ authorization:
         type: URL
         pattern: GET:/employees/**
     permission-groups:
-      - code: EMPLOYEE_VIEWERS
-        name: Employee viewers
+      - code: EMPLOYEE_READ_ACCESS
+        name: Employee read access
         permissions: [URL:EMPLOYEE_VIEW]
     roles:
-      - code: HR_VIEWER
-        name: HR viewer
-        permission-groups: [EMPLOYEE_VIEWERS]
+      - code: HR_ANALYST
+        name: HR analyst
+        permission-groups: [EMPLOYEE_READ_ACCESS]
     resource-rules:
       - code: EMPLOYEES
         type: URL
@@ -300,11 +300,12 @@ Open:
 http://localhost:8080/demo-ui/
 ```
 
-Sign in as `viewer`, `manager`, or `admin-user` with password `demo`. The browser redirects
+Sign in as `emma`, `michael`, or `olivia` with password `demo`. The browser redirects
 to Keycloak using Authorization Code/OIDC login. On success, core places access and refresh tokens
 in HttpOnly cookies, removes the temporary login session, performs targeted identity
 synchronization, and authorizes from the local database/cache. The demo page checks the opaque UI
-resources `seePage1` and `seePage2`; `admin-user` can open `/authorization-admin/`.
+resources `employeeDirectory` and `managerWorkspace`; `olivia` can open
+`/authorization-admin/`.
 
 Sign out is a CSRF-protected POST and uses OIDC RP-initiated logout to clear local cookies and end
 the Keycloak SSO session. See

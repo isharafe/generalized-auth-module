@@ -50,6 +50,17 @@ The realm's `employee-demo` OIDC client accepts callbacks for both runnable appl
 The corresponding post-logout pages are registered as well. The Nuxt callback is proxied to its
 Spring backend, so browser navigation remains on port 3000.
 
+The realm also includes three local application-demo identities, all with password `demo`:
+
+| User | Keycloak authority used by the authorization demos |
+|---|---|
+| `emma` | Group `/authorization-demo/hr-analysts` |
+| `michael` | Group `/authorization-demo/hr-managers`, which grants `people-manager` |
+| `olivia` | Group `/authorization-demo/authorization-administrators` |
+
+The demo seeds map the analyst group, the manager's business role, and the administrator group to
+application-owned roles. This intentionally demonstrates both group and realm-role mappings.
+
 ## LDAP
 
 LDAP is available to other containers at:
@@ -159,21 +170,21 @@ The functional Keycloak groups carry roles:
 
 ```text
 Function-Employees
-  -> VIEW_SELF, EDIT_SELF
+  -> employee
 
 Function-Managers
-  -> VIEW_SELF, EDIT_SELF, VIEW_TEAM, EDIT_TEAM, APPROVE
+  -> employee, people-manager, request-approver
 
 Function-Department-Heads
-  -> VIEW_SELF, EDIT_SELF, VIEW_TEAM, EDIT_TEAM,
-     VIEW_DEPARTMENT, APPROVE
+  -> employee, people-manager, department-head, request-approver
 
 Function-HR-Admins
-  -> VIEW_SELF, EDIT_SELF, VIEW_ALL, EDIT_ALL, APPROVE
+  -> employee, hr-administrator, request-approver
 ```
 
-Therefore Bob gets manager permissions because LDAP says Bob belongs to
-`Function-Managers`; the permissions are not assigned directly to Bob.
+These are business-responsibility roles rather than individual permissions. Therefore Bob becomes
+an employee, people manager, and request approver because LDAP says Bob belongs to
+`Function-Managers`; application permissions are still defined by each application.
 
 ## Why one LDAP group mapper?
 
@@ -258,7 +269,7 @@ and group memberships including:
 ```
 
 Because `Function-Managers` has Keycloak role mappings, Bob inherits
-`VIEW_TEAM`, `EDIT_TEAM`, and `APPROVE`.
+`employee`, `people-manager`, and `request-approver`.
 
 ## Obtain a JWT using an LDAP password
 
