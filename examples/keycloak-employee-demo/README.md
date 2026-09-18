@@ -42,6 +42,14 @@ Select realm:
 
 - `employee-demo`
 
+The realm's `employee-demo` OIDC client accepts callbacks for both runnable applications:
+
+- Spring-only demo: `http://localhost:8080/login/oauth2/code/keycloak`
+- Nuxt/Nitro demo: `http://localhost:3000/login/oauth2/code/keycloak`
+
+The corresponding post-logout pages are registered as well. The Nuxt callback is proxied to its
+Spring backend, so browser navigation remains on port 3000.
+
 ## LDAP
 
 LDAP is available to other containers at:

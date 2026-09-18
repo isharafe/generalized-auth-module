@@ -8,11 +8,12 @@ cookies and remains the enforcement boundary.
 ## Install and configure
 
 Reference the directory from the consuming frontend, for example with a workspace or
-`file:../path/to/integrations/authorization-nuxt`, then register the package:
+`file:../path/to/integrations/authorization-nuxt`. A source checkout can use the explicit source
+entry point without building the module first:
 
 ```ts
 export default defineNuxtConfig({
-  modules: ['@isharafe/authorization-nuxt'],
+  modules: ['@isharafe/authorization-nuxt/source'],
   authorizationNuxt: {
     backendBaseUrl: process.env.AUTHORIZATION_BACKEND_URL!,
     publicBaseUrl: process.env.NUXT_PUBLIC_BASE_URL!,
@@ -20,6 +21,8 @@ export default defineNuxtConfig({
   }
 })
 ```
+
+A packaged/built copy uses the root `@isharafe/authorization-nuxt` entry point instead.
 
 `backendBaseUrl` is a private Spring origin without a path. `publicBaseUrl` is also server-side and
 must be the browser-visible Nuxt origin, such as `https://app.example.com`. Nitro derives trusted
@@ -52,6 +55,7 @@ Available module options and defaults are:
 | `backendBaseUrl` | empty | Private Spring HTTP(S) origin; required at runtime |
 | `publicBaseUrl` | empty | Browser-visible Nuxt origin used in forwarded headers |
 | `apiProxyPrefix` | `/api/_authorization/backend` | Fixed prefix for application API calls |
+| `backendProxyPrefixes` | `[]` | Additional Spring path prefixes preserved by Nitro |
 | `permissionsEndpoint` | `/authorization/ui/permissions` | Current-user UI snapshot |
 | `csrfEndpoint` | `/authorization/security/csrf` | CSRF token initialization |
 | `refreshEndpoint` | `/authorization/security/token/refresh` | Access-token refresh |
@@ -62,6 +66,10 @@ Available module options and defaults are:
 The configured permission and security paths, `/oauth2/**`, and `/login/**` are proxied directly.
 Application calls go through `apiProxyPrefix`; absolute URLs, backslashes, malformed escapes, and
 parent traversal are rejected.
+
+Use `backendProxyPrefixes: ['/authorization-admin']` when the optional Spring-served administration
+UI must share the Nuxt origin. Each prefix registers its exact path and descendants without
+stripping the prefix. Root and API-proxy-overlapping prefixes are rejected.
 
 ## UI permissions
 
@@ -173,6 +181,14 @@ hydration gets the opportunity to use the path-scoped refresh cookie.
 
 UI visibility is not security enforcement. Every protected operation still needs a URL resource
 rule and permission enforced by Spring Security.
+
+## Runnable example
+
+`examples/authorization-nuxt-demo` combines the module with a Spring Boot backend, the Keycloak
+identity synchronization module, and the optional packaged administration UI. It demonstrates the
+viewer, manager, and administrator behaviors against the repository's existing Keycloak realm.
+See the [demo README](../examples/authorization-nuxt-demo/README.md) for the user matrix, startup
+commands, and configuration walkthrough.
 
 ## Verify the package
 

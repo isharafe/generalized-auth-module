@@ -328,3 +328,6 @@ Inside `authorization-ldap`:
 - [x] traversal-safe fixed upstream proxy and trusted forwarded headers
 - [x] permission, request lifecycle, and proxy tests
 - [x] package typecheck/build and integration documentation
+- [x] runnable Spring + Nuxt/Nitro demo using the existing Keycloak identities
+- [x] permission-controlled content, routes, form controls, and authorized backend calls
+- [x] same-origin proxy support for the optional packaged administration UI

@@ -9,6 +9,10 @@
       "types": "./dist/types.d.mts",
       "import": "./dist/module.mjs"
     },
+    "./source": {
+      "types": "./src/module.ts",
+      "import": "./src/module.ts"
+    },
     "./runtime": {
       "types": "./dist/runtime/types.d.ts",
       "import": "./dist/runtime/types.js"
@@ -16,7 +20,8 @@
   },
   "main": "./dist/module.mjs",
   "files": [
-    "dist"
+    "dist",
+    "src"
   ],
   "scripts": {
     "build": "nuxt-module-build build",

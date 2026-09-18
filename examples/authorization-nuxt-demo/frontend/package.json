@@ -1,0 +1,27 @@
+{
+  "name": "@isharafe/authorization-nuxt-demo-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "scripts": {
+    "dev": "nuxt dev --port 3000",
+    "build": "nuxt build",
+    "preview": "node .output/server/index.mjs",
+    "test": "nuxt prepare && vitest run",
+    "typecheck": "nuxt typecheck"
+  },
+  "dependencies": {
+    "@isharafe/authorization-nuxt": "file:../../../integrations/authorization-nuxt",
+    "nuxt": "^4.5.2",
+    "vue": "^3.5.43"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.30",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.10",
+    "vue-tsc": "^3.3.11"
+  }
+}

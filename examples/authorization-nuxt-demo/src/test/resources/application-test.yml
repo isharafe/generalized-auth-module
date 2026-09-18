@@ -1,0 +1,9 @@
+authorization:
+  source: database
+  seed:
+    locations:
+      - classpath:authorization/nuxt-demo-test-identities.yml
+      - classpath:authorization/nuxt-demo-seed.yml
+  security:
+    cookie-oauth2:
+      enabled: false

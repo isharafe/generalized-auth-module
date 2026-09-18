@@ -1,0 +1,115 @@
+authorization:
+  seed:
+    permissions:
+      - code: URL:EMPLOYEE_VIEW
+        name: View employees
+        type: URL
+        pattern: GET:/demo/employees/**
+      - code: URL:EMPLOYEE_EDIT
+        name: Edit employees
+        type: URL
+        pattern: PUT:/demo/employees/**
+      - code: UI:DEMO_PAGE_1
+        name: See demo page one
+        type: UI
+        pattern: demoPage1
+      - code: UI:DEMO_PAGE_2
+        name: See demo page two
+        type: UI
+        pattern: demoPage2
+      - code: UI:EMPLOYEE_EDIT
+        name: Use employee edit controls
+        type: UI
+        pattern: employeeEdit
+      - code: UI:AUTHORIZATION_ADMIN
+        name: Open authorization administration
+        type: UI
+        pattern: authorizationAdmin
+    permission-groups:
+      - code: EMPLOYEE_VIEWER
+        name: Employee viewer
+        permissions: [URL:EMPLOYEE_VIEW, UI:DEMO_PAGE_1]
+      - code: EMPLOYEE_MANAGER
+        name: Employee manager
+        permissions: [URL:EMPLOYEE_VIEW, URL:EMPLOYEE_EDIT, UI:DEMO_PAGE_1, UI:DEMO_PAGE_2, UI:EMPLOYEE_EDIT]
+      - code: DEMO_ADMIN_ACCESS
+        name: Demo administration navigation
+        permissions: [UI:AUTHORIZATION_ADMIN]
+    roles:
+      - code: HR_VIEWER
+        name: HR viewer
+        permission-groups: [EMPLOYEE_VIEWER]
+      - code: HR_MANAGER
+        name: HR manager
+        permission-groups: [EMPLOYEE_MANAGER]
+      - code: DEMO_AUTHORIZATION_ADMIN
+        name: Demo authorization administrator
+        permission-groups: [AUTHZ_SYSTEM_ADMIN, DEMO_ADMIN_ACCESS]
+    resource-rules:
+      - code: DEMO_PUBLIC
+        type: URL
+        pattern: "*:/demo/public"
+        access-mode: PERMIT_ALL
+      - code: DEMO_PROFILE
+        type: URL
+        pattern: "*:/demo/profile"
+        access-mode: AUTHENTICATED
+      - code: DEMO_EMPLOYEES
+        type: URL
+        pattern: "*:/demo/employees/**"
+        access-mode: AUTHORIZED
+      - code: DEMO_PAGE_1
+        type: UI
+        pattern: demoPage1
+        access-mode: AUTHORIZED
+      - code: DEMO_PAGE_2
+        type: UI
+        pattern: demoPage2
+        access-mode: AUTHORIZED
+      - code: DEMO_EMPLOYEE_EDIT
+        type: UI
+        pattern: employeeEdit
+        access-mode: AUTHORIZED
+      - code: DEMO_AUTHORIZATION_ADMIN
+        type: UI
+        pattern: authorizationAdmin
+        access-mode: AUTHORIZED
+      - code: AUTHZ_ADMIN_API
+        type: URL
+        pattern: "*:/authorization-admin/api/**"
+        access-mode: AUTHORIZED
+      - code: AUTHZ_ADMIN_UI
+        type: URL
+        pattern: "*:/authorization-admin/**"
+        access-mode: AUTHORIZED
+    external-authority-mappings:
+      - source-system: KEYCLOAK
+        authority-type: GROUP
+        authority: /authorization-demo/viewers
+        target:
+          type: ROLE
+          code: HR_VIEWER
+      - source-system: KEYCLOAK
+        authority-type: ROLE
+        authority: authorization-demo-viewer
+        target:
+          type: PERMISSION_GROUP
+          code: EMPLOYEE_VIEWER
+      - source-system: KEYCLOAK
+        authority-type: GROUP
+        authority: /authorization-demo/employee-managers
+        target:
+          type: PERMISSION_GROUP
+          code: EMPLOYEE_MANAGER
+      - source-system: KEYCLOAK
+        authority-type: ROLE
+        authority: authorization-demo-manager
+        target:
+          type: ROLE
+          code: HR_MANAGER
+      - source-system: KEYCLOAK
+        authority-type: GROUP
+        authority: /authorization-demo/admins
+        target:
+          type: ROLE
+          code: DEMO_AUTHORIZATION_ADMIN

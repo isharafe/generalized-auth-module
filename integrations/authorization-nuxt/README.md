@@ -6,11 +6,12 @@ requests, refresh-token recovery, login/logout helpers, and permission-aware rou
 
 ## Configure
 
-Add the package through a local or Git dependency and register it:
+Add the package through a local or Git dependency. A source checkout can use the explicit source
+entry point without building the module first:
 
 ```ts
 export default defineNuxtConfig({
-  modules: ['@isharafe/authorization-nuxt'],
+  modules: ['@isharafe/authorization-nuxt/source'],
   authorizationNuxt: {
     backendBaseUrl: process.env.AUTHORIZATION_BACKEND_URL!,
     publicBaseUrl: process.env.NUXT_PUBLIC_BASE_URL!,
@@ -19,6 +20,8 @@ export default defineNuxtConfig({
 })
 ```
 
+A packaged/built copy uses the root `@isharafe/authorization-nuxt` entry point instead.
+
 `backendBaseUrl` is the private Spring origin. `publicBaseUrl` is the browser-visible Nuxt origin
 used for trusted forwarded headers. Configure Spring with `server.forward-headers-strategy=framework`
 and register OAuth login/logout redirect URIs on the public Nuxt origin.
@@ -26,6 +29,15 @@ and register OAuth login/logout redirect URIs on the public Nuxt origin.
 The module exposes Spring's `/oauth2/**`, `/login/**`, `/authorization/security/**`, and
 `/authorization/ui/permissions` paths through Nitro. Application backend calls use the fixed
 `/api/_authorization/backend` proxy; absolute URLs and traversal are rejected.
+
+Spring-served applications such as the optional administration UI can be exposed on the same
+browser origin without stripping their paths:
+
+```ts
+authorizationNuxt: {
+  backendProxyPrefixes: ['/authorization-admin']
+}
+```
 
 Spring exposes the UI permission endpoint by default. It can be changed or disabled with:
 

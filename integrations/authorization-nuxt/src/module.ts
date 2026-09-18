@@ -12,6 +12,7 @@ export interface ModuleOptions {
   backendBaseUrl: string;
   publicBaseUrl: string;
   apiProxyPrefix: string;
+  backendProxyPrefixes: string[];
   permissionsEndpoint: string;
   csrfEndpoint: string;
   refreshEndpoint: string;
@@ -30,6 +31,7 @@ export default defineNuxtModule<ModuleOptions>({
     backendBaseUrl: "",
     publicBaseUrl: "",
     apiProxyPrefix: "/api/_authorization/backend",
+    backendProxyPrefixes: [],
     permissionsEndpoint: "/authorization/ui/permissions",
     csrfEndpoint: "/authorization/security/csrf",
     refreshEndpoint: "/authorization/security/token/refresh",
@@ -40,10 +42,15 @@ export default defineNuxtModule<ModuleOptions>({
   setup(options, nuxt) {
     validateOptions(options);
     const resolver = createResolver(import.meta.url);
+    const apiProxyPrefix = normalizedPath(options.apiProxyPrefix);
+    const backendProxyPrefixes = normalizeBackendProxyPrefixes(
+      options.backendProxyPrefixes,
+      apiProxyPrefix
+    );
     const privateConfig = {
       backendBaseUrl: options.backendBaseUrl,
       publicBaseUrl: options.publicBaseUrl,
-      apiProxyPrefix: normalizedPath(options.apiProxyPrefix),
+      apiProxyPrefix,
       permissionsEndpoint: normalizedPath(options.permissionsEndpoint),
       csrfEndpoint: normalizedPath(options.csrfEndpoint),
       refreshEndpoint: normalizedPath(options.refreshEndpoint),
@@ -101,6 +108,10 @@ export default defineNuxtModule<ModuleOptions>({
     }
     addServerHandler({ route: "/oauth2/**:path", handler: proxyHandler });
     addServerHandler({ route: "/login/**:path", handler: proxyHandler });
+    for (const prefix of backendProxyPrefixes) {
+      addServerHandler({ route: prefix, handler: proxyHandler });
+      addServerHandler({ route: `${prefix}/**:path`, handler: proxyHandler });
+    }
     addServerHandler({
       route: `${privateConfig.apiProxyPrefix}/**:path`,
       handler: proxyHandler
@@ -110,11 +121,33 @@ export default defineNuxtModule<ModuleOptions>({
 
 function validateOptions(options: ModuleOptions) {
   for (const [name, value] of Object.entries(options)) {
-    if (name === "backendBaseUrl" || name === "publicBaseUrl" || name === "loginEndpoint") continue;
+    if (name === "backendBaseUrl" || name === "publicBaseUrl"
+      || name === "loginEndpoint" || name === "backendProxyPrefixes") continue;
     normalizedPath(value);
   }
   if (options.backendBaseUrl) validateBaseUrl(options.backendBaseUrl, "backendBaseUrl");
   if (options.publicBaseUrl) validateBaseUrl(options.publicBaseUrl, "publicBaseUrl");
+}
+
+export function normalizeBackendProxyPrefixes(
+  values: readonly string[],
+  apiProxyPrefix: string
+): string[] {
+  const apiPrefix = normalizedPath(apiProxyPrefix);
+  const prefixes = [...new Set(values.map(normalizedPath))];
+  for (const prefix of prefixes) {
+    if (prefix === "/") {
+      throw new Error("Authorization backend proxy prefixes must not proxy the application root");
+    }
+    if (pathsOverlap(prefix, apiPrefix)) {
+      throw new Error(`Authorization backend proxy prefix conflicts with apiProxyPrefix: ${prefix}`);
+    }
+  }
+  return prefixes;
+}
+
+function pathsOverlap(first: string, second: string): boolean {
+  return first === second || first.startsWith(`${second}/`) || second.startsWith(`${first}/`);
 }
 
 function normalizedPath(value: string): string {

@@ -1,0 +1,54 @@
+spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          keycloak:
+            provider: keycloak
+            client-id: ${AUTHORIZATION_KEYCLOAK_LOGIN_CLIENT_ID:employee-demo}
+            client-secret: ${AUTHORIZATION_KEYCLOAK_LOGIN_CLIENT_SECRET:employee-demo-secret}
+            authorization-grant-type: authorization_code
+            scope: openid,profile,email
+        provider:
+          keycloak:
+            issuer-uri: ${AUTHORIZATION_KEYCLOAK_ISSUER_URI:http://localhost:8081/realms/employee-demo}
+      resourceserver:
+        jwt:
+          issuer-uri: ${AUTHORIZATION_KEYCLOAK_ISSUER_URI:http://localhost:8081/realms/employee-demo}
+
+authorization:
+  source: keycloak
+  security:
+    cookie-oauth2:
+      enabled: true
+      registration-id: keycloak
+      login-success-uri: /
+      access-token-cookie:
+        secure: false
+      refresh-token-cookie:
+        secure: false
+      id-token-cookie:
+        secure: false
+      csrf:
+        secure: false
+      logout:
+        mode: OIDC
+        revoke-refresh-token: true
+        post-logout-redirect-uri: "{baseUrl}/signed-out"
+  keycloak:
+    enabled: true
+    base-url: ${AUTHORIZATION_KEYCLOAK_BASE_URL:http://localhost:8081}
+    realm: ${AUTHORIZATION_KEYCLOAK_REALM:employee-demo}
+    client-id: ${AUTHORIZATION_KEYCLOAK_CLIENT_ID:authorization-sync-service}
+    client-secret: ${AUTHORIZATION_KEYCLOAK_CLIENT_SECRET:authorization-sync-service-demo-secret}
+    issuer: ${AUTHORIZATION_KEYCLOAK_ISSUER_URI:http://localhost:8081/realms/employee-demo}
+    sync:
+      enabled: true
+      page-size: 100
+      full-cron: "-"
+      incremental-cron: "-"
+    http:
+      connect-timeout: 5s
+      read-timeout: 15s
+      max-attempts: 3
+      retry-backoff: 250ms

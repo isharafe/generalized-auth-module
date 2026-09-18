@@ -9,6 +9,7 @@ A reusable Spring Boot 4.1 authorization library with a functional DB-backed cor
 - `authorization-ldap`: published optional LDAP directory client and local identity/authority synchronization.
 - `authorization-admin`: published optional management REST API, services, framework-admin seeds, and React/TypeScript SPA.
 - `examples/authorization-demo`: non-published runnable verification application.
+- `examples/authorization-nuxt-demo`: non-published Spring + Nuxt/Nitro browser demo, including the optional admin UI.
 - `integrations/authorization-nuxt`: source-only Nuxt 3/4 module for permission-aware UI and secure backend requests.
 
 ## Add the DB-backed core
@@ -75,7 +76,8 @@ export default defineNuxtConfig({
 ```
 
 UI controls fail closed and are presentation-only; Spring Security must still protect every
-backend operation. See [the Nuxt/Nitro integration guide](docs/23-nuxt-integration.md).
+backend operation. See [the Nuxt/Nitro integration guide](docs/23-nuxt-integration.md) and the
+[runnable Spring + Nuxt demo](examples/authorization-nuxt-demo/README.md).
 
 ## Seed data
 
@@ -307,6 +309,11 @@ resources `seePage1` and `seePage2`; `admin-user` can open `/authorization-admin
 Sign out is a CSRF-protected POST and uses OIDC RP-initiated logout to clear local cookies and end
 the Keycloak SSO session. See
 [the demo Keycloak setup](docs/14-demo-application.md#keycloak-profile).
+
+For the Nuxt/Nitro example, run the Spring backend on port 8082 and the browser-facing Nuxt server
+on port 3000. The same demo identities exercise permission-aware components, directives, route
+middleware, authorized requests, token refresh, and the proxied administration UI. Follow the
+[Nuxt demo quickstart](examples/authorization-nuxt-demo/README.md).
 
 ## Current status
 

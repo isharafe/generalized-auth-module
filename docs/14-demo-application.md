@@ -255,3 +255,10 @@ to the public `/demo-ui/signed-out` page after ending the Keycloak SSO session.
 
 Bearer-token curl or Postman calls remain supported for API testing, but are not required for the
 sample pages. Query-parameter and runtime header authentication are not available.
+
+## Nuxt/Nitro companion demo
+
+The separate `examples/authorization-nuxt-demo` application reuses this realm and the same
+`viewer`, `manager`, and `admin-user` identities. It runs Spring on port 8082 and exposes the
+browser application, OAuth2 callbacks, and optional administration UI through Nuxt on port 3000.
+See its [README](../examples/authorization-nuxt-demo/README.md) for startup and behavior details.
