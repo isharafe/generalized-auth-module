@@ -1,13 +1,14 @@
 # `@isharafe/authorization-nuxt`
 
-Source-only Nuxt 3/4 integration for the reusable authorization framework. It keeps OAuth tokens in
-HttpOnly Spring-managed cookies while providing SSR-safe UI permission checks, CSRF-protected API
-requests, refresh-token recovery, login/logout helpers, and permission-aware route middleware.
+Source-only Nuxt 3/4 integration for the authorization framework. It provides SSR-safe permission
+checks, protected routes and requests, CSRF handling, refresh recovery, and login/logout helpers.
+OAuth tokens remain in Spring-managed HttpOnly cookies; Spring Security remains the enforcement
+boundary.
 
 ## Configure
 
-Add the package through a local or Git dependency. A source checkout can use the explicit source
-entry point without building the module first:
+Reference the package from a workspace, local path, or Git dependency. A source checkout can load
+the source entry point directly:
 
 ```ts
 export default defineNuxtConfig({
@@ -20,32 +21,16 @@ export default defineNuxtConfig({
 })
 ```
 
-A packaged/built copy uses the root `@isharafe/authorization-nuxt` entry point instead.
+A built package uses `@isharafe/authorization-nuxt` instead. Configure Spring with
+`server.forward-headers-strategy=framework` and register OAuth login/logout callbacks on the public
+Nuxt origin.
 
-`backendBaseUrl` is the private Spring origin. `publicBaseUrl` is the browser-visible Nuxt origin
-used for trusted forwarded headers. Configure Spring with `server.forward-headers-strategy=framework`
-and register OAuth login/logout redirect URIs on the public Nuxt origin.
-
-The module exposes Spring's `/oauth2/**`, `/login/**`, `/authorization/security/**`, and
-`/authorization/ui/permissions` paths through Nitro. Application backend calls use the fixed
-`/api/_authorization/backend` proxy; absolute URLs and traversal are rejected.
-
-Spring-served applications such as the optional administration UI can be exposed on the same
-browser origin without stripping their paths:
+To proxy the optional Spring administration UI on the same browser origin:
 
 ```ts
 authorizationNuxt: {
   backendProxyPrefixes: ['/authorization-admin']
 }
-```
-
-Spring exposes the UI permission endpoint by default. It can be changed or disabled with:
-
-```yaml
-authorization:
-  ui-api:
-    enabled: true
-    endpoint: /authorization/ui/permissions
 ```
 
 ## Control UI content
@@ -57,13 +42,10 @@ authorization:
 </Authorized>
 
 <button v-authorization.disable="'UI:EMPLOYEE_EDIT'">Save</button>
-<section v-authorization="['UI:EMPLOYEE_VIEW', 'UI:EMPLOYEE_EXPORT']">...</section>
 ```
 
-Multiple permissions require all permissions by default. Use the object directive form
-`{ permissions: [...], match: 'any' }` or the component's `match="any"` prop when appropriate.
-
-Programmatic checks are reactive and fail closed until permissions have loaded:
+Multiple permissions require all by default. Use `match="any"` or the directive object form when
+one permission is enough. Programmatic checks are reactive and fail closed until permissions load:
 
 ```ts
 const authorization = useAuthorization()
@@ -72,26 +54,19 @@ authorization.can('UI:EMPLOYEE_EDIT')
 await authorization.refreshPermissions()
 ```
 
-## Protected requests
+## Call protected APIs
 
 ```ts
 const employee = await $authorizationFetch('/api/employees/123')
-
 const { data, error } = await useAuthorizationFetch('/api/employees')
 ```
 
-Unsafe requests lazily initialize CSRF and include Spring's returned CSRF header. A `401` starts one
-shared refresh request, retries each rejected request once, then refreshes the UI permission snapshot.
-Failed refresh clears permission state and throws `AuthenticationRequiredError`; it does not force a
-global redirect. Import the public error and state types from
-`@isharafe/authorization-nuxt/runtime` when application code needs to distinguish failures.
+Unsafe requests obtain and send Spring's CSRF token. Concurrent 401 responses share one refresh
+request, retry once, and reload the UI permission snapshot. Failed refresh clears permission state
+and raises `AuthenticationRequiredError`.
 
-Tokens are never returned to or read by JavaScript. Logout uses a CSRF-protected browser form so both
-local and OIDC redirects work:
-
-```ts
-await authorization.logout()
-```
+Application calls use the fixed `/api/_authorization/backend` proxy. Absolute URLs and traversal
+attempts are rejected. Tokens are never returned to JavaScript.
 
 ## Protect routes
 
@@ -105,13 +80,23 @@ definePageMeta({
 })
 ```
 
-Unauthenticated protected routes navigate to `loginEndpoint` in the browser. Permission denials go
-to `deniedRedirect`. Infrastructure failures produce HTTP 503 behavior.
+Unauthenticated browser navigation starts login, permission denial uses the configured denied
+redirect, and authorization infrastructure failure produces HTTP 503 behavior.
 
-The refresh cookie remains scoped to `/authorization/security` by default. Therefore an expired
-access token cannot be refreshed during an unrelated SSR page request; SSR remains fail closed and
-the client recovers during hydration. The module deliberately performs refresh only in the browser
-so the refresh token can retain this narrow cookie path.
+UI checks improve presentation only. Every protected backend operation still needs a Spring
+Security resource rule and permission.
 
-UI hiding and disabling are presentation behavior only. Every protected backend operation must
-still be authorized by Spring Security.
+## Learn more and verify
+
+The [complete integration guide](../../docs/23-nuxt-integration.md) documents all options, endpoint
+behavior, SSR/refresh details, and public errors. The
+[runnable Spring + Nuxt demo](../../examples/authorization-nuxt-demo/README.md) provides an
+end-to-end setup.
+
+```bash
+cd integrations/authorization-nuxt
+npm install
+npm test
+npm run typecheck
+npm run build
+```
