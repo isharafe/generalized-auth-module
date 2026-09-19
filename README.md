@@ -1,6 +1,84 @@
-# Reusable Authorization Framework
+# Authorization Framework for Spring Boot
 
-A reusable Spring Boot 4.1 authorization library with a functional DB-backed core, optional administration module, and runnable H2 demo.
+Application-owned authorization for Spring Boot 4.1 applications, with DB-backed decisions,
+optional Keycloak and LDAP synchronization, a packaged administration console, and Nuxt/Nitro
+integration.
+
+Keep roles, permission groups, permissions, and resource rules close to the application while your
+identity provider continues to own identities and external authorities. Normal authorization
+requests are evaluated from the local cache and database—never through a request-time Keycloak or
+LDAP call—and ambiguous or unavailable authorization state fails closed.
+
+**[Get started](#add-the-db-backed-core)** · **[Run the demo](#run-and-verify)** ·
+**[Explore the modules](#modules)** · **[Sponsor the project ❤️](https://github.com/sponsors/isharafe)**
+
+## Why this project?
+
+- **Keep authorization application-owned.** External groups and roles map explicitly to local
+  roles and permission groups; an identity provider never defines application URL permissions.
+- **Start small and add only what you need.** Use the DB-backed core by itself, then opt into the
+  admin console, Keycloak synchronization, LDAP synchronization, or Nuxt integration.
+- **Use Spring Security end to end.** A native `AuthorizationManager` provides fail-closed resource
+  rules, Spring path matching, and distinct 401, 403, and 503 outcomes.
+- **Operate it with confidence.** Separate Flyway migrations, idempotent seeds, targeted caching,
+  audit hooks, optimistic locking, metrics, and multi-instance invalidation are included.
+- **Try real workflows.** Runnable Spring and Spring + Nuxt demos cover public, authenticated,
+  permission-controlled, administration, and Keycloak-backed synchronization flows.
+
+## Why not just connect Keycloak directly?
+
+You can. For a small application with a few stable roles, reading Keycloak roles from a token and
+writing a handful of checks may be all you need.
+
+But Keycloak mainly tells your application **who the user is** and which external roles or groups
+they have. Your application still has to decide **what that user may do**. As requirements grow,
+teams often end up rebuilding the same authorization code in every application:
+
+| When wiring Keycloak directly | With this framework |
+| --- | --- |
+| Write code to translate Keycloak roles and groups into application roles. | Map external authorities to local roles or permission groups through seed configuration or the admin UI. |
+| Add role checks throughout controllers and services. | Protect URL resources centrally through Spring Security's authorization pipeline. |
+| Create broader and broader roles—or many new roles—for every access variation. | Grant focused permissions such as `URL:EMPLOYEE_VIEW` and `URL:EMPLOYEE_EDIT`. |
+| Repeat role-based `if` and `v-if` checks throughout the frontend. | Use `<Authorized>`, `v-authorization`, and a permission-aware composable for UI behavior. |
+| Build synchronization, caching, invalidation, audit, migrations, and management tools yourself. | Use the implementations already provided by the core and optional modules. |
+| Decide how missing rules and infrastructure failures should behave. | Get tested fail-closed defaults, including distinct 401, 403, and 503 outcomes. |
+
+Without a shared authorization layer, backend checks can easily become scattered application code:
+
+```java
+if (!userHasRole("ADMIN")) {
+    throw new AccessDeniedException("Not allowed");
+}
+```
+
+Frontend code often repeats the same broad role assumption:
+
+```vue
+<button v-if="user.roles.includes('ADMIN')">Edit employee</button>
+```
+
+This framework lets the application describe the actual capability instead—such as
+`URL:EMPLOYEE_EDIT` for the protected operation and `UI:EMPLOYEE_EDIT` for its presentation—and
+assign those permissions through reusable permission groups and roles. Backend URL rules are
+enforced centrally by `AuthorizationManager`; the UI integration can then express the matching
+intent without depending on an identity-provider role name:
+
+```vue
+<Authorized permission="UI:EMPLOYEE_EDIT">
+  <button>Edit employee</button>
+</Authorized>
+```
+
+UI checks improve the user experience but are not a security boundary. The corresponding backend
+operation must always remain protected by Spring Security.
+
+The result is less authorization plumbing to recreate in each application and a consistent set of
+defaults: no matching rule denies access, provider failures do not look like empty permissions,
+Spring path matching is used, synchronized assignments cannot overwrite manual or seeded ones, and
+the optional cookie flow provides HttpOnly tokens and CSRF protection. Keycloak still handles
+identity; this framework turns that identity into granular, application-owned permissions. See the
+[runtime architecture](docs/02-runtime-architecture.md) and
+[Keycloak integration](docs/09-keycloak-integration.md) for the full flow.
 
 ## Modules
 
@@ -329,6 +407,29 @@ Both Nuxt processes can also be built and launched as separate containers:
 docker compose -f examples/keycloak-employee-demo/docker-compose.yml \
   --profile authorization-nuxt-demo up -d --build
 ```
+
+## Support the project
+
+Authorization infrastructure sits on a sensitive boundary and needs ongoing attention long after
+the first implementation. Maintaining this project means tracking changes across Java, Spring Boot,
+Spring Security, Keycloak, LDAP, React, and Nuxt while preserving secure defaults and upgrade-safe
+behavior.
+
+If this framework saves your team from rebuilding authorization plumbing—or you want to help it
+become a dependable long-term option—please consider
+**[sponsoring its development](https://github.com/sponsors/isharafe)**.
+
+Sponsorship helps create dedicated time for:
+
+- security maintenance and regression testing;
+- compatibility updates and stable releases;
+- migration, synchronization, and multi-instance reliability work;
+- clearer documentation and runnable examples; and
+- issue investigation and long-term project stewardship.
+
+Every sponsorship, at any level, helps turn continued maintenance from spare-time work into
+predictable project investment. If sponsorship is not possible, a star, a bug report, or feedback
+from a real integration is also valuable.
 
 ## Current status
 
