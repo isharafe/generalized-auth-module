@@ -1,6 +1,7 @@
 package io.github.isharafe.authorization.ldap.client;
 
 import io.github.isharafe.authorization.ldap.config.AuthorizationLdapProperties;
+import io.github.isharafe.authorization.spi.AuthorizationObservation;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -11,6 +12,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
+import java.time.Duration;
 import javax.naming.AuthenticationException;
 import javax.naming.CommunicationException;
 import javax.naming.Context;
@@ -32,10 +34,13 @@ import javax.naming.ldap.Rdn;
 
 public final class JndiLdapDirectoryClient implements LdapDirectoryClient {
   private final AuthorizationLdapProperties properties;
+  private final AuthorizationObservation observation;
 
-  public JndiLdapDirectoryClient(AuthorizationLdapProperties properties) {
+  public JndiLdapDirectoryClient(
+      AuthorizationLdapProperties properties, AuthorizationObservation observation) {
     properties.validate();
     this.properties = properties;
+    this.observation = observation;
   }
 
   @Override
@@ -69,7 +74,8 @@ public final class JndiLdapDirectoryClient implements LdapDirectoryClient {
         properties.getUser().getBaseDn(),
         filter,
         userAttributeNames(),
-        properties.getSync().isPagedResults());
+        properties.getSync().isPagedResults(),
+        "user_search");
   }
 
   private LdapUser toUser(DirectoryEntry entry) {
@@ -111,7 +117,12 @@ public final class JndiLdapDirectoryClient implements LdapDirectoryClient {
     String filter = group.getSearchFilter().replace("{0}", escapeFilterValue(userDn));
     Set<LdapAuthority> authorities = new LinkedHashSet<>();
     for (DirectoryEntry entry :
-        search(group.getBaseDn(), filter, new String[] {group.getNameAttribute()}, false)) {
+        search(
+            group.getBaseDn(),
+            filter,
+            new String[] {group.getNameAttribute()},
+            false,
+            "group_search")) {
       String authority = groupAuthority(entry.distinguishedName(), entry.attributes());
       if (!blank(authority)) authorities.add(new LdapAuthority("GROUP", authority));
     }
@@ -168,14 +179,20 @@ public final class JndiLdapDirectoryClient implements LdapDirectoryClient {
   }
 
   private List<DirectoryEntry> search(
-      String baseDn, String filter, String[] returningAttributes, boolean paged) {
+      String baseDn,
+      String filter,
+      String[] returningAttributes,
+      boolean paged,
+      String operation) {
     LdapContext context = null;
     try {
-      context = new InitialLdapContext(environment(), null);
+      context = bind();
       SearchControls controls = new SearchControls();
       controls.setSearchScope(SearchControls.SUBTREE_SCOPE);
       controls.setReturningAttributes(returningAttributes);
-      return paged ? pagedSearch(context, baseDn, filter, controls) : singleSearch(context, baseDn, filter, controls);
+      return paged
+          ? pagedSearch(context, baseDn, filter, controls, operation)
+          : singleSearch(context, baseDn, filter, controls, operation);
     } catch (AuthenticationException exception) {
       throw new LdapClientException(
           LdapFailureType.AUTHENTICATION, "LDAP service bind authentication failed", exception);
@@ -190,7 +207,11 @@ public final class JndiLdapDirectoryClient implements LdapDirectoryClient {
   }
 
   private List<DirectoryEntry> pagedSearch(
-      LdapContext context, String baseDn, String filter, SearchControls controls)
+      LdapContext context,
+      String baseDn,
+      String filter,
+      SearchControls controls,
+      String operation)
       throws NamingException, IOException {
     List<DirectoryEntry> entries = new ArrayList<>();
     byte[] cookie = null;
@@ -199,7 +220,7 @@ public final class JndiLdapDirectoryClient implements LdapDirectoryClient {
           new Control[] {
             new PagedResultsControl(properties.getSync().getPageSize(), cookie, Control.CRITICAL)
           });
-      readSearchResults(context, baseDn, filter, controls, entries);
+      readSearchResults(context, baseDn, filter, controls, entries, operation);
       PageResponse response = pageResponse(context.getResponseControls());
       if (!response.present())
         throw new LdapClientException(
@@ -211,10 +232,14 @@ public final class JndiLdapDirectoryClient implements LdapDirectoryClient {
   }
 
   private List<DirectoryEntry> singleSearch(
-      LdapContext context, String baseDn, String filter, SearchControls controls)
+      LdapContext context,
+      String baseDn,
+      String filter,
+      SearchControls controls,
+      String operation)
       throws NamingException {
     List<DirectoryEntry> entries = new ArrayList<>();
-    readSearchResults(context, baseDn, filter, controls, entries);
+    readSearchResults(context, baseDn, filter, controls, entries, operation);
     return entries;
   }
 
@@ -223,8 +248,11 @@ public final class JndiLdapDirectoryClient implements LdapDirectoryClient {
       String baseDn,
       String filter,
       SearchControls controls,
-      List<DirectoryEntry> entries)
+      List<DirectoryEntry> entries,
+      String operation)
       throws NamingException {
+    long started = System.nanoTime();
+    String metricResult = "success";
     NamingEnumeration<SearchResult> results = null;
     try {
       results = context.search(baseDn == null ? "" : baseDn, filter, controls);
@@ -233,10 +261,47 @@ public final class JndiLdapDirectoryClient implements LdapDirectoryClient {
         entries.add(new DirectoryEntry(distinguishedName(result, baseDn), result.getAttributes()));
       }
     } catch (PartialResultException exception) {
-      if (!properties.getReferral().equalsIgnoreCase("ignore")) throw exception;
+      if (!properties.getReferral().equalsIgnoreCase("ignore")) {
+        metricResult = "search_failure";
+        throw exception;
+      }
+    } catch (NamingException exception) {
+      metricResult = ldapResult(exception);
+      throw exception;
     } finally {
       close(results);
+      observation.recordExternalRequest(
+          "ldap",
+          operation,
+          "SEARCH",
+          metricResult,
+          Duration.ofNanos(System.nanoTime() - started));
     }
+  }
+
+  private LdapContext bind() throws NamingException {
+    long started = System.nanoTime();
+    String result = "success";
+    try {
+      return new InitialLdapContext(environment(), null);
+    } catch (NamingException exception) {
+      result = ldapResult(exception);
+      throw exception;
+    } finally {
+      observation.recordExternalRequest(
+          "ldap",
+          "service_bind",
+          "BIND",
+          result,
+          Duration.ofNanos(System.nanoTime() - started));
+    }
+  }
+
+  private String ldapResult(NamingException exception) {
+    if (exception instanceof AuthenticationException) return "authentication";
+    if (exception instanceof CommunicationException || exception instanceof ServiceUnavailableException)
+      return "connection";
+    return "search_failure";
   }
 
   private String distinguishedName(SearchResult result, String searchBase) {

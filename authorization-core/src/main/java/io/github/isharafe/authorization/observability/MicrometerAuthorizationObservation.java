@@ -61,4 +61,55 @@ public final class MicrometerAuthorizationObservation implements AuthorizationOb
             remote ? "remote" : "local")
         .increment();
   }
+
+  @Override
+  public void recordPersistenceOperation(String operation, String result, Duration duration) {
+    Tags tags = Tags.of("operation", operation, "result", result);
+    registry.counter("authorization.persistence.operations", tags).increment();
+    registry.timer("authorization.persistence.operation.duration", tags).record(duration);
+  }
+
+  @Override
+  public void recordExternalRequest(
+      String system, String operation, String method, String result, Duration duration) {
+    Tags tags =
+        Tags.of(
+            "system", system,
+            "operation", operation,
+            "method", method,
+            "result", result);
+    registry.counter("authorization.external.requests", tags).increment();
+    registry.timer("authorization.external.request.duration", tags).record(duration);
+  }
+
+  @Override
+  public void recordExternalTokenCacheRequest(String system, boolean hit) {
+    registry
+        .counter(
+            "authorization.external.token.cache.requests",
+            "system",
+            system,
+            "result",
+            hit ? "hit" : "miss")
+        .increment();
+  }
+
+  @Override
+  public void recordSynchronization(
+      String source, String operation, String result, Duration duration) {
+    Tags tags = Tags.of("source", source, "operation", operation, "result", result);
+    registry.counter("authorization.synchronizations", tags).increment();
+    registry.timer("authorization.synchronization.duration", tags).record(duration);
+  }
+
+  @Override
+  public void recordLoginInitialization(
+      boolean synchronizationEnabled, String result, Duration duration) {
+    Tags tags =
+        Tags.of(
+            "synchronization", synchronizationEnabled ? "enabled" : "disabled",
+            "result", result);
+    registry.counter("authorization.login.initializations", tags).increment();
+    registry.timer("authorization.login.initialization.duration", tags).record(duration);
+  }
 }

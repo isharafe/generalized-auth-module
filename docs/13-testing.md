@@ -136,6 +136,23 @@ database, matching the lock boundary used by multiple pods. Transport-specific p
 and deployment load tests should still be added by consuming applications for their selected DB,
 connection pool, traffic shape, and latency objectives.
 
+## Repeatable performance diagnostics
+
+The authorization demo has an opt-in Maven `performance` profile. Its integration test exercises
+cold and warm public/authenticated/authorized requests and first/repeated targeted Keycloak
+synchronization against a local mock server. A datasource proxy counts actual JDBC executions and
+batch members, while the framework observation API counts and times external calls. It writes JSON
+and Markdown reports under `examples/authorization-demo/target/authorization-performance/`.
+
+```bash
+./mvnw -Pperformance -pl examples/authorization-demo -am test
+```
+
+Warmups and measured samples default to 3 and 10. Override them with
+`-Dauthorization.performance.warmups=N` and `-Dauthorization.performance.samples=N`. These numbers
+are regression diagnostics for the local H2/mock-server environment, not production capacity
+claims; production testing must use the deployed database, network, pool, and traffic distribution.
+
 ## Release-blocking security tests
 
 Path/method matching bypass tests and admin endpoint authorization are release-blocking.

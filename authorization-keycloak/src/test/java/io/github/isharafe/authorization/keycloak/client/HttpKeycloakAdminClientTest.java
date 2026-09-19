@@ -5,6 +5,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.github.isharafe.authorization.keycloak.config.AuthorizationKeycloakProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.isharafe.authorization.observability.MicrometerAuthorizationObservation;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
@@ -86,13 +88,54 @@ class HttpKeycloakAdminClientTest {
           json(exchange, 200, "{\"id\":\"u1\",\"username\":\"alice\",\"enabled\":true,\"emailVerified\":true}");
         });
 
-    KeycloakAdminClient client = new HttpKeycloakAdminClient(properties, new ObjectMapper());
+    SimpleMeterRegistry registry = new SimpleMeterRegistry();
+    KeycloakAdminClient client =
+        new HttpKeycloakAdminClient(
+            properties, new ObjectMapper(), new MicrometerAuthorizationObservation(registry));
 
     assertThat(client.users()).extracting(KeycloakUser::id).containsExactly("u1", "u2", "u3");
     assertThat(client.user("u1")).get().extracting(KeycloakUser::username).isEqualTo("alice");
     assertThat(client.groups("u1")).extracting(KeycloakGroup::path).containsExactly("/Finance");
     assertThat(client.realmRoles("u1")).extracting(KeycloakRole::name).containsExactly("approver");
     assertThat(tokens).hasValue(1);
+    assertThat(registry.get("authorization.external.requests").counters())
+        .satisfies(counters -> assertThat(counters).hasSize(5));
+    assertThat(
+            registry
+                .get("authorization.external.requests")
+                .tags(
+                    "system", "keycloak",
+                    "operation", "users",
+                    "method", "GET",
+                    "result", "success")
+                .counter()
+                .count())
+        .isEqualTo(2);
+    assertThat(
+            registry
+                .get("authorization.external.requests")
+                .tags(
+                    "system", "keycloak",
+                    "operation", "service_token",
+                    "method", "POST",
+                    "result", "success")
+                .counter()
+                .count())
+        .isEqualTo(1);
+    assertThat(
+            registry
+                .get("authorization.external.token.cache.requests")
+                .tags("system", "keycloak", "result", "miss")
+                .counter()
+                .count())
+        .isEqualTo(1);
+    assertThat(
+            registry
+                .get("authorization.external.token.cache.requests")
+                .tags("system", "keycloak", "result", "hit")
+                .counter()
+                .count())
+        .isEqualTo(4);
   }
 
   @Test

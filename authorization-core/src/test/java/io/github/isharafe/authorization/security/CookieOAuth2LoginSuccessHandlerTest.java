@@ -1,6 +1,8 @@
 package io.github.isharafe.authorization.security;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -8,7 +10,9 @@ import static org.mockito.Mockito.when;
 
 import io.github.isharafe.authorization.config.AuthorizationProperties;
 import io.github.isharafe.authorization.domain.AuthenticatedIdentity;
+import io.github.isharafe.authorization.spi.AuthorizationObservation;
 import io.github.isharafe.authorization.spi.IdentitySynchronizationProvider;
+import java.time.Duration;
 import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,6 +36,7 @@ class CookieOAuth2LoginSuccessHandlerTest {
       mock(SpringAuthenticationIdentityResolver.class);
   private final IdentitySynchronizationProvider synchronization =
       mock(IdentitySynchronizationProvider.class);
+  private final AuthorizationObservation observation = mock(AuthorizationObservation.class);
   private final Authentication authentication = mock(Authentication.class);
   private final AuthorizationTokenCookies cookies = new AuthorizationTokenCookies(properties);
   private final AuthenticatedIdentity identity =
@@ -68,6 +73,10 @@ class CookieOAuth2LoginSuccessHandlerTest {
 
     verify(synchronization).synchronize(identity);
     verify(clients).removeAuthorizedClient("keycloak", authentication, request, response);
+    verify(observation)
+        .recordLoginInitialization(
+            eq(true), eq("success"), any(Duration.class));
+    assertThat(session).isNotNull();
     assertThat(session.isInvalid()).isTrue();
     assertThat(response.getStatus()).isEqualTo(302);
     assertThat(response.getRedirectedUrl()).endsWith("/demo-ui/");
@@ -89,6 +98,9 @@ class CookieOAuth2LoginSuccessHandlerTest {
     handler().onAuthenticationSuccess(request, response, authentication);
 
     verify(synchronization).supported();
+    verify(observation)
+        .recordLoginInitialization(
+            eq(false), eq("success"), any(Duration.class));
     assertThat(response.getStatus()).isEqualTo(302);
   }
 
@@ -107,12 +119,16 @@ class CookieOAuth2LoginSuccessHandlerTest {
 
     handler().onAuthenticationSuccess(request, response, authentication);
 
+    assertThat(session).isNotNull();
     assertThat(session.isInvalid()).isTrue();
     assertThat(response.getStatus()).isEqualTo(503);
     assertThat(response.getErrorMessage()).contains("local authorization initialization failed");
     assertThat(response.getHeaders(HttpHeaders.SET_COOKIE))
         .hasSize(4)
         .allSatisfy(value -> assertThat(value).contains("Max-Age=0"));
+    verify(observation)
+        .recordLoginInitialization(
+            eq(true), eq("failure"), any(Duration.class));
   }
 
   @Test
@@ -124,11 +140,14 @@ class CookieOAuth2LoginSuccessHandlerTest {
 
     assertThat(response.getStatus()).isEqualTo(503);
     assertThat(response.getHeaders(HttpHeaders.SET_COOKIE)).hasSize(4);
+    verify(observation)
+        .recordLoginInitialization(
+            eq(false), eq("failure"), any(Duration.class));
   }
 
   private CookieOAuth2LoginSuccessHandler handler() {
     return new CookieOAuth2LoginSuccessHandler(
-        properties, clients, resolver, synchronization, cookies);
+        properties, clients, resolver, synchronization, cookies, observation);
   }
 
   private OAuth2AuthorizedClient clientWithoutRefreshToken() {

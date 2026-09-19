@@ -343,6 +343,82 @@ The demo sets cookie and CSRF `secure` flags to `false` for local HTTP. Set them
 HTTPS. Real deployments must also replace the demo secrets, restrict redirect URIs, use durable
 storage, and configure production-grade Keycloak and database settings.
 
+## Performance measurement
+
+The optional `performance` profile adds diagnostic instrumentation to this demo only. It does not
+change the published authorization modules or put a JDBC proxy into consuming applications.
+
+Build and start Keycloak as described above, then run the application with live instrumentation:
+
+```bash
+SPRING_PROFILES_ACTIVE=keycloak-demo,performance \
+  java -jar examples/authorization-demo/target/authorization-demo-0.1.0-SNAPSHOT.jar
+```
+
+The management server listens only on `127.0.0.1:8083`. Useful endpoints are:
+
+```bash
+curl http://127.0.0.1:8083/actuator/metrics/authorization.decisions
+curl http://127.0.0.1:8083/actuator/metrics/authorization.external.requests
+curl http://127.0.0.1:8083/actuator/metrics/authorization.persistence.operations
+curl http://127.0.0.1:8083/actuator/prometheus
+```
+
+Every application request also writes one `authorizationPerformance` log line containing total
+time, actual JDBC executions, SQL statements (including batch members), JDBC time, external calls,
+and external-call time. The JDBC figures cover all synchronous datasource work on that request
+thread, including the authorization audit write; use the logical persistence meters when only
+framework operations are needed. Query strings are omitted. Enable this profile only while
+diagnosing or benchmarking because datasource proxying and per-request logging add overhead.
+
+Framework Micrometer meters are available whenever any consuming application supplies a
+`MeterRegistry`, even without the demo profile:
+
+| Meters | Meaning |
+|---|---|
+| `authorization.decisions`, `authorization.decision.duration` | Complete authorization decisions |
+| `authorization.cache.requests` | Rule and user-entitlement cache hit/miss counts |
+| `authorization.persistence.operations`, `authorization.persistence.operation.duration` | Logical rule, entitlement, authority-mapping, and audit persistence work |
+| `authorization.external.requests`, `authorization.external.request.duration` | Each physical Keycloak HTTP request or LDAP bind/search, including pages and retries |
+| `authorization.external.token.cache.requests` | Keycloak service-token cache hits/misses |
+| `authorization.synchronizations`, `authorization.synchronization.duration` | Whole targeted, incremental, or full identity synchronizations |
+| `authorization.login.initializations`, `authorization.login.initialization.duration` | Post-authentication local initialization, including targeted sync when enabled |
+
+Metric tags contain only bounded categories—never usernames, subjects, paths, permission codes, or
+exception messages. Normal authorized requests read local cache/database state and should make zero
+Keycloak or LDAP calls. A first targeted Keycloak synchronization normally makes four calls in this
+demo: service token, user, groups, and realm roles. Repeating it while the service token is cached
+makes three. Pagination and retries add physical calls and are intentionally counted separately.
+The browser's standard OIDC authorization/token/user-info traffic is owned by Spring Security; the
+library's login timer begins at its success handler and measures local authorization initialization.
+
+Run the repeatable H2/local-mock-Keycloak measurement suite with:
+
+```bash
+./mvnw -Pperformance -pl examples/authorization-demo -am test
+```
+
+It defaults to three warmups and ten measured samples. For a longer run:
+
+```bash
+./mvnw -Pperformance \
+  -Dauthorization.performance.warmups=10 \
+  -Dauthorization.performance.samples=100 \
+  -pl examples/authorization-demo -am test
+```
+
+Results are written to:
+
+```text
+examples/authorization-demo/target/authorization-performance/authorization-performance.md
+examples/authorization-demo/target/authorization-performance/authorization-performance.json
+```
+
+The report separates cold-cache and warm-cache requests and first/warm-token targeted
+synchronization. Its latency values describe this machine, H2, and a local mock server; use the
+same metrics with the production database, Keycloak/LDAP deployment, connection pool, and traffic
+shape for capacity decisions.
+
 ## Reset and stop
 
 Restarting only the Java application resets its in-memory H2 authorization data. To reset Keycloak,

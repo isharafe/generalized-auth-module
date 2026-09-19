@@ -89,6 +89,18 @@ The integration suite treats the UI and API namespaces independently and exercis
 through the actual filter chain, including context paths, encoded/repeated separators, semicolon
 parameters, trailing slashes, and method-override headers.
 
+## Performance profile
+
+Adding `performance` enables Actuator/Prometheus on the loopback-only management address
+`127.0.0.1:8083`, structured per-request performance logs, and datasource-proxy JDBC measurements.
+It reports total request time, JDBC executions/statements/time, and authorization external-call
+count/time. This profile is diagnostic and is not enabled by default. The published library modules
+do not depend on datasource-proxy.
+
+For live Keycloak-backed measurements, run with `keycloak-demo,performance` and inspect
+`/actuator/metrics` or `/actuator/prometheus` on port 8083. For repeatable H2 and mock-Keycloak
+scenarios, use the Maven performance test described in the demo README.
+
 ## Endpoints
 
 ```text

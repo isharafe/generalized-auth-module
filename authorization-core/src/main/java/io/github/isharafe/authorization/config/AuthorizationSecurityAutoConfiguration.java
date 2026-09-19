@@ -13,6 +13,7 @@ import io.github.isharafe.authorization.security.OAuth2CookieRefreshService;
 import io.github.isharafe.authorization.security.OAuth2RefreshTokenRevokingLogoutHandler;
 import io.github.isharafe.authorization.security.OidcCookieLogoutSuccessHandler;
 import io.github.isharafe.authorization.security.SpringAuthenticationIdentityResolver;
+import io.github.isharafe.authorization.spi.AuthorizationObservation;
 import io.github.isharafe.authorization.spi.IdentitySynchronizationProvider;
 import java.util.Set;
 import org.springframework.beans.factory.ObjectProvider;
@@ -131,9 +132,10 @@ public class AuthorizationSecurityAutoConfiguration {
       OAuth2AuthorizedClientRepository clients,
       SpringAuthenticationIdentityResolver resolver,
       IdentitySynchronizationProvider synchronization,
-      AuthorizationTokenCookies cookies) {
+      AuthorizationTokenCookies cookies,
+      AuthorizationObservation observation) {
     return new CookieOAuth2LoginSuccessHandler(
-        properties, clients, resolver, synchronization, cookies);
+        properties, clients, resolver, synchronization, cookies, observation);
   }
 
   @Bean

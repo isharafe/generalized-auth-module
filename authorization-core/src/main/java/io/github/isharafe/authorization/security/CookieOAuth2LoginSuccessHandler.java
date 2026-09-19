@@ -2,11 +2,14 @@ package io.github.isharafe.authorization.security;
 
 import io.github.isharafe.authorization.config.AuthorizationProperties;
 import io.github.isharafe.authorization.domain.AuthenticatedIdentity;
+import io.github.isharafe.authorization.spi.AuthorizationObservation;
 import io.github.isharafe.authorization.spi.IdentitySynchronizationProvider;
-import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.time.Duration;
+
+import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -28,6 +31,7 @@ public final class CookieOAuth2LoginSuccessHandler implements AuthenticationSucc
   private final SpringAuthenticationIdentityResolver identityResolver;
   private final IdentitySynchronizationProvider synchronization;
   private final AuthorizationTokenCookies cookies;
+  private final AuthorizationObservation observation;
   private final RedirectStrategy redirects = new DefaultRedirectStrategy();
 
   public CookieOAuth2LoginSuccessHandler(
@@ -35,33 +39,33 @@ public final class CookieOAuth2LoginSuccessHandler implements AuthenticationSucc
       OAuth2AuthorizedClientRepository clients,
       SpringAuthenticationIdentityResolver identityResolver,
       IdentitySynchronizationProvider synchronization,
-      AuthorizationTokenCookies cookies) {
+      AuthorizationTokenCookies cookies,
+      AuthorizationObservation observation) {
     this.properties = properties.getSecurity().getCookieOauth2();
     this.clients = clients;
     this.identityResolver = identityResolver;
     this.synchronization = synchronization;
     this.cookies = cookies;
+    this.observation = observation;
   }
 
   @Override
   public void onAuthenticationSuccess(
-      HttpServletRequest request,
-      HttpServletResponse response,
-      Authentication authentication)
-      throws IOException, ServletException {
+          @NonNull HttpServletRequest request,
+          @NonNull HttpServletResponse response,
+          @NonNull Authentication authentication)
+      throws IOException {
+    long started = System.nanoTime();
+    boolean synchronizationEnabled = false;
+    String result = "failure";
     String registrationId = properties.getRegistrationId();
-    OAuth2AuthorizedClient client =
-        clients.loadAuthorizedClient(registrationId, authentication, request);
-    if (client == null) {
-      fail(
-          request,
-          response,
-          new IllegalStateException("OAuth2 authorized client is unavailable"));
-      return;
-    }
     try {
+      OAuth2AuthorizedClient client =
+          clients.loadAuthorizedClient(registrationId, authentication, request);
+      if (client == null) throw new IllegalStateException("OAuth2 authorized client is unavailable");
       AuthenticatedIdentity identity = identityResolver.resolve(authentication);
-      if (synchronization.supported()) synchronization.synchronize(identity);
+      synchronizationEnabled = synchronization.supported();
+      if (synchronizationEnabled) synchronization.synchronize(identity);
       String idToken =
           authentication.getPrincipal() instanceof OidcUser oidc
               ? oidc.getIdToken().getTokenValue()
@@ -71,8 +75,14 @@ public final class CookieOAuth2LoginSuccessHandler implements AuthenticationSucc
       clients.removeAuthorizedClient(registrationId, authentication, request, response);
       if (request.getSession(false) != null) request.getSession(false).invalidate();
       redirects.sendRedirect(request, response, properties.getLoginSuccessUri());
+      result = "success";
     } catch (RuntimeException exception) {
       fail(request, response, exception);
+    } finally {
+      observation.recordLoginInitialization(
+          synchronizationEnabled,
+          result,
+          Duration.ofNanos(System.nanoTime() - started));
     }
   }
 

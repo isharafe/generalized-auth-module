@@ -17,4 +17,18 @@ public interface AuthorizationObservation {
   default void recordIdentityEventFailure(Duration duration) {}
 
   default void recordInvalidation(String scope, boolean remote) {}
+
+  default void recordPersistenceOperation(
+      String operation, String result, Duration duration) {}
+
+  default void recordExternalRequest(
+      String system, String operation, String method, String result, Duration duration) {}
+
+  default void recordExternalTokenCacheRequest(String system, boolean hit) {}
+
+  default void recordSynchronization(
+      String source, String operation, String result, Duration duration) {}
+
+  default void recordLoginInitialization(
+      boolean synchronizationEnabled, String result, Duration duration) {}
 }

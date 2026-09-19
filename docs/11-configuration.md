@@ -58,6 +58,10 @@ must exceed the longest expected instance outage when retained invalidations nee
 
 Micrometer collection activates automatically when the application provides a `MeterRegistry`.
 Spring Boot Actuator plus the selected registry implementation controls how the metrics are exposed.
+No authorization property is required. Metrics include decisions, logical persistence operations,
+Keycloak/LDAP requests, token-cache usage, synchronization, and post-login initialization. Network
+timers count each physical page and retry; normal authorization requests remain local and therefore
+must not increment the external-request counters.
 
 The UI API returns only enabled permissions whose resource type is `UI`, together with the current
 entitlement version. It requires authentication when core supplies the cookie OAuth2 security

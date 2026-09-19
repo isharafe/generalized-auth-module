@@ -14,6 +14,7 @@ import io.github.isharafe.authorization.persistence.repository.UserRoleRepositor
 import io.github.isharafe.authorization.persistence.service.PendingUserAssignmentResolver;
 import io.github.isharafe.authorization.spi.AuthorizationAuditPublisher;
 import io.github.isharafe.authorization.spi.AuthorizationCacheInvalidator;
+import io.github.isharafe.authorization.spi.AuthorizationObservation;
 import io.github.isharafe.authorization.spi.ExternalAuthorityMapper;
 import io.github.isharafe.authorization.spi.IdentitySynchronizationProvider;
 import org.springframework.beans.factory.ObjectProvider;
@@ -37,8 +38,9 @@ import org.springframework.transaction.PlatformTransactionManager;
 public class AuthorizationLdapAutoConfiguration {
   @Bean
   @ConditionalOnMissingBean(LdapDirectoryClient.class)
-  LdapDirectoryClient ldapDirectoryClient(AuthorizationLdapProperties properties) {
-    return new JndiLdapDirectoryClient(properties);
+  LdapDirectoryClient ldapDirectoryClient(
+      AuthorizationLdapProperties properties, AuthorizationObservation observation) {
+    return new JndiLdapDirectoryClient(properties, observation);
   }
 
   @Bean
@@ -56,6 +58,7 @@ public class AuthorizationLdapAutoConfiguration {
       ObjectProvider<PendingUserAssignmentResolver> pendingResolver,
       AuthorizationCacheInvalidator cache,
       AuthorizationAuditPublisher audit,
+      AuthorizationObservation observation,
       PlatformTransactionManager transactionManager) {
     return new LdapIdentitySynchronizationProvider(
         properties,
@@ -70,6 +73,7 @@ public class AuthorizationLdapAutoConfiguration {
         pendingResolver,
         cache,
         audit,
+        observation,
         transactionManager);
   }
 

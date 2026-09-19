@@ -23,9 +23,11 @@ import io.github.isharafe.authorization.persistence.repository.UserRoleRepositor
 import io.github.isharafe.authorization.persistence.service.PendingUserAssignmentResolver;
 import io.github.isharafe.authorization.spi.AuthorizationAuditPublisher;
 import io.github.isharafe.authorization.spi.AuthorizationCacheInvalidator;
+import io.github.isharafe.authorization.spi.AuthorizationObservation;
 import io.github.isharafe.authorization.spi.ExternalAuthorityMapper;
 import io.github.isharafe.authorization.spi.IdentitySynchronizationProvider;
 import java.time.Instant;
+import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -53,6 +55,7 @@ public final class LdapIdentitySynchronizationProvider implements IdentitySynchr
   private final ObjectProvider<PendingUserAssignmentResolver> pendingResolver;
   private final AuthorizationCacheInvalidator cache;
   private final AuthorizationAuditPublisher audit;
+  private final AuthorizationObservation observation;
   private final TransactionTemplate transaction;
 
   public LdapIdentitySynchronizationProvider(
@@ -68,6 +71,7 @@ public final class LdapIdentitySynchronizationProvider implements IdentitySynchr
       ObjectProvider<PendingUserAssignmentResolver> pendingResolver,
       AuthorizationCacheInvalidator cache,
       AuthorizationAuditPublisher audit,
+      AuthorizationObservation observation,
       PlatformTransactionManager transactionManager) {
     properties.validate();
     this.properties = properties;
@@ -82,6 +86,7 @@ public final class LdapIdentitySynchronizationProvider implements IdentitySynchr
     this.pendingResolver = pendingResolver;
     this.cache = cache;
     this.audit = audit;
+    this.observation = observation;
     this.transaction = new TransactionTemplate(transactionManager);
   }
 
@@ -127,8 +132,10 @@ public final class LdapIdentitySynchronizationProvider implements IdentitySynchr
   }
 
   private void execute(String operation, String target, Supplier<SyncOutcome> work) {
-    publish("IDENTITY_SYNC_STARTED", target, "SYNC", operation);
+    long started = System.nanoTime();
+    String result = "failure";
     try {
+      publish("IDENTITY_SYNC_STARTED", target, "SYNC", operation);
       SyncOutcome outcome =
           transaction.execute(
               status -> {
@@ -148,6 +155,7 @@ public final class LdapIdentitySynchronizationProvider implements IdentitySynchr
         throw new LdapSynchronizationException("LDAP synchronization returned no result");
       outcome.invalidatedIdentities().forEach(cache::invalidateIdentity);
       publish("IDENTITY_SYNC_COMPLETED", target, "SYNC", outcome.details(operation));
+      result = "success";
     } catch (RuntimeException exception) {
       recordFailure(operation, exception);
       publish(
@@ -159,6 +167,12 @@ public final class LdapIdentitySynchronizationProvider implements IdentitySynchr
         throw synchronizationException;
       throw new LdapSynchronizationException(
           "LDAP " + operation + " synchronization failed", exception);
+    } finally {
+      observation.recordSynchronization(
+          "ldap",
+          operation.toLowerCase(java.util.Locale.ROOT),
+          result,
+          Duration.ofNanos(System.nanoTime() - started));
     }
   }
 

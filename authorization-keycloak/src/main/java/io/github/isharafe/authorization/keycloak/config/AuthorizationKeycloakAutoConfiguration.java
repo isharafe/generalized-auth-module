@@ -16,6 +16,7 @@ import io.github.isharafe.authorization.persistence.repository.UserRoleRepositor
 import io.github.isharafe.authorization.persistence.service.PendingUserAssignmentResolver;
 import io.github.isharafe.authorization.spi.AuthorizationAuditPublisher;
 import io.github.isharafe.authorization.spi.AuthorizationCacheInvalidator;
+import io.github.isharafe.authorization.spi.AuthorizationObservation;
 import io.github.isharafe.authorization.spi.ExternalAuthorityMapper;
 import io.github.isharafe.authorization.spi.IdentityChangeEventProcessor;
 import io.github.isharafe.authorization.spi.IdentitySynchronizationProvider;
@@ -43,9 +44,11 @@ public class AuthorizationKeycloakAutoConfiguration {
   @Bean
   @ConditionalOnMissingBean(KeycloakAdminClient.class)
   KeycloakAdminClient keycloakAdminClient(
-      AuthorizationKeycloakProperties properties, ObjectProvider<ObjectMapper> mappers) {
+      AuthorizationKeycloakProperties properties,
+      ObjectProvider<ObjectMapper> mappers,
+      AuthorizationObservation observation) {
     return new HttpKeycloakAdminClient(
-        properties, mappers.getIfAvailable(ObjectMapper::new));
+        properties, mappers.getIfAvailable(ObjectMapper::new), observation);
   }
 
   @Bean
@@ -63,6 +66,7 @@ public class AuthorizationKeycloakAutoConfiguration {
       ObjectProvider<PendingUserAssignmentResolver> pendingResolver,
       AuthorizationCacheInvalidator cache,
       AuthorizationAuditPublisher audit,
+      AuthorizationObservation observation,
       PlatformTransactionManager transactionManager) {
     return new KeycloakIdentitySynchronizationProvider(
         properties,
@@ -77,6 +81,7 @@ public class AuthorizationKeycloakAutoConfiguration {
         pendingResolver,
         cache,
         audit,
+        observation,
         transactionManager);
   }
 

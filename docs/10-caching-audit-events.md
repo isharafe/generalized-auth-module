@@ -71,11 +71,28 @@ authorization.cache.requests
 authorization.identity.events
 authorization.identity.event.duration
 authorization.cache.invalidations
+authorization.persistence.operations
+authorization.persistence.operation.duration
+authorization.external.requests
+authorization.external.request.duration
+authorization.external.token.cache.requests
+authorization.synchronizations
+authorization.synchronization.duration
+authorization.login.initializations
+authorization.login.initialization.duration
 ```
 
-Tags are limited to decision/reason/resource type, cache/result, event result, and invalidation
-scope/delivery. Stable identities, request paths, permission codes, and exception messages are not
-used as tags. Without a registry, a no-op implementation keeps Micrometer optional at runtime.
+Persistence operations distinguish entitlement, resource-rule, authority-mapping, and audit work.
+External requests distinguish the system, bounded operation, HTTP/directory method, and outcome;
+every retry and page is an individual request. Synchronization and login timers measure their
+whole operation, so they can be compared with the component request timers. Tags remain bounded:
+stable identities, request paths, permission codes, and exception messages are not used as tags.
+Without a registry, a no-op implementation keeps Micrometer optional at runtime.
+
+These library-level persistence metrics measure logical repository/provider operations, not exact
+SQL statement counts. Use a JDBC proxy or datasource/driver telemetry when exact database calls are
+required. The demo's opt-in performance profile supplies that diagnostic instrumentation without
+adding a datasource proxy to the published modules.
 
 ## Audit events
 

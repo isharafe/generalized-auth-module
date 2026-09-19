@@ -7,8 +7,9 @@ authorization ownership boundaries.
 
 Core exposes `AuthorizationObservation` and supplies a Micrometer implementation whenever a
 `MeterRegistry` exists. It records low-cardinality decision/latency, cache hit/miss,
-identity-event, and invalidation metrics. A no-op implementation keeps metrics optional and both
-SPIs remain replaceable.
+identity-event, invalidation, logical persistence, synchronization, post-login initialization, and
+external Keycloak/LDAP request metrics. Each physical page and retry is observed separately. A
+no-op implementation keeps metrics optional and the observation SPI remains replaceable.
 
 `AuthorizationInvalidationPublisher` is the provider-neutral cross-instance transport contract.
 Single-instance deployments use the no-op publisher. The opt-in database implementation persists
@@ -44,6 +45,11 @@ authorization test verifies that repeated decisions remain local and complete wi
 regression bound. Deployment-specific capacity testing remains the responsibility of the consuming
 application because its database, pool, ruleset, hardware, and latency targets determine meaningful
 production limits.
+
+The demo's opt-in performance profile complements those regression tests with exact per-request
+JDBC execution counts, total JDBC time, structured request logs, and repeatable cold/warm request
+and targeted-Keycloak synchronization reports. Diagnostic JDBC instrumentation remains outside the
+published library modules.
 
 ## Verification
 

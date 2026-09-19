@@ -8,21 +8,35 @@ import io.github.isharafe.authorization.domain.ResourceType;
 import io.github.isharafe.authorization.persistence.entity.AuditEventEntity;
 import io.github.isharafe.authorization.persistence.repository.AuditEventRepository;
 import io.github.isharafe.authorization.spi.AuthorizationAuditPublisher;
+import io.github.isharafe.authorization.spi.AuthorizationObservation;
+import io.github.isharafe.authorization.observability.NoOpAuthorizationObservation;
 import io.github.isharafe.authorization.util.HttpResourceUtil;
+import java.time.Duration;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
-@RequiredArgsConstructor
 public class DatabaseAuthorizationAuditPublisher implements AuthorizationAuditPublisher {
   private final AuditEventRepository repository;
+  private final AuthorizationObservation observation;
+
+  public DatabaseAuthorizationAuditPublisher(AuditEventRepository repository) {
+    this(repository, new NoOpAuthorizationObservation());
+  }
+
+  public DatabaseAuthorizationAuditPublisher(
+      AuditEventRepository repository, AuthorizationObservation observation) {
+    this.repository = repository;
+    this.observation = observation;
+  }
 
   @Override
   public void publishDecision(AuthorizationResult result, ProtectedResource resource) {
+    long started = System.nanoTime();
+    String persistenceResult = "success";
     try {
       String requestMethod =
           resource.resourceType() == ResourceType.URL
@@ -51,13 +65,21 @@ public class DatabaseAuthorizationAuditPublisher implements AuthorizationAuditPu
               result.matchedRuleCode(),
               result.matchedPermissionCode()));
     } catch (RuntimeException exception) {
+      persistenceResult = "failure";
       log.warn("Unable to persist authorization decision audit event", exception);
+    } finally {
+      observation.recordPersistenceOperation(
+          "decision_audit_write",
+          persistenceResult,
+          Duration.ofNanos(System.nanoTime() - started));
     }
   }
 
   @Override
   @Transactional(propagation = Propagation.REQUIRES_NEW)
   public void publishChange(AuthorizationChangeAuditEvent event) {
+    long started = System.nanoTime();
+    String persistenceResult = "success";
     try {
       repository.save(
           AuditEventEntity.authorizationChange(
@@ -70,7 +92,13 @@ public class DatabaseAuthorizationAuditPublisher implements AuthorizationAuditPu
               correlationId(),
               event.detailsJson()));
     } catch (RuntimeException exception) {
+      persistenceResult = "failure";
       log.warn("Unable to persist authorization change audit event", exception);
+    } finally {
+      observation.recordPersistenceOperation(
+          "change_audit_write",
+          persistenceResult,
+          Duration.ofNanos(System.nanoTime() - started));
     }
   }
 

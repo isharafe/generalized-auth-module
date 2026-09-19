@@ -1,0 +1,8 @@
+authorization:
+  seed:
+    resource-rules:
+      - code: PERFORMANCE_ACTUATOR
+        type: URL
+        pattern: "*:/actuator/**"
+        access-mode: PERMIT_ALL
+        priority: 1000

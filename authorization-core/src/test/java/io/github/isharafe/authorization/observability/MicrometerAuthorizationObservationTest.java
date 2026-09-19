@@ -31,6 +31,14 @@ class MicrometerAuthorizationObservationTest {
     observation.recordIdentityEvent(IdentityChangeProcessingResult.DUPLICATE, Duration.ofMillis(1));
     observation.recordIdentityEventFailure(Duration.ofMillis(3));
     observation.recordInvalidation("identity", true);
+    observation.recordPersistenceOperation(
+        "entitlements_load", "success", Duration.ofMillis(4));
+    observation.recordExternalRequest(
+        "keycloak", "groups", "GET", "success", Duration.ofMillis(5));
+    observation.recordExternalTokenCacheRequest("keycloak", true);
+    observation.recordSynchronization(
+        "keycloak", "targeted", "success", Duration.ofMillis(6));
+    observation.recordLoginInitialization(true, "success", Duration.ofMillis(7));
 
     assertThat(
             registry
@@ -67,5 +75,55 @@ class MicrometerAuthorizationObservationTest {
                 .counter()
                 .count())
         .isEqualTo(1);
+    assertThat(
+            registry
+                .get("authorization.persistence.operations")
+                .tags("operation", "entitlements_load", "result", "success")
+                .counter()
+                .count())
+        .isEqualTo(1);
+    assertThat(
+            registry
+                .get("authorization.external.requests")
+                .tags(
+                    "system", "keycloak",
+                    "operation", "groups",
+                    "method", "GET",
+                    "result", "success")
+                .counter()
+                .count())
+        .isEqualTo(1);
+    assertThat(
+            registry
+                .get("authorization.external.token.cache.requests")
+                .tags("system", "keycloak", "result", "hit")
+                .counter()
+                .count())
+        .isEqualTo(1);
+    assertThat(
+            registry
+                .get("authorization.synchronizations")
+                .tags("source", "keycloak", "operation", "targeted", "result", "success")
+                .counter()
+                .count())
+        .isEqualTo(1);
+    assertThat(
+            registry
+                .get("authorization.login.initializations")
+                .tags("synchronization", "enabled", "result", "success")
+                .counter()
+                .count())
+        .isEqualTo(1);
+    assertThat(
+            registry
+                .get("authorization.external.request.duration")
+                .tags(
+                    "system", "keycloak",
+                    "operation", "groups",
+                    "method", "GET",
+                    "result", "success")
+                .timer()
+                .totalTime(java.util.concurrent.TimeUnit.MILLISECONDS))
+        .isEqualTo(5);
   }
 }

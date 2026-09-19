@@ -329,10 +329,13 @@ to the same configured LDAP issuer and stable subject. See
 
 ## Production observability and multi-instance caches
 
-When a Micrometer `MeterRegistry` bean is available, core records authorization decisions and
-latency, cache hits/misses, identity-event processing, and cache invalidations. The tags are bounded
-enums/categories; user IDs, paths, and permission codes are never metric tags. Add Spring Boot
-Actuator and the registry/exporter appropriate for the deployment to expose them.
+When a Micrometer `MeterRegistry` bean is available, core records authorization decisions,
+persistence-provider work, login initialization, identity synchronization, Keycloak/LDAP calls,
+token-cache hits/misses, cache activity, and latency. The tags are bounded enums/categories; user
+IDs, paths, permission codes, and exception messages are never metric tags. Add Spring Boot
+Actuator and the registry/exporter appropriate for the deployment to expose them. The runnable demo
+also has an opt-in `performance` profile for exact per-request JDBC counts and a repeatable report;
+see [the demo guide](examples/authorization-demo/README.md#performance-measurement).
 
 Local caches are the default. Applications with multiple instances sharing one authorization
 database can enable the built-in database invalidation transport:

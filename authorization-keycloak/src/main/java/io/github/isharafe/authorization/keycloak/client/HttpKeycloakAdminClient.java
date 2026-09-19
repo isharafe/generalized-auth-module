@@ -1,6 +1,8 @@
 package io.github.isharafe.authorization.keycloak.client;
 
 import io.github.isharafe.authorization.keycloak.config.AuthorizationKeycloakProperties;
+import io.github.isharafe.authorization.observability.NoOpAuthorizationObservation;
+import io.github.isharafe.authorization.spi.AuthorizationObservation;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -12,6 +14,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -20,13 +23,22 @@ public final class HttpKeycloakAdminClient implements KeycloakAdminClient {
   private final AuthorizationKeycloakProperties properties;
   private final ObjectMapper mapper;
   private final HttpClient http;
+  private final AuthorizationObservation observation;
   private volatile Token token;
 
   public HttpKeycloakAdminClient(
       AuthorizationKeycloakProperties properties, ObjectMapper mapper) {
+    this(properties, mapper, new NoOpAuthorizationObservation());
+  }
+
+  public HttpKeycloakAdminClient(
+      AuthorizationKeycloakProperties properties,
+      ObjectMapper mapper,
+      AuthorizationObservation observation) {
     properties.validate();
     this.properties = properties;
     this.mapper = mapper;
+    this.observation = observation;
     this.http =
         HttpClient.newBuilder()
             .connectTimeout(properties.getHttp().getConnectTimeout())
@@ -111,8 +123,7 @@ public final class HttpKeycloakAdminClient implements KeycloakAdminClient {
               .GET()
               .build();
       try {
-        HttpResponse<String> response =
-            http.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+        HttpResponse<String> response = send(request, operation(path));
         int status = response.statusCode();
         if (status >= 200 && status < 300) return response.body();
         if (status == 404 && notFoundAllowed) return null;
@@ -149,8 +160,11 @@ public final class HttpKeycloakAdminClient implements KeycloakAdminClient {
   }
 
   private synchronized String accessToken() {
-    if (token != null && token.expiresAt().isAfter(Instant.now().plusSeconds(10)))
+    if (token != null && token.expiresAt().isAfter(Instant.now().plusSeconds(10))) {
+      observation.recordExternalTokenCacheRequest("keycloak", true);
       return token.value();
+    }
+    observation.recordExternalTokenCacheRequest("keycloak", false);
     String form =
         "grant_type=client_credentials&client_id="
             + form(properties.getClientId())
@@ -170,8 +184,7 @@ public final class HttpKeycloakAdminClient implements KeycloakAdminClient {
     KeycloakClientException last = null;
     for (int attempt = 1; attempt <= properties.getHttp().getMaxAttempts(); attempt++) {
       try {
-        HttpResponse<String> response =
-            http.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+        HttpResponse<String> response = send(request, "service_token");
         if (response.statusCode() >= 200 && response.statusCode() < 300) {
           JsonNode json = mapper.readTree(response.body());
           String value = json.path("access_token").asText(null);
@@ -224,6 +237,54 @@ public final class HttpKeycloakAdminClient implements KeycloakAdminClient {
 
   private boolean retryable(int status) {
     return status == 401 || status == 429 || status >= 500;
+  }
+
+  private HttpResponse<String> send(HttpRequest request, String operation)
+      throws IOException, InterruptedException {
+    long started = System.nanoTime();
+    try {
+      HttpResponse<String> response =
+          http.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+      observation.recordExternalRequest(
+          "keycloak",
+          operation,
+          request.method(),
+          outcome(response.statusCode()),
+          Duration.ofNanos(System.nanoTime() - started));
+      return response;
+    } catch (IOException exception) {
+      observation.recordExternalRequest(
+          "keycloak",
+          operation,
+          request.method(),
+          "transport",
+          Duration.ofNanos(System.nanoTime() - started));
+      throw exception;
+    } catch (InterruptedException exception) {
+      observation.recordExternalRequest(
+          "keycloak",
+          operation,
+          request.method(),
+          "interrupted",
+          Duration.ofNanos(System.nanoTime() - started));
+      throw exception;
+    }
+  }
+
+  private String operation(String path) {
+    if (path.endsWith("/groups") || path.contains("/groups?")) return "groups";
+    if (path.contains("/role-mappings/realm")) return "realm_roles";
+    if (path.contains("/users/")) return "user";
+    return "users";
+  }
+
+  private String outcome(int status) {
+    if (status >= 200 && status < 300) return "success";
+    if (status == 401 || status == 403) return "authentication";
+    if (status == 404) return "not_found";
+    if (status == 429) return "rate_limited";
+    if (status >= 500) return "remote_server";
+    return "invalid_response";
   }
 
   private void backoff(int attempt) {

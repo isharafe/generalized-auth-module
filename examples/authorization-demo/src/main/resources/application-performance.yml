@@ -1,0 +1,14 @@
+management:
+  server:
+    address: 127.0.0.1
+    port: 8083
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,prometheus
+
+authorization:
+  seed:
+    locations:
+      - classpath:authorization/demo-seed.yml
+      - classpath:authorization/performance-seed.yml

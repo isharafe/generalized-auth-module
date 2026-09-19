@@ -64,7 +64,7 @@ public class AuthorizationAutoConfiguration {
       UserRepository repository,
       AuthorizationProperties properties,
       AuthorizationObservation observation) {
-    EntitlementProvider provider = new DatabaseEntitlementProvider(repository);
+    EntitlementProvider provider = new DatabaseEntitlementProvider(repository, observation);
     AuthorizationProperties.CacheRegion cache = properties.getCache().getEntitlements();
     return cache.isEnabled()
         ? new CachingEntitlementProvider(provider, cache.getTtl(), observation)
@@ -77,7 +77,7 @@ public class AuthorizationAutoConfiguration {
       ResourceRuleRepository repository,
       AuthorizationProperties properties,
       AuthorizationObservation observation) {
-    ResourceRuleProvider provider = new DatabaseResourceRuleProvider(repository);
+    ResourceRuleProvider provider = new DatabaseResourceRuleProvider(repository, observation);
     AuthorizationProperties.CacheRegion cache = properties.getCache().getResourceRules();
     return cache.isEnabled()
         ? new CachingResourceRuleProvider(provider, cache.getTtl(), observation)
@@ -135,14 +135,16 @@ public class AuthorizationAutoConfiguration {
 
   @Bean
   @ConditionalOnMissingBean(AuthorizationAuditPublisher.class)
-  AuthorizationAuditPublisher authorizationAuditPublisher(AuditEventRepository repository) {
-    return new DatabaseAuthorizationAuditPublisher(repository);
+  AuthorizationAuditPublisher authorizationAuditPublisher(
+      AuditEventRepository repository, AuthorizationObservation observation) {
+    return new DatabaseAuthorizationAuditPublisher(repository, observation);
   }
 
   @Bean
   @ConditionalOnMissingBean(ExternalAuthorityMapper.class)
-  ExternalAuthorityMapper externalAuthorityMapper(ExternalAuthorityMappingRepository repository) {
-    return new DatabaseExternalAuthorityMapper(repository);
+  ExternalAuthorityMapper externalAuthorityMapper(
+      ExternalAuthorityMappingRepository repository, AuthorizationObservation observation) {
+    return new DatabaseExternalAuthorityMapper(repository, observation);
   }
 
   @Bean
