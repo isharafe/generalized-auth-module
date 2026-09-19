@@ -25,23 +25,25 @@ LDAP call—and ambiguous or unavailable authorization state fails closed.
 - **Try real workflows.** Runnable Spring and Spring + Nuxt demos cover public, authenticated,
   permission-controlled, administration, and Keycloak-backed synchronization flows.
 
-## Why not just connect Keycloak directly?
+## Why use a shared authorization layer?
 
-You can. For a small application with a few stable roles, reading Keycloak roles from a token and
-writing a handful of checks may be all you need.
+For a small application, direct role checks may be enough regardless of where users come from.
+You might store users and assignments in the application database, read Keycloak roles from a
+token, inspect LDAP groups, or integrate another identity system.
 
-But Keycloak mainly tells your application **who the user is** and which external roles or groups
-they have. Your application still has to decide **what that user may do**. As requirements grow,
-teams often end up rebuilding the same authorization code in every application:
+Those sources answer **who the user is** and may provide external roles, groups, or attributes. The
+application still has to decide **what that user may do**. As requirements grow, teams often rebuild
+the same authorization behavior around each source:
 
-| When wiring Keycloak directly | With this framework |
+| Without a shared authorization layer | With this framework |
 | --- | --- |
-| Write code to translate Keycloak roles and groups into application roles. | Map external authorities to local roles or permission groups through seed configuration or the admin UI. |
-| Add role checks throughout controllers and services. | Protect URL resources centrally through Spring Security's authorization pipeline. |
-| Create broader and broader roles—or many new roles—for every access variation. | Grant focused permissions such as `URL:EMPLOYEE_VIEW` and `URL:EMPLOYEE_EDIT`. |
-| Repeat role-based `if` and `v-if` checks throughout the frontend. | Use `<Authorized>`, `v-authorization`, and a permission-aware composable for UI behavior. |
-| Build synchronization, caching, invalidation, audit, migrations, and management tools yourself. | Use the implementations already provided by the core and optional modules. |
-| Decide how missing rules and infrastructure failures should behave. | Get tested fail-closed defaults, including distinct 401, 403, and 503 outcomes. |
+| Database mode needs custom tables, assignment loading, and authorization checks. | Core provides the local model, persistence, seeds, caching, and authorization engine. |
+| Keycloak roles or groups become application-specific checks scattered through the codebase. | Explicit mappings translate selected Keycloak authorities into local roles or permission groups. |
+| LDAP or Active Directory groups and attributes require provider-specific authorization logic. | Explicit mappings synchronize selected directory authorities while request-time decisions stay local. |
+| Another identity source requires redesigning application permissions. | Provider-neutral SPIs allow another source to populate the same local assignment model. |
+| Broad roles multiply as each access variation appears. | Focused permissions such as `URL:EMPLOYEE_VIEW` and `URL:EMPLOYEE_EDIT` express actual capabilities. |
+| Backend and frontend checks drift into unrelated role assumptions. | Spring Security enforces URL access while Nuxt helpers express matching UI intent. |
+| Missing rules and provider failures need application-specific handling. | Tested fail-closed defaults distinguish authentication, denial, and infrastructure failure. |
 
 Without a shared authorization layer, backend checks can easily become scattered application code:
 
@@ -72,13 +74,20 @@ intent without depending on an identity-provider role name:
 UI checks improve the user experience but are not a security boundary. The corresponding backend
 operation must always remain protected by Spring Security.
 
-The result is less authorization plumbing to recreate in each application and a consistent set of
-defaults: no matching rule denies access, provider failures do not look like empty permissions,
-Spring path matching is used, synchronized assignments cannot overwrite manual or seeded ones, and
-the optional cookie flow provides HttpOnly tokens and CSRF protection. Keycloak still handles
-identity; this framework turns that identity into granular, application-owned permissions. See the
-[runtime architecture](docs/02-runtime-architecture.md) and
-[Keycloak integration](docs/09-keycloak-integration.md) for the full flow.
+The result is one application-owned authorization model across different identity arrangements:
+
+- **Database only:** seed or manage local users and assignments with no external synchronization.
+- **Keycloak:** map selected groups and realm roles into local assignments.
+- **LDAP or Active Directory:** map selected groups and user attributes into local assignments.
+- **Custom source:** implement the core SPIs while keeping the same roles, permissions, rules, and
+  decision engine.
+
+In every mode, no matching rule denies access, provider failures do not look like empty
+permissions, synchronized assignments cannot overwrite manual or seeded ones, and normal
+authorization decisions use the local cache and database. See the
+[runtime architecture](docs/02-runtime-architecture.md),
+[Keycloak integration](docs/09-keycloak-integration.md), and
+[LDAP integration](docs/20-ldap-integration.md) for the full flows.
 
 ## Modules
 
