@@ -184,6 +184,13 @@ Valid post logout redirect URI: http://localhost:8080/demo-ui/signed-out
 Keeping login and synchronization clients separate prevents the browser-login client from receiving
 administrative service-account privileges.
 
+The browser client requests only `openid` and uses explicit client scopes/mappers to minimize its
+access token. It retains Keycloak lifecycle/session claims, `sub`, `acr`, and
+`preferred_username`, while profile PII, LDAP employee attributes, groups, roles, and
+`allowed-origins` are omitted. Profile information remains available through the ID token/UserInfo;
+external groups and realm roles are retrieved independently by the synchronization client and
+mapped to local assignments.
+
 ### Demo permissions
 
 The seed defines two opaque UI resource identifiers:

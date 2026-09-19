@@ -329,6 +329,12 @@ that service account. The one-time `keycloak-init` job enforces that assignment 
 generated service-account user and enables its effective token scope before reporting that the demo
 is ready. This prevents Admin API 403 responses during login-time synchronization.
 
+The browser client requests only `openid`. Its access token retains Keycloak's lifecycle/session
+claims, the stable subject, authentication context, and `preferred_username`; it excludes profile
+PII, LDAP attributes, groups, roles, and allowed origins. Profile details remain available through
+the ID token/UserInfo surfaces, while group and realm-role synchronization uses the separate Admin
+API client.
+
 The configured full and incremental synchronization cron expressions are `-`, so scheduled sync is
 disabled. Browser login performs targeted synchronization. Full, incremental, and targeted actions
 are also available through the admin component to an authorized administrator.

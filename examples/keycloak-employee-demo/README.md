@@ -298,32 +298,33 @@ and group memberships including:
 Because `Function-Managers` has Keycloak role mappings, Bob inherits
 `employee`, `people-manager`, and `request-approver`.
 
-## Obtain a JWT using an LDAP password
+## Obtain a minimized JWT using an LDAP password
 
 ```bash
-curl -s   -X POST http://localhost:8081/realms/employee-demo/protocol/openid-connect/token   -H "Content-Type: application/x-www-form-urlencoded"   -d "client_id=employee-demo"   -d "client_secret=employee-demo-secret"   -d "grant_type=password"   -d "username=bob"   -d "password=demo"
+curl -s   -X POST http://localhost:8081/realms/employee-demo/protocol/openid-connect/token   -H "Content-Type: application/x-www-form-urlencoded"   -d "client_id=employee-demo"   -d "client_secret=employee-demo-secret"   -d "grant_type=password"   -d "scope=openid"   -d "username=bob"   -d "password=demo"
 ```
 
-The access token should contain LDAP-derived claims such as:
+The browser client deliberately keeps its access token small. In addition to Keycloak's signed
+token lifecycle and session fields, it contains the stable subject, authentication context, and a
+display username:
 
 ```json
 {
-  "employeeId": "1002",
-  "department": "PAYMENTS",
-  "location": "SG",
-  "managerDn": "uid=alice,ou=People,dc=demo,dc=local",
-  "jobTitle": "Payments Manager",
-  "groups": [
-    "/Department-Payments",
-    "/Location-Singapore",
-    "/Function-Managers",
-    "/Team-Bob",
-    "/Team-Alice-Department"
-  ]
+  "iss": "http://localhost:8081/realms/employee-demo",
+  "sub": "<stable-keycloak-user-id>",
+  "typ": "Bearer",
+  "azp": "employee-demo",
+  "acr": "1",
+  "scope": "openid",
+  "preferred_username": "bob"
 }
 ```
 
-and effective roles under `realm_access.roles`.
+Names, email, LDAP employee attributes, groups, roles, and allowed origins are excluded from access
+tokens. Profile and LDAP attributes remain available in the ID token and UserInfo response. The
+authorization component retrieves groups and realm roles through its separate, least-privilege
+Admin API client and maps them to local assignments; normal API requests never authorize from
+token group or role claims.
 
 ## Demo change: prove synchronization
 
@@ -337,8 +338,9 @@ change because his LDAP group membership changed.
 ## Reset everything
 
 OpenLDAP bootstrap LDIF is processed only when its data volume is empty, and
-Keycloak startup import skips an already-existing realm. To return to the
-original sample data:
+Keycloak startup import skips an already-existing realm. This also means changes to client scopes
+or token mappers in the checked-in realm file do not affect an existing demo realm. To return to
+the current sample data:
 
 ```bash
 ./reset-demo-data.sh

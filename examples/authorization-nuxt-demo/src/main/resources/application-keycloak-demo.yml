@@ -8,7 +8,7 @@ spring:
             client-id: ${AUTHORIZATION_KEYCLOAK_LOGIN_CLIENT_ID:employee-demo}
             client-secret: ${AUTHORIZATION_KEYCLOAK_LOGIN_CLIENT_SECRET:employee-demo-secret}
             authorization-grant-type: authorization_code
-            scope: openid,profile,email
+            scope: openid
         provider:
           keycloak:
             issuer-uri: ${AUTHORIZATION_KEYCLOAK_ISSUER_URI:http://localhost:8081/realms/employee-demo}

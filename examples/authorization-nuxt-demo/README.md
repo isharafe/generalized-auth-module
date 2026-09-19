@@ -16,6 +16,8 @@ Spring remains the enforcement boundary for every backend request.
 Always open the demo through port `3000`. Nitro proxies OAuth2 callbacks, framework security
 endpoints, application API requests, and `/authorization-admin/**` to Spring. Access and refresh
 tokens stay in Spring-managed HttpOnly cookies and are never exposed to Nuxt application code.
+The browser client requests only `openid`; its access token contains stable identity and security
+context rather than profile PII, LDAP attributes, groups, roles, or allowed-origin metadata.
 
 ## Containerized quick start
 
