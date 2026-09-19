@@ -198,7 +198,9 @@
         "http://localhost:8080/login/oauth2/code/keycloak",
         "http://127.0.0.1:8080/login/oauth2/code/keycloak",
         "http://localhost:3000/login/oauth2/code/keycloak",
-        "http://127.0.0.1:3000/login/oauth2/code/keycloak"
+        "http://127.0.0.1:3000/login/oauth2/code/keycloak",
+        "http://localhost:8083/login/oauth2/code/keycloak",
+        "http://127.0.0.1:8083/login/oauth2/code/keycloak"
       ],
       "webOrigins": [
         "+"
