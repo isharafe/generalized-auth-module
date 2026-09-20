@@ -20,6 +20,7 @@ class AuthorizationSeedRunnerTest {
             loader,
             List.of("seed.yml"),
             List.of(),
+            List.of(),
             mock(AuthorizationSeedInitializationService.class),
             false);
 
@@ -34,6 +35,7 @@ class AuthorizationSeedRunnerTest {
         new AuthorizationSeedRunner(
             loader,
             List.of("seed.yml"),
+            List.of(),
             List.of(),
             mock(AuthorizationSeedInitializationService.class),
             true);

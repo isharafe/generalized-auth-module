@@ -63,14 +63,6 @@ authorization:
         type: UI
         pattern: managerWorkspace
         access-mode: AUTHORIZED
-      - code: AUTHZ_ADMIN_API
-        type: URL
-        pattern: "*:/authorization-admin/api/**"
-        access-mode: AUTHORIZED
-      - code: AUTHZ_ADMIN_UI
-        type: URL
-        pattern: "*:/authorization-admin/**"
-        access-mode: AUTHORIZED
     external-authority-mappings:
       - source-system: KEYCLOAK
         authority-type: GROUP
