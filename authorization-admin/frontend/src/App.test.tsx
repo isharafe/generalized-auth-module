@@ -297,7 +297,7 @@ describe("Authorization admin UI", () => {
   });
 
   it("shows the resource type for resource rules", async () => {
-    window.location.hash = "#/rules";
+    window.location.hash = "#/resources";
     vi.stubGlobal("fetch", vi.fn((input: RequestInfo | URL) => {
       const url = String(input);
       if (url.endsWith("/capabilities"))
@@ -311,9 +311,39 @@ describe("Authorization admin UI", () => {
     }));
     render(<App config={config} api={new AdminApi(config.apiBasePath)} />);
 
+    fireEvent.click(await screen.findByRole("button", { name: "Rules" }));
+
     const rule = (await screen.findByText("EMPLOYEE_API")).closest("article");
     expect(rule).not.toBeNull();
     expect(within(rule!).getByText("URL")).toBeVisible();
+  });
+
+  it("shows URL coverage and prefills a rule for an uncovered route", async () => {
+    window.location.hash = "#/resources";
+    vi.stubGlobal("fetch", vi.fn((input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.endsWith("/capabilities"))
+        return response({ source: "DATABASE", identitySynchronization: false,
+          externalAuthorityMapping: true, syncProvider: null });
+      if (url.includes("/resource-inventory/urls"))
+        return response(page([{ resourceType: "URL", method: "PUT",
+          path: "/api/employees/{id}", pattern: "PUT:/api/employees/{id}",
+          coverageStatus: "UNMATCHED", accessMode: null, matchedRule: null,
+          priority: null, reason: "NO_MATCHING_RULE", origins: ["APPLICATION"],
+          handlers: ["example.EmployeeController#update"] }]));
+      if (url.includes("/resource-rules")) return response(page([]));
+      throw new Error(`Unexpected request ${url}`);
+    }));
+
+    render(<App config={config} api={new AdminApi(config.apiBasePath)} />);
+
+    expect(await screen.findByText("Default denied")).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Create rule" }));
+
+    expect(await screen.findByDisplayValue("PUT")).toBeVisible();
+    expect(screen.getByDisplayValue("/api/employees/{id}")).toBeVisible();
+    expect(screen.getByDisplayValue("AUTHORIZED")).toBeVisible();
+    expect(screen.getByLabelText("Code")).toHaveValue("");
   });
 
   it("shows synchronization only when the provider supports it", async () => {

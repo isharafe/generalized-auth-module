@@ -70,6 +70,36 @@ public final class AdminDtos {
       Boolean enabled,
       Long version) {}
 
+  public enum UrlCoverageStatus {
+    MATCHED,
+    UNMATCHED,
+    INDETERMINATE
+  }
+
+  public enum UrlResourceOrigin {
+    APPLICATION,
+    AUTHORIZATION_FRAMEWORK,
+    SPRING_INFRASTRUCTURE
+  }
+
+  public record UrlResourceInventoryItem(
+      ResourceType resourceType,
+      String method,
+      String path,
+      String pattern,
+      UrlCoverageStatus coverageStatus,
+      AccessMode accessMode,
+      String matchedRule,
+      Integer priority,
+      AuthorizationReason reason,
+      Set<UrlResourceOrigin> origins,
+      Set<String> handlers) {
+    public UrlResourceInventoryItem {
+      origins = Set.copyOf(origins);
+      handlers = Set.copyOf(handlers);
+    }
+  }
+
   public record ExternalMapping(
       Long id,
       @NotBlank @Size(max = 50) String sourceSystem,

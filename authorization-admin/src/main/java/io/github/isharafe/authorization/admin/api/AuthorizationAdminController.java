@@ -4,6 +4,7 @@ import io.github.isharafe.authorization.admin.dto.AdminDtos;
 import io.github.isharafe.authorization.admin.service.AuthorizationAdminService;
 import io.github.isharafe.authorization.domain.AuditEventKind;
 import io.github.isharafe.authorization.domain.AuthenticatedIdentity;
+import io.github.isharafe.authorization.domain.ResourceType;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Set;
@@ -180,8 +181,10 @@ public class AuthorizationAdminController {
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "20") int size,
       @RequestParam(defaultValue = "code,asc") String sort,
-      @RequestParam(defaultValue = "") String search) {
-    return service.resourceRules(search, pageable(page, size, sort, "code", CODE_SORTS));
+      @RequestParam(defaultValue = "") String search,
+      @RequestParam(required = false) ResourceType resourceType) {
+    return service.resourceRules(
+        search, resourceType, pageable(page, size, sort, "code", CODE_SORTS));
   }
 
   @PostMapping("/resource-rules")

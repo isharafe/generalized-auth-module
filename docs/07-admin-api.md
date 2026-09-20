@@ -103,6 +103,19 @@ DELETE /resource-rules/{code}
 
 Server validates conflicts.
 
+The collection endpoint also accepts an optional `resourceType` filter. The URL inventory endpoint
+shows the Spring MVC routes registered in the current application context and the effective enabled
+rule selected for each declared method/path mapping:
+
+```text
+GET /resource-inventory/urls
+```
+
+It supports the common pagination/search parameters plus `coverage`, `accessMode`, and `origin`
+filters. `MATCHED` returns the winning rule and access mode, `UNMATCHED` means the route is denied by
+the framework default, and `INDETERMINATE` identifies a rule conflict. Route metadata is protected
+by the dedicated `URL:AUTHZ_RESOURCE_INVENTORY_VIEW` permission.
+
 ## Users
 
 At minimum:

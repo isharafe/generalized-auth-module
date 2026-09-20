@@ -101,6 +101,26 @@ export interface ResourceRule {
   version: number;
 }
 
+export type UrlCoverageStatus = "MATCHED" | "UNMATCHED" | "INDETERMINATE";
+export type UrlResourceOrigin =
+  | "APPLICATION"
+  | "AUTHORIZATION_FRAMEWORK"
+  | "SPRING_INFRASTRUCTURE";
+
+export interface UrlResourceInventoryItem {
+  resourceType: "URL";
+  method: string;
+  path: string;
+  pattern: string;
+  coverageStatus: UrlCoverageStatus;
+  accessMode?: ResourceRule["accessMode"] | null;
+  matchedRule?: string | null;
+  priority?: number | null;
+  reason: string;
+  origins: UrlResourceOrigin[];
+  handlers: string[];
+}
+
 export interface Assignment {
   code: string;
   source: AssignmentSource;

@@ -101,6 +101,21 @@ URL:EMPLOYEE_EDIT
 URL:PUT:/api/employees/**
 ```
 
+### Resources
+
+The Resources workspace is organized first by resource type so additional types can be added
+without introducing unrelated top-level navigation. URL resources provide Coverage and Rules views;
+UI resources currently provide the Rules view because opaque UI identifiers are not discoverable.
+
+URL Coverage lists registered Spring MVC controller mappings, their application/framework origin,
+the effective access mode, and the winning rule. A route with no matching rule is shown as
+`Default denied`, not as public. From an uncovered route, an administrator can open the rule editor
+with its method/path and safe `AUTHORIZED` defaults prefilled; saving remains explicit.
+
+The inventory covers `RequestMappingInfo` handler mappings in the current application context. It
+does not claim static-resource handlers, arbitrary servlet registrations, functional router
+predicates, or a separate management application context.
+
 ### Resource Rules
 
 Structured editor for resource type, URL method/path or UI identifier, access mode, priority, and

@@ -4,9 +4,11 @@ import io.github.isharafe.authorization.admin.api.AdminApiExceptionHandler;
 import io.github.isharafe.authorization.admin.api.AuthorizationAdminController;
 import io.github.isharafe.authorization.admin.api.AuthorizationCapabilitiesController;
 import io.github.isharafe.authorization.admin.api.AuthorizationDataTransferController;
+import io.github.isharafe.authorization.admin.api.UrlResourceInventoryController;
 import io.github.isharafe.authorization.admin.seed.FrameworkAdminSeedContributor;
 import io.github.isharafe.authorization.admin.service.AuthorizationAdminService;
 import io.github.isharafe.authorization.admin.service.AuthorizationDataTransferService;
+import io.github.isharafe.authorization.admin.service.UrlResourceInventoryService;
 import io.github.isharafe.authorization.config.AuthorizationAutoConfiguration;
 import io.github.isharafe.authorization.config.AuthorizationProperties;
 import io.github.isharafe.authorization.engine.AuthorizationEngine;
@@ -31,7 +33,9 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
+import org.springframework.web.servlet.mvc.method.RequestMappingInfoHandlerMapping;
 
 @AutoConfiguration(after = AuthorizationAutoConfiguration.class)
 @EnableConfigurationProperties(AuthorizationAdminProperties.class)
@@ -101,6 +105,32 @@ public class AuthorizationAdminAutoConfiguration {
   AuthorizationAdminController authorizationAdminController(
       AuthorizationAdminService service) {
     return new AuthorizationAdminController(service);
+  }
+
+  @Bean
+  @ConditionalOnMissingBean
+  @ConditionalOnProperty(
+      prefix = "authorization.admin.api",
+      name = "enabled",
+      havingValue = "true",
+      matchIfMissing = true)
+  UrlResourceInventoryService urlResourceInventoryService(
+      ObjectProvider<RequestMappingInfoHandlerMapping> handlerMappings,
+      ResourceRuleRepository rules,
+      PermissionMatcher matcher) {
+    return new UrlResourceInventoryService(handlerMappings, rules, matcher);
+  }
+
+  @Bean
+  @ConditionalOnMissingBean
+  @ConditionalOnProperty(
+      prefix = "authorization.admin.api",
+      name = "enabled",
+      havingValue = "true",
+      matchIfMissing = true)
+  UrlResourceInventoryController urlResourceInventoryController(
+      UrlResourceInventoryService service) {
+    return new UrlResourceInventoryController(service);
   }
 
   @Bean

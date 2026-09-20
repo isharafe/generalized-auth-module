@@ -23,6 +23,9 @@ import type {
   Role,
   RuntimeConfig,
   SyncStatus,
+  UrlCoverageStatus,
+  UrlResourceInventoryItem,
+  UrlResourceOrigin,
   User
 } from "./types";
 
@@ -32,7 +35,7 @@ type Route =
   | "roles"
   | "groups"
   | "permissions"
-  | "rules"
+  | "resources"
   | "mappings"
   | "explain"
   | "sync"
@@ -50,7 +53,7 @@ const NAVIGATION: Array<{
   { route: "roles", label: "Roles", eyebrow: "03" },
   { route: "groups", label: "Permission groups", eyebrow: "04" },
   { route: "permissions", label: "Permissions", eyebrow: "05" },
-  { route: "rules", label: "Resource rules", eyebrow: "06" },
+  { route: "resources", label: "Resources", eyebrow: "06" },
   {
     route: "mappings",
     label: "External mappings",
@@ -69,7 +72,8 @@ const NAVIGATION: Array<{
 ];
 
 function routeFromHash(): Route {
-  const candidate = window.location.hash.replace(/^#\/?/, "") as Route;
+  const hashRoute = window.location.hash.replace(/^#\/?/, "");
+  const candidate = (hashRoute === "rules" ? "resources" : hashRoute) as Route;
   return NAVIGATION.some((item) => item.route === candidate)
     ? candidate
     : "dashboard";
@@ -260,8 +264,8 @@ function RouteContent({
       );
     case "permissions":
       return <PermissionsPage api={api} />;
-    case "rules":
-      return <RulesPage api={api} />;
+    case "resources":
+      return <ResourcesPage api={api} />;
     case "mappings":
       return <MappingsPage api={api} source={capabilities.source} />;
     case "explain":
@@ -892,12 +896,228 @@ function PermissionsPage({ api }: { api: AdminApi }) {
   );
 }
 
-function RulesPage({ api }: { api: AdminApi }) {
-  const empty = {
+type RuleDraft = {
+  code: string;
+  resourceType: "URL" | "UI";
+  method: string;
+  resource: string;
+  accessMode: ResourceRule["accessMode"];
+  priority: number;
+  enabled: boolean;
+  version?: number;
+};
+
+const RESOURCE_WORKSPACES: Array<{
+  type: ResourceRule["resourceType"];
+  label: string;
+  inventory: boolean;
+}> = [
+  { type: "URL", label: "URLs", inventory: true },
+  { type: "UI", label: "UI resources", inventory: false }
+];
+
+function ResourcesPage({ api }: { api: AdminApi }) {
+  const [resourceType, setResourceType] = useState<"URL" | "UI">("URL");
+  const [view, setView] = useState<"coverage" | "rules">("coverage");
+  const [prefill, setPrefill] = useState<RuleDraft | null>(null);
+
+  const selectType = (type: "URL" | "UI") => {
+    setResourceType(type);
+    setView(type === "URL" ? "coverage" : "rules");
+    setPrefill(null);
+  };
+
+  const createRule = (resource: UrlResourceInventoryItem) => {
+    setResourceType("URL");
+    setPrefill({
+      code: "",
+      resourceType: "URL",
+      method: resource.method,
+      resource: resource.path,
+      accessMode: "AUTHORIZED",
+      priority: 0,
+      enabled: true
+    });
+    setView("rules");
+  };
+
+  return (
+    <>
+      <section className="resource-workspace-heading">
+        <PageHeading
+          eyebrow="Protected resources"
+          title="Resources"
+          description="Compare resources exposed by the application with the rules that govern them."
+        />
+        <div className="resource-tabs" aria-label="Resource type">
+          {RESOURCE_WORKSPACES.map((workspace) => (
+            <button
+              className={resourceType === workspace.type ? "active" : ""}
+              key={workspace.type}
+              onClick={() => selectType(workspace.type)}
+            >
+              {workspace.label}
+            </button>
+          ))}
+        </div>
+        <div className="resource-tabs secondary" aria-label="Resource view">
+          {resourceType === "URL" && (
+            <button
+              className={view === "coverage" ? "active" : ""}
+              onClick={() => setView("coverage")}
+            >
+              Coverage
+            </button>
+          )}
+          <button
+            className={view === "rules" ? "active" : ""}
+            onClick={() => setView("rules")}
+          >
+            Rules
+          </button>
+        </div>
+      </section>
+      {resourceType === "URL" && view === "coverage" ? (
+        <UrlCoveragePage api={api} onCreateRule={createRule} />
+      ) : (
+        <RulesPage
+          api={api}
+          resourceType={resourceType}
+          prefill={prefill}
+          onPrefillConsumed={() => setPrefill(null)}
+        />
+      )}
+    </>
+  );
+}
+
+function coverageLabel(item: UrlResourceInventoryItem): string {
+  if (item.coverageStatus === "UNMATCHED") return "Default denied";
+  if (item.coverageStatus === "INDETERMINATE") return "Configuration conflict";
+  switch (item.accessMode) {
+    case "PERMIT_ALL": return "Public";
+    case "AUTHENTICATED": return "Sign-in required";
+    case "AUTHORIZED": return "Permission required";
+    case "DENY_ALL": return "Explicitly denied";
+    default: return "Rule matched";
+  }
+}
+
+function UrlCoveragePage({
+  api,
+  onCreateRule
+}: {
+  api: AdminApi;
+  onCreateRule: (resource: UrlResourceInventoryItem) => void;
+}) {
+  const [items, setItems] = useState<UrlResourceInventoryItem[]>([]);
+  const [search, setSearch] = useState("");
+  const [coverage, setCoverage] = useState<"" | UrlCoverageStatus>("");
+  const [accessMode, setAccessMode] = useState<"" | ResourceRule["accessMode"]>("");
+  const [origin, setOrigin] = useState<"" | UrlResourceOrigin>("");
+  const [page, setPage] = useState(0);
+  const [result, setResult] = useState<Page<UrlResourceInventoryItem> | null>(null);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    setPage(0);
+  }, [search, coverage, accessMode, origin]);
+
+  useEffect(() => {
+    api.page<UrlResourceInventoryItem>("/resource-inventory/urls", {
+      search,
+      coverage,
+      accessMode,
+      origin,
+      page,
+      size: 25,
+      sort: "path,asc"
+    })
+      .then((loaded) => {
+        setResult(loaded);
+        setItems(loaded.content);
+        setError("");
+      })
+      .catch((caught) => setError(message(caught)));
+  }, [api, search, coverage, accessMode, origin, page]);
+
+  return (
+    <section className="panel coverage-panel">
+      <PageHeading
+        eyebrow="Live MVC inventory"
+        title="URL coverage"
+        description="No matching rule is a default deny. Static coverage reflects declared controller method and path mappings."
+      />
+      {error && <Notice tone="error">{error}</Notice>}
+      <div className="coverage-summary" aria-label="URL coverage summary">
+        <article><small>Matching routes</small><strong>{result?.totalElements ?? 0}</strong></article>
+        <article><small>Rules matched on this page</small><strong>{items.filter((item) => item.coverageStatus === "MATCHED").length}</strong></article>
+        <article><small>Default denied on this page</small><strong>{items.filter((item) => item.coverageStatus === "UNMATCHED").length}</strong></article>
+      </div>
+      <div className="coverage-filters">
+        <Search value={search} onChange={setSearch} />
+        <select aria-label="Coverage" value={coverage} onChange={(event) => setCoverage(event.target.value as "" | UrlCoverageStatus)}>
+          <option value="">All coverage</option>
+          <option value="MATCHED">Rule matched</option>
+          <option value="UNMATCHED">No matching rule</option>
+          <option value="INDETERMINATE">Configuration conflict</option>
+        </select>
+        <select aria-label="Access mode" value={accessMode} onChange={(event) => setAccessMode(event.target.value as "" | ResourceRule["accessMode"])}>
+          <option value="">All access modes</option>
+          {(["PERMIT_ALL", "AUTHENTICATED", "AUTHORIZED", "DENY_ALL"] as const).map((mode) => <option key={mode}>{mode}</option>)}
+        </select>
+        <select aria-label="Origin" value={origin} onChange={(event) => setOrigin(event.target.value as "" | UrlResourceOrigin)}>
+          <option value="">All origins</option>
+          <option value="APPLICATION">Application</option>
+          <option value="AUTHORIZATION_FRAMEWORK">Authorization framework</option>
+          <option value="SPRING_INFRASTRUCTURE">Spring infrastructure</option>
+        </select>
+      </div>
+      <div className="table-scroll">
+        <table className="coverage-table">
+          <thead><tr><th>Method</th><th>Path</th><th>Effective access</th><th>Rule</th><th>Origin</th><th /></tr></thead>
+          <tbody>
+            {items.map((item) => (
+              <tr key={item.pattern}>
+                <td><Badge>{item.method}</Badge></td>
+                <td><code>{item.path}</code><small title={item.handlers.join("\n")}>{item.handlers[0]}</small></td>
+                <td><Badge tone={item.coverageStatus === "MATCHED" ? "manual" : item.coverageStatus === "UNMATCHED" ? "seed" : "identity_sync"}>{coverageLabel(item)}</Badge></td>
+                <td>{item.matchedRule ? <><code>{item.matchedRule}</code><small>Priority {item.priority}</small></> : <span className="muted">No rule</span>}</td>
+                <td>{item.origins.map((value) => <small key={value}>{value.replaceAll("_", " ")}</small>)}</td>
+                <td>{item.coverageStatus === "UNMATCHED" && <button className="quiet" onClick={() => onCreateRule(item)}>Create rule</button>}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {items.length === 0 && !error && <Empty label="No URL resources match these filters" />}
+      </div>
+      {result && result.totalPages > 1 && (
+        <div className="pagination">
+          <button className="quiet" disabled={page === 0} onClick={() => setPage((value) => value - 1)}>Previous</button>
+          <span>Page {page + 1} of {result.totalPages}</span>
+          <button className="quiet" disabled={page + 1 >= result.totalPages} onClick={() => setPage((value) => value + 1)}>Next</button>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function RulesPage({
+  api,
+  resourceType,
+  prefill,
+  onPrefillConsumed
+}: {
+  api: AdminApi;
+  resourceType: "URL" | "UI";
+  prefill: RuleDraft | null;
+  onPrefillConsumed: () => void;
+}) {
+  const empty: RuleDraft = {
     code: "",
-    resourceType: "URL" as "URL" | "UI",
+    resourceType,
     method: "*",
-    resource: "/api/**",
+    resource: resourceType === "URL" ? "/api/**" : "componentIdentifier",
     accessMode: "AUTHORIZED" as ResourceRule["accessMode"],
     priority: 0,
     enabled: true,
@@ -910,15 +1130,26 @@ function RulesPage({ api }: { api: AdminApi }) {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    setDraft(empty);
+  }, [resourceType]);
+
+  useEffect(() => {
+    if (!prefill) return;
+    setDraft(prefill);
+    onPrefillConsumed();
+  }, [prefill]);
+
+  useEffect(() => {
     api
       .page<ResourceRule>("/resource-rules", {
         search,
+        resourceType,
         size: 100,
         sort: "code,asc"
       })
       .then((page) => setItems(page.content))
       .catch((caught) => setError(message(caught)));
-  }, [api, search, reload]);
+  }, [api, search, reload, resourceType]);
 
   const edit = (item: ResourceRule) => {
     const separator = item.pattern.indexOf(":");
@@ -982,8 +1213,8 @@ function RulesPage({ api }: { api: AdminApi }) {
     <div className="split-layout">
       <section className="panel list-panel">
         <PageHeading
-          eyebrow="Locks"
-          title="Resource rules"
+          eyebrow={`${resourceType} locks`}
+          title={`${resourceType} resource rules`}
           description="Most-specific matching rules decide the required access mode."
         />
         <Search value={search} onChange={setSearch} />
@@ -1029,18 +1260,7 @@ function RulesPage({ api }: { api: AdminApi }) {
             />
           </Field>
           <Field label="Resource type">
-            <select
-              value={draft.resourceType}
-              onChange={(event) =>
-                setDraft({
-                  ...draft,
-                  resourceType: event.target.value as "URL" | "UI"
-                })
-              }
-            >
-              <option>URL</option>
-              <option>UI</option>
-            </select>
+            <input value={draft.resourceType} disabled />
           </Field>
           {draft.resourceType === "URL" && (
             <Field label="HTTP method">

@@ -331,3 +331,15 @@ Inside `authorization-ldap`:
 - [x] runnable Spring + Nuxt/Nitro demo using the existing Keycloak identities
 - [x] permission-controlled content, routes, form controls, and authorized backend calls
 - [x] same-origin proxy support for the optional packaged administration UI
+
+---
+
+# Phase 9 — Admin resource coverage inventory
+
+- [x] discover Spring MVC method/path mappings in the active application context
+- [x] evaluate effective resource-rule coverage with default-deny and conflict states
+- [x] paginated/filterable URL inventory admin API
+- [x] dedicated framework viewer permission for route metadata
+- [x] resource-type-oriented Resources workspace
+- [x] uncovered-route rule creation with explicit save
+- [x] backend, security integration, and frontend tests

@@ -104,6 +104,10 @@ The Maven lifecycle runs the frontend production build and Vitest suite. Tests c
 
 The demo integration suite also verifies packaged-index delivery, runtime path configuration, 401/403 protection, authorized access, and the demo browser-session bootstrap. Optional browser E2E remains encouraged.
 
+Resource-inventory coverage verifies MVC mapping discovery, method/path flattening, effective rule
+selection, disabled/unmatched rules, filtering and pagination, dedicated admin authorization, and
+the UI workflow that prefills but does not automatically save a new rule.
+
 ## Current implemented coverage
 
 The current suite covers:

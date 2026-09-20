@@ -75,6 +75,11 @@ public final class FrameworkAdminSeedContributor implements AuthorizationSeedCon
       "*:/authorization-admin/api/resource-rules/**"
     },
     {
+      "AUTHZ_RESOURCE_INVENTORY_VIEW",
+      "View available URL resources and rule coverage",
+      "GET:/authorization-admin/api/resource-inventory/urls"
+    },
+    {
       "AUTHZ_EXTERNAL_MAPPING_VIEW",
       "View external mappings",
       "GET:/authorization-admin/api/external-mappings/**"
@@ -153,6 +158,7 @@ public final class FrameworkAdminSeedContributor implements AuthorizationSeedCon
         url("AUTHZ_PERMISSION_VIEW"),
         url("AUTHZ_PERMISSION_GROUP_VIEW"),
         url("AUTHZ_RESOURCE_RULE_VIEW"),
+        url("AUTHZ_RESOURCE_INVENTORY_VIEW"),
         url("AUTHZ_EXTERNAL_MAPPING_VIEW"),
         url("AUTHZ_SYNC_VIEW"),
         url("AUTHZ_AUDIT_VIEW"),
