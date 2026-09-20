@@ -1,8 +1,10 @@
 package io.github.isharafe.authorization.config;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import io.github.isharafe.authorization.security.UrlSecurityPolicyDecision;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
@@ -11,6 +13,26 @@ import org.springframework.security.oauth2.client.registration.InMemoryClientReg
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 
 class AuthorizationSecurityAutoConfigurationTest {
+  @Test
+  void publishesInspectablePoliciesForTheDefaultFilterChains() {
+    AuthorizationProperties properties = properties();
+    properties.getUiApi().setEndpoint("/custom/ui/permissions");
+
+    assertThat(AuthorizationSecurityAutoConfiguration.defaultUrlSecurityPolicies(properties))
+        .anySatisfy(
+            policy -> {
+              assertThat(policy.code()).isEqualTo("AUTHORIZATION_UI_PERMISSIONS");
+              assertThat(policy.pattern()).isEqualTo("*:/custom/ui/permissions");
+              assertThat(policy.decision()).isEqualTo(UrlSecurityPolicyDecision.AUTHENTICATED);
+            })
+        .anySatisfy(
+            policy -> {
+              assertThat(policy.code()).isEqualTo("AUTHORIZATION_RESOURCE_RULES");
+              assertThat(policy.pattern()).isEqualTo("*:/**");
+              assertThat(policy.decision()).isEqualTo(UrlSecurityPolicyDecision.RESOURCE_RULES);
+            });
+  }
+
   @Test
   void acceptsAValidLocalLogoutConfiguration() {
     AuthorizationProperties properties = properties();

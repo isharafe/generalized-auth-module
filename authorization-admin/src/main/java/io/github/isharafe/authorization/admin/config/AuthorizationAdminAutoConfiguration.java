@@ -28,6 +28,7 @@ import io.github.isharafe.authorization.spi.AuthorizationCacheInvalidator;
 import io.github.isharafe.authorization.spi.EntitlementProvider;
 import io.github.isharafe.authorization.spi.IdentitySynchronizationProvider;
 import io.github.isharafe.authorization.spi.PermissionMatcher;
+import io.github.isharafe.authorization.spi.UrlSecurityPolicyContributor;
 import jakarta.persistence.EntityManager;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -117,8 +118,9 @@ public class AuthorizationAdminAutoConfiguration {
   UrlResourceInventoryService urlResourceInventoryService(
       ObjectProvider<RequestMappingInfoHandlerMapping> handlerMappings,
       ResourceRuleRepository rules,
-      PermissionMatcher matcher) {
-    return new UrlResourceInventoryService(handlerMappings, rules, matcher);
+      PermissionMatcher matcher,
+      ObjectProvider<UrlSecurityPolicyContributor> securityPolicies) {
+    return new UrlResourceInventoryService(handlerMappings, rules, matcher, securityPolicies);
   }
 
   @Bean

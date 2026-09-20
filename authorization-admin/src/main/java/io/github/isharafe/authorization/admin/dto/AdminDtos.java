@@ -82,6 +82,12 @@ public final class AdminDtos {
     SPRING_INFRASTRUCTURE
   }
 
+  public enum UrlEnforcementSource {
+    SECURITY_FILTER_CHAIN,
+    RESOURCE_RULE,
+    UNKNOWN
+  }
+
   public record UrlResourceInventoryItem(
       ResourceType resourceType,
       String method,
@@ -92,6 +98,9 @@ public final class AdminDtos {
       String matchedRule,
       Integer priority,
       AuthorizationReason reason,
+      UrlEnforcementSource enforcementSource,
+      String matchedSecurityPolicy,
+      io.github.isharafe.authorization.security.UrlSecurityPolicyDecision securityDecision,
       Set<UrlResourceOrigin> origins,
       Set<String> handlers) {
     public UrlResourceInventoryItem {

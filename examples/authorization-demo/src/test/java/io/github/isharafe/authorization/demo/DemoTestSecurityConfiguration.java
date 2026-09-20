@@ -2,6 +2,9 @@ package io.github.isharafe.authorization.demo;
 
 import io.github.isharafe.authorization.security.AuthorizationServiceUnavailableHandler;
 import io.github.isharafe.authorization.security.DynamicRequestAuthorizationManager;
+import io.github.isharafe.authorization.security.UrlSecurityPolicy;
+import io.github.isharafe.authorization.security.UrlSecurityPolicyDecision;
+import io.github.isharafe.authorization.spi.UrlSecurityPolicyContributor;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -27,6 +30,18 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @Configuration(proxyBeanMethods = false)
 @Profile("test")
 class DemoTestSecurityConfiguration {
+  @Bean
+  UrlSecurityPolicyContributor testUrlSecurityPolicyContributor() {
+    return () ->
+        List.of(
+            new UrlSecurityPolicy(
+                "TEST_RESOURCE_RULES",
+                "*:/**",
+                UrlSecurityPolicyDecision.RESOURCE_RULES,
+                0,
+                0));
+  }
+
   @Bean
   SecurityFilterChain testSecurityFilterChain(
       HttpSecurity http,

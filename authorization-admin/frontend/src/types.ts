@@ -106,6 +106,16 @@ export type UrlResourceOrigin =
   | "APPLICATION"
   | "AUTHORIZATION_FRAMEWORK"
   | "SPRING_INFRASTRUCTURE";
+export type UrlEnforcementSource =
+  | "SECURITY_FILTER_CHAIN"
+  | "RESOURCE_RULE"
+  | "UNKNOWN";
+export type UrlSecurityPolicyDecision =
+  | "PERMIT_ALL"
+  | "AUTHENTICATED"
+  | "AUTHORIZED"
+  | "DENY_ALL"
+  | "RESOURCE_RULES";
 
 export interface UrlResourceInventoryItem {
   resourceType: "URL";
@@ -116,7 +126,10 @@ export interface UrlResourceInventoryItem {
   accessMode?: ResourceRule["accessMode"] | null;
   matchedRule?: string | null;
   priority?: number | null;
-  reason: string;
+  reason?: string | null;
+  enforcementSource: UrlEnforcementSource;
+  matchedSecurityPolicy?: string | null;
+  securityDecision?: UrlSecurityPolicyDecision | null;
   origins: UrlResourceOrigin[];
   handlers: string[];
 }

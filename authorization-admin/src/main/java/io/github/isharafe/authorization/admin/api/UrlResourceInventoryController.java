@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
     matchIfMissing = true)
 public class UrlResourceInventoryController {
   private static final Set<String> SORTS =
-      Set.of("path", "method", "coverageStatus", "accessMode", "origin");
+      Set.of("path", "method", "coverageStatus", "accessMode", "origin", "enforcementSource");
   private final UrlResourceInventoryService service;
 
   @GetMapping("/resource-inventory/urls")
@@ -34,7 +34,8 @@ public class UrlResourceInventoryController {
       @RequestParam(defaultValue = "") String search,
       @RequestParam(required = false) AdminDtos.UrlCoverageStatus coverage,
       @RequestParam(required = false) AccessMode accessMode,
-      @RequestParam(required = false) AdminDtos.UrlResourceOrigin origin) {
+      @RequestParam(required = false) AdminDtos.UrlResourceOrigin origin,
+      @RequestParam(required = false) AdminDtos.UrlEnforcementSource enforcementSource) {
     if (page < 0) throw AdminApiException.validation("page must be zero or greater");
     if (size < 1 || size > 100)
       throw AdminApiException.validation("size must be between 1 and 100");
@@ -45,6 +46,11 @@ public class UrlResourceInventoryController {
             ? Sort.Direction.DESC
             : Sort.Direction.ASC;
     return service.find(
-        search, coverage, accessMode, origin, PageRequest.of(page, size, Sort.by(direction, property)));
+        search,
+        coverage,
+        accessMode,
+        origin,
+        enforcementSource,
+        PageRequest.of(page, size, Sort.by(direction, property)));
   }
 }

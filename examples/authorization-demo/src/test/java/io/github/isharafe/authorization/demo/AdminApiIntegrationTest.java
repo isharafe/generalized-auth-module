@@ -92,6 +92,8 @@ class AdminApiIntegrationTest {
         .andExpect(jsonPath("$.content[0].coverageStatus", is("MATCHED")))
         .andExpect(jsonPath("$.content[0].accessMode", is("PERMIT_ALL")))
         .andExpect(jsonPath("$.content[0].matchedRule", is("DEMO_PUBLIC")))
+        .andExpect(jsonPath("$.content[0].enforcementSource", is("RESOURCE_RULE")))
+        .andExpect(jsonPath("$.content[0].matchedSecurityPolicy", is("TEST_RESOURCE_RULES")))
         .andExpect(jsonPath("$.content[0].origins", hasItem("APPLICATION")));
   }
 

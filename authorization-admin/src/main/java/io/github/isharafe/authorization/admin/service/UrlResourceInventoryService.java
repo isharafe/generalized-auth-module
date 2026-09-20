@@ -9,7 +9,12 @@ import io.github.isharafe.authorization.domain.ResourceRule;
 import io.github.isharafe.authorization.domain.ResourceType;
 import io.github.isharafe.authorization.engine.AuthorizationEngine;
 import io.github.isharafe.authorization.persistence.repository.ResourceRuleRepository;
+import io.github.isharafe.authorization.security.UrlSecurityPolicy;
+import io.github.isharafe.authorization.security.UrlSecurityPolicyDecision;
 import io.github.isharafe.authorization.spi.PermissionMatcher;
+import io.github.isharafe.authorization.spi.UrlSecurityPolicyContributor;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -41,6 +46,7 @@ public class UrlResourceInventoryService {
   private final ObjectProvider<RequestMappingInfoHandlerMapping> handlerMappings;
   private final ResourceRuleRepository rules;
   private final PermissionMatcher matcher;
+  private final ObjectProvider<UrlSecurityPolicyContributor> securityPolicyContributors;
 
   @Transactional(readOnly = true)
   public AdminDtos.Page<AdminDtos.UrlResourceInventoryItem> find(
@@ -48,6 +54,7 @@ public class UrlResourceInventoryService {
       AdminDtos.UrlCoverageStatus coverage,
       AccessMode accessMode,
       AdminDtos.UrlResourceOrigin origin,
+      AdminDtos.UrlEnforcementSource enforcementSource,
       Pageable pageable) {
     List<ResourceRule> enabledRules =
         rules.findByEnabledTrue().stream().map(value -> value.toDomain()).toList();
@@ -60,15 +67,20 @@ public class UrlResourceInventoryService {
               throw new IllegalStateException("Entitlements are not loaded for route coverage");
             },
             matcher);
+    List<UrlSecurityPolicy> securityPolicies = securityPolicies();
 
     String normalizedSearch = search == null ? "" : search.trim().toLowerCase(Locale.ROOT);
     List<AdminDtos.UrlResourceInventoryItem> items =
         discover().stream()
-            .map(value -> evaluate(value, snapshotEngine, rulesByCode))
+            .map(value -> evaluate(value, snapshotEngine, rulesByCode, securityPolicies))
             .filter(value -> matchesSearch(value, normalizedSearch))
             .filter(value -> coverage == null || value.coverageStatus() == coverage)
             .filter(value -> accessMode == null || value.accessMode() == accessMode)
             .filter(value -> origin == null || value.origins().contains(origin))
+            .filter(
+                value ->
+                    enforcementSource == null
+                        || value.enforcementSource() == enforcementSource)
             .sorted(comparator(pageable))
             .toList();
 
@@ -125,8 +137,14 @@ public class UrlResourceInventoryService {
   private AdminDtos.UrlResourceInventoryItem evaluate(
       DiscoveredUrl route,
       AuthorizationEngine engine,
-      Map<String, ResourceRule> rulesByCode) {
+      Map<String, ResourceRule> rulesByCode,
+      List<UrlSecurityPolicy> securityPolicies) {
     String pattern = route.method() + ":" + route.path();
+    UrlSecurityPolicy securityPolicy = matchingSecurityPolicy(pattern, securityPolicies);
+    if (securityPolicy == null) return unknownSecurityPolicy(route, pattern);
+    if (securityPolicy.decision() != UrlSecurityPolicyDecision.RESOURCE_RULES)
+      return securityPolicy(route, pattern, securityPolicy);
+
     AuthorizationResult result =
         engine.authorize(new ProtectedResource(ResourceType.URL, pattern), null);
     ResourceRule matched =
@@ -148,6 +166,93 @@ public class UrlResourceInventoryService {
         matched == null ? null : matched.code(),
         matched == null ? null : matched.priority(),
         result.reason(),
+        AdminDtos.UrlEnforcementSource.RESOURCE_RULE,
+        securityPolicy.code(),
+        securityPolicy.decision(),
+        route.origins(),
+        route.handlers());
+  }
+
+  private UrlSecurityPolicy matchingSecurityPolicy(
+      String pattern, List<UrlSecurityPolicy> securityPolicies) {
+    ProtectedResource resource = new ProtectedResource(ResourceType.URL, pattern);
+    return securityPolicies.stream()
+        .filter(
+            policy ->
+                matcher.matches(
+                    new ResourceRule(
+                        policy.code(),
+                        ResourceType.URL,
+                        policy.pattern(),
+                        AccessMode.DENY_ALL,
+                        0,
+                        true),
+                    resource))
+        .findFirst()
+        .orElse(null);
+  }
+
+  private List<UrlSecurityPolicy> securityPolicies() {
+    List<UrlSecurityPolicy> policies = new ArrayList<>();
+    securityPolicyContributors.orderedStream()
+        .map(UrlSecurityPolicyContributor::urlSecurityPolicies)
+        .filter(java.util.Objects::nonNull)
+        .flatMap(Collection::stream)
+        .forEach(
+            policy -> {
+              matcher.validate(ResourceType.URL, policy.pattern());
+              policies.add(policy);
+            });
+    return policies.stream()
+        .sorted(
+            Comparator.comparingInt(UrlSecurityPolicy::chainOrder)
+                .thenComparingInt(UrlSecurityPolicy::matcherOrder)
+                .thenComparing(UrlSecurityPolicy::code))
+        .toList();
+  }
+
+  private AdminDtos.UrlResourceInventoryItem securityPolicy(
+      DiscoveredUrl route, String pattern, UrlSecurityPolicy policy) {
+    AccessMode accessMode =
+        switch (policy.decision()) {
+          case PERMIT_ALL -> AccessMode.PERMIT_ALL;
+          case AUTHENTICATED -> AccessMode.AUTHENTICATED;
+          case AUTHORIZED -> AccessMode.AUTHORIZED;
+          case DENY_ALL -> AccessMode.DENY_ALL;
+          case RESOURCE_RULES -> throw new IllegalArgumentException("Resource-rule policy delegated");
+        };
+    return new AdminDtos.UrlResourceInventoryItem(
+        ResourceType.URL,
+        route.method(),
+        route.path(),
+        pattern,
+        AdminDtos.UrlCoverageStatus.MATCHED,
+        accessMode,
+        null,
+        null,
+        null,
+        AdminDtos.UrlEnforcementSource.SECURITY_FILTER_CHAIN,
+        policy.code(),
+        policy.decision(),
+        route.origins(),
+        route.handlers());
+  }
+
+  private AdminDtos.UrlResourceInventoryItem unknownSecurityPolicy(
+      DiscoveredUrl route, String pattern) {
+    return new AdminDtos.UrlResourceInventoryItem(
+        ResourceType.URL,
+        route.method(),
+        route.path(),
+        pattern,
+        AdminDtos.UrlCoverageStatus.INDETERMINATE,
+        null,
+        null,
+        null,
+        null,
+        AdminDtos.UrlEnforcementSource.UNKNOWN,
+        null,
+        null,
         route.origins(),
         route.handlers());
   }
@@ -157,6 +262,8 @@ public class UrlResourceInventoryService {
     return value.pattern().toLowerCase(Locale.ROOT).contains(search)
         || (value.matchedRule() != null
             && value.matchedRule().toLowerCase(Locale.ROOT).contains(search))
+        || (value.matchedSecurityPolicy() != null
+            && value.matchedSecurityPolicy().toLowerCase(Locale.ROOT).contains(search))
         || value.handlers().stream().anyMatch(item -> item.toLowerCase(Locale.ROOT).contains(search));
   }
 
@@ -177,6 +284,8 @@ public class UrlResourceInventoryService {
           case "origin" ->
               Comparator.comparing(
                   value -> value.origins().stream().map(Enum::name).sorted().findFirst().orElse(""));
+          case "enforcementSource" ->
+              Comparator.comparing(value -> value.enforcementSource().name());
           default -> Comparator.comparing(AdminDtos.UrlResourceInventoryItem::path);
         };
     if (order.isDescending()) comparator = comparator.reversed();

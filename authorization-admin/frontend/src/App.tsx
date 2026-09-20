@@ -24,6 +24,7 @@ import type {
   RuntimeConfig,
   SyncStatus,
   UrlCoverageStatus,
+  UrlEnforcementSource,
   UrlResourceInventoryItem,
   UrlResourceOrigin,
   User
@@ -992,6 +993,7 @@ function ResourcesPage({ api }: { api: AdminApi }) {
 }
 
 function coverageLabel(item: UrlResourceInventoryItem): string {
+  if (item.enforcementSource === "UNKNOWN") return "Filter-chain policy unknown";
   if (item.coverageStatus === "UNMATCHED") return "Default denied";
   if (item.coverageStatus === "INDETERMINATE") return "Configuration conflict";
   switch (item.accessMode) {
@@ -1015,13 +1017,14 @@ function UrlCoveragePage({
   const [coverage, setCoverage] = useState<"" | UrlCoverageStatus>("");
   const [accessMode, setAccessMode] = useState<"" | ResourceRule["accessMode"]>("");
   const [origin, setOrigin] = useState<"" | UrlResourceOrigin>("");
+  const [enforcementSource, setEnforcementSource] = useState<"" | UrlEnforcementSource>("");
   const [page, setPage] = useState(0);
   const [result, setResult] = useState<Page<UrlResourceInventoryItem> | null>(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
     setPage(0);
-  }, [search, coverage, accessMode, origin]);
+  }, [search, coverage, accessMode, origin, enforcementSource]);
 
   useEffect(() => {
     api.page<UrlResourceInventoryItem>("/resource-inventory/urls", {
@@ -1029,6 +1032,7 @@ function UrlCoveragePage({
       coverage,
       accessMode,
       origin,
+      enforcementSource,
       page,
       size: 25,
       sort: "path,asc"
@@ -1039,28 +1043,28 @@ function UrlCoveragePage({
         setError("");
       })
       .catch((caught) => setError(message(caught)));
-  }, [api, search, coverage, accessMode, origin, page]);
+  }, [api, search, coverage, accessMode, origin, enforcementSource, page]);
 
   return (
     <section className="panel coverage-panel">
       <PageHeading
         eyebrow="Live MVC inventory"
         title="URL coverage"
-        description="No matching rule is a default deny. Static coverage reflects declared controller method and path mappings."
+        description="Effective access combines declared Spring Security policies with resource rules for each controller method and path mapping."
       />
       {error && <Notice tone="error">{error}</Notice>}
       <div className="coverage-summary" aria-label="URL coverage summary">
         <article><small>Matching routes</small><strong>{result?.totalElements ?? 0}</strong></article>
-        <article><small>Rules matched on this page</small><strong>{items.filter((item) => item.coverageStatus === "MATCHED").length}</strong></article>
+        <article><small>Policies matched on this page</small><strong>{items.filter((item) => item.coverageStatus === "MATCHED").length}</strong></article>
         <article><small>Default denied on this page</small><strong>{items.filter((item) => item.coverageStatus === "UNMATCHED").length}</strong></article>
       </div>
       <div className="coverage-filters">
         <Search value={search} onChange={setSearch} />
         <select aria-label="Coverage" value={coverage} onChange={(event) => setCoverage(event.target.value as "" | UrlCoverageStatus)}>
           <option value="">All coverage</option>
-          <option value="MATCHED">Rule matched</option>
-          <option value="UNMATCHED">No matching rule</option>
-          <option value="INDETERMINATE">Configuration conflict</option>
+          <option value="MATCHED">Policy matched</option>
+          <option value="UNMATCHED">No matching resource rule</option>
+          <option value="INDETERMINATE">Indeterminate</option>
         </select>
         <select aria-label="Access mode" value={accessMode} onChange={(event) => setAccessMode(event.target.value as "" | ResourceRule["accessMode"])}>
           <option value="">All access modes</option>
@@ -1072,17 +1076,24 @@ function UrlCoveragePage({
           <option value="AUTHORIZATION_FRAMEWORK">Authorization framework</option>
           <option value="SPRING_INFRASTRUCTURE">Spring infrastructure</option>
         </select>
+        <select aria-label="Enforced by" value={enforcementSource} onChange={(event) => setEnforcementSource(event.target.value as "" | UrlEnforcementSource)}>
+          <option value="">All enforcement sources</option>
+          <option value="SECURITY_FILTER_CHAIN">Security filter chain</option>
+          <option value="RESOURCE_RULE">Resource rules</option>
+          <option value="UNKNOWN">Unknown</option>
+        </select>
       </div>
       <div className="table-scroll">
         <table className="coverage-table">
-          <thead><tr><th>Method</th><th>Path</th><th>Effective access</th><th>Rule</th><th>Origin</th><th /></tr></thead>
+          <thead><tr><th>Method</th><th>Path</th><th>Effective access</th><th>Enforced by</th><th>Policy / rule</th><th>Origin</th><th /></tr></thead>
           <tbody>
             {items.map((item) => (
               <tr key={item.pattern}>
                 <td><Badge>{item.method}</Badge></td>
                 <td><code>{item.path}</code><small title={item.handlers.join("\n")}>{item.handlers[0]}</small></td>
                 <td><Badge tone={item.coverageStatus === "MATCHED" ? "manual" : item.coverageStatus === "UNMATCHED" ? "seed" : "identity_sync"}>{coverageLabel(item)}</Badge></td>
-                <td>{item.matchedRule ? <><code>{item.matchedRule}</code><small>Priority {item.priority}</small></> : <span className="muted">No rule</span>}</td>
+                <td><small>{item.enforcementSource.replaceAll("_", " ")}</small></td>
+                <td>{item.matchedRule ? <><code>{item.matchedRule}</code><small>Priority {item.priority}</small></> : item.matchedSecurityPolicy ? <code>{item.matchedSecurityPolicy}</code> : <span className="muted">No policy metadata</span>}</td>
                 <td>{item.origins.map((value) => <small key={value}>{value.replaceAll("_", " ")}</small>)}</td>
                 <td>{item.coverageStatus === "UNMATCHED" && <button className="quiet" onClick={() => onCreateRule(item)}>Create rule</button>}</td>
               </tr>

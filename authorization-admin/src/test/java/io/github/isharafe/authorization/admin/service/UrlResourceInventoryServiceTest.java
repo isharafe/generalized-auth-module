@@ -10,6 +10,9 @@ import io.github.isharafe.authorization.domain.ResourceType;
 import io.github.isharafe.authorization.persistence.entity.ResourceRuleEntity;
 import io.github.isharafe.authorization.persistence.repository.ResourceRuleRepository;
 import io.github.isharafe.authorization.security.DefaultPermissionMatcher;
+import io.github.isharafe.authorization.security.UrlSecurityPolicy;
+import io.github.isharafe.authorization.security.UrlSecurityPolicyDecision;
+import io.github.isharafe.authorization.spi.UrlSecurityPolicyContributor;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +42,7 @@ class UrlResourceInventoryServiceTest {
             null,
             null,
             null,
+            null,
             PageRequest.of(0, 20, Sort.by("path").ascending()));
 
     assertThat(page.totalElements()).isEqualTo(2);
@@ -49,6 +53,8 @@ class UrlResourceInventoryServiceTest {
               assertThat(item.coverageStatus()).isEqualTo(AdminDtos.UrlCoverageStatus.MATCHED);
               assertThat(item.matchedRule()).isEqualTo("EMPLOYEE");
               assertThat(item.accessMode()).isEqualTo(AccessMode.AUTHORIZED);
+              assertThat(item.enforcementSource())
+                  .isEqualTo(AdminDtos.UrlEnforcementSource.RESOURCE_RULE);
               assertThat(item.origins())
                   .containsExactly(AdminDtos.UrlResourceOrigin.AUTHORIZATION_FRAMEWORK);
             })
@@ -70,6 +76,7 @@ class UrlResourceInventoryServiceTest {
             AdminDtos.UrlCoverageStatus.UNMATCHED,
             null,
             AdminDtos.UrlResourceOrigin.AUTHORIZATION_FRAMEWORK,
+            null,
             PageRequest.of(0, 1, Sort.by("method").ascending()));
 
     assertThat(page.totalElements()).isOne();
@@ -87,7 +94,7 @@ class UrlResourceInventoryServiceTest {
 
     AdminDtos.UrlResourceInventoryItem employee =
         service
-            .find("employee", null, null, null, PageRequest.of(0, 20))
+            .find("employee", null, null, null, null, PageRequest.of(0, 20))
             .content()
             .getFirst();
 
@@ -98,9 +105,65 @@ class UrlResourceInventoryServiceTest {
     assertThat(employee.matchedRule()).isNull();
   }
 
+  @Test
+  void filterChainPolicyTakesPrecedenceOverResourceRules() throws Exception {
+    UrlResourceInventoryService service =
+        service(
+            List.of(),
+            List.of(
+                new UrlSecurityPolicy(
+                    "UI_PERMISSIONS",
+                    "GET:/api/employees/{id}",
+                    UrlSecurityPolicyDecision.AUTHENTICATED,
+                    0,
+                    0),
+                resourceRuleFallback()));
+
+    AdminDtos.UrlResourceInventoryItem employee =
+        service
+            .find(
+                "employee",
+                null,
+                null,
+                null,
+                AdminDtos.UrlEnforcementSource.SECURITY_FILTER_CHAIN,
+                PageRequest.of(0, 20))
+            .content()
+            .getFirst();
+
+    assertThat(employee.coverageStatus()).isEqualTo(AdminDtos.UrlCoverageStatus.MATCHED);
+    assertThat(employee.accessMode()).isEqualTo(AccessMode.AUTHENTICATED);
+    assertThat(employee.enforcementSource())
+        .isEqualTo(AdminDtos.UrlEnforcementSource.SECURITY_FILTER_CHAIN);
+    assertThat(employee.matchedSecurityPolicy()).isEqualTo("UI_PERMISSIONS");
+    assertThat(employee.matchedRule()).isNull();
+  }
+
+  @Test
+  void reportsUnknownWhenNoFilterChainMetadataMatches() throws Exception {
+    UrlResourceInventoryService service = service(List.of(), List.of());
+
+    AdminDtos.UrlResourceInventoryItem employee =
+        service
+            .find("employee", null, null, null, null, PageRequest.of(0, 20))
+            .content()
+            .getFirst();
+
+    assertThat(employee.coverageStatus())
+        .isEqualTo(AdminDtos.UrlCoverageStatus.INDETERMINATE);
+    assertThat(employee.enforcementSource()).isEqualTo(AdminDtos.UrlEnforcementSource.UNKNOWN);
+    assertThat(employee.accessMode()).isNull();
+  }
+
   @SuppressWarnings("unchecked")
   private UrlResourceInventoryService service(List<ResourceRuleEntity> enabledRules)
       throws Exception {
+    return service(enabledRules, List.of(resourceRuleFallback()));
+  }
+
+  @SuppressWarnings("unchecked")
+  private UrlResourceInventoryService service(
+      List<ResourceRuleEntity> enabledRules, List<UrlSecurityPolicy> policies) throws Exception {
     RequestMappingInfoHandlerMapping mapping = mock(RequestMappingInfoHandlerMapping.class);
     Method employee = TestController.class.getDeclaredMethod("employee");
     Method uncovered = TestController.class.getDeclaredMethod("uncovered");
@@ -115,7 +178,16 @@ class UrlResourceInventoryServiceTest {
     when(mappings.orderedStream()).thenReturn(Stream.of(mapping));
     ResourceRuleRepository repository = mock(ResourceRuleRepository.class);
     when(repository.findByEnabledTrue()).thenReturn(enabledRules);
-    return new UrlResourceInventoryService(mappings, repository, new DefaultPermissionMatcher());
+    ObjectProvider<UrlSecurityPolicyContributor> contributors = mock(ObjectProvider.class);
+    UrlSecurityPolicyContributor contributor = () -> policies;
+    when(contributors.orderedStream()).thenReturn(Stream.of(contributor));
+    return new UrlResourceInventoryService(
+        mappings, repository, new DefaultPermissionMatcher(), contributors);
+  }
+
+  private UrlSecurityPolicy resourceRuleFallback() {
+    return new UrlSecurityPolicy(
+        "RESOURCE_RULES", "*:/**", UrlSecurityPolicyDecision.RESOURCE_RULES, 0, 100);
   }
 
   private ResourceRuleEntity rule(
