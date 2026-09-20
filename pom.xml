@@ -4,7 +4,7 @@
 
   <groupId>io.github.isharafe</groupId>
   <artifactId>authorization-parent</artifactId>
-  <version>0.1.0</version>
+  <version>0.1.0-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Reusable Authorization Framework</name>
   <url>https://github.com/isharafe/generalized-auth-module</url>
