@@ -4,9 +4,12 @@
   <parent>
     <groupId>io.github.isharafe</groupId>
     <artifactId>authorization-parent</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>0.1.0</version>
   </parent>
+
   <artifactId>authorization-ldap</artifactId>
+  <name>Reusable Authorization Framework - ldap</name>
+
   <dependencies>
     <dependency>
       <groupId>org.projectlombok</groupId>
