@@ -9,7 +9,7 @@ import type { AuthorizationPublicConfig, AuthorizationState } from "../src/runti
 
 const config: AuthorizationPublicConfig = {
   apiProxyPrefix: "/api/_authorization/backend",
-  permissionsEndpoint: "/authorization/ui/permissions",
+  permissionsEndpoint: "/authorization/user/permissions",
   csrfEndpoint: "/authorization/security/csrf",
   refreshEndpoint: "/authorization/security/token/refresh",
   logoutEndpoint: "/authorization/security/logout",
@@ -42,11 +42,11 @@ function fetcher(
 }
 
 describe("authorization manager", () => {
-  it("loads UI permissions and fails closed until ready", async () => {
+  it("loads effective permissions and fails closed until ready", async () => {
     const authorizationState = state();
     const manager = createAuthorizationManager(
       fetcher(async () => response(200, {
-        permissions: ["UI:EDIT", "UI:VIEW", "UI:EDIT"],
+        permissions: ["URL:EDIT", "UI:VIEW", "URL:EDIT"],
         entitlementVersion: 3
       })),
       config,
@@ -56,10 +56,10 @@ describe("authorization manager", () => {
     expect(manager.can("UI:VIEW")).toBe(false);
     await manager.refreshPermissions();
 
-    expect(manager.permissions.value).toEqual(["UI:EDIT", "UI:VIEW"]);
+    expect(manager.permissions.value).toEqual(["UI:VIEW", "URL:EDIT"]);
     expect(manager.entitlementVersion.value).toBe(3);
     expect(manager.can("UI:VIEW")).toBe(true);
-    expect(manager.canAll(["UI:VIEW", "UI:EDIT"])).toBe(true);
+    expect(manager.canAll(["UI:VIEW", "URL:EDIT"])).toBe(true);
   });
 
   it("adds CSRF to unsafe API requests", async () => {
@@ -127,11 +127,11 @@ describe("authorization manager", () => {
     expect(authorizationState.value.status).toBe("unauthenticated");
   });
 
-  it("fails closed when the permission response contains a non-UI code", async () => {
+  it("fails closed when the permission response contains a malformed code", async () => {
     const authorizationState = state();
     const manager = createAuthorizationManager(
       fetcher(async () => response(200, {
-        permissions: ["URL:EMPLOYEE_VIEW"],
+        permissions: ["EMPLOYEE_VIEW"],
         entitlementVersion: 1
       })),
       config,

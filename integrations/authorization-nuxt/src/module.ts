@@ -32,7 +32,7 @@ export default defineNuxtModule<ModuleOptions>({
     publicBaseUrl: "",
     apiProxyPrefix: "/api/_authorization/backend",
     backendProxyPrefixes: [],
-    permissionsEndpoint: "/authorization/ui/permissions",
+    permissionsEndpoint: "/authorization/user/permissions",
     csrfEndpoint: "/authorization/security/csrf",
     refreshEndpoint: "/authorization/security/token/refresh",
     logoutEndpoint: "/authorization/security/logout",

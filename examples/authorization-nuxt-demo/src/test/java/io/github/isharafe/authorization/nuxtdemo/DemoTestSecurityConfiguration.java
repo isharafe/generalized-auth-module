@@ -41,7 +41,7 @@ class DemoTestSecurityConfiguration {
         .authorizeHttpRequests(
             requests ->
                 requests
-                    .requestMatchers(properties.getUiApi().getEndpoint())
+                    .requestMatchers(properties.getPermissionsApi().getEndpoint())
                     .authenticated()
                     .anyRequest()
                     .access(authorization))
