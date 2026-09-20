@@ -65,18 +65,18 @@ class AuthorizationPropertiesTest {
   }
 
   @Test
-  void bindsUiApiConfiguration() {
+  void bindsPermissionsApiConfiguration() {
     AuthorizationProperties properties =
         new Binder(
                 new MapConfigurationPropertySource(
                     Map.of(
-                        "authorization.ui-api.enabled", "false",
-                        "authorization.ui-api.endpoint", "/api/my-ui-permissions")))
+                        "authorization.permissions-api.enabled", "false",
+                        "authorization.permissions-api.endpoint", "/api/my-permissions")))
             .bind("authorization", Bindable.of(AuthorizationProperties.class))
             .get();
 
-    assertThat(properties.getUiApi().isEnabled()).isFalse();
-    assertThat(properties.getUiApi().getEndpoint()).isEqualTo("/api/my-ui-permissions");
+    assertThat(properties.getPermissionsApi().isEnabled()).isFalse();
+    assertThat(properties.getPermissionsApi().getEndpoint()).isEqualTo("/api/my-permissions");
   }
 
   @Test

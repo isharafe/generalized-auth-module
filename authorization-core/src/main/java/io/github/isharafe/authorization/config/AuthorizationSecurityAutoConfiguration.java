@@ -350,9 +350,9 @@ public class AuthorizationSecurityAutoConfiguration {
                       .jwt(Customizer.withDefaults()))
           .authorizeHttpRequests(
               requests -> {
-                if (properties.getUiApi().isEnabled()) {
+                if (properties.getPermissionsApi().isEnabled()) {
                   requests
-                      .requestMatchers(properties.getUiApi().getEndpoint())
+                      .requestMatchers(properties.getPermissionsApi().getEndpoint())
                       .authenticated();
                 }
                 requests
@@ -413,11 +413,11 @@ public class AuthorizationSecurityAutoConfiguration {
             1));
 
     int matcherOrder = 0;
-    if (properties.getUiApi().isEnabled()) {
+    if (properties.getPermissionsApi().isEnabled()) {
       policies.add(
           new UrlSecurityPolicy(
-              "AUTHORIZATION_UI_PERMISSIONS",
-              "*:" + properties.getUiApi().getEndpoint(),
+              "AUTHORIZATION_USER_PERMISSIONS",
+              "*:" + properties.getPermissionsApi().getEndpoint(),
               UrlSecurityPolicyDecision.AUTHENTICATED,
               1,
               matcherOrder++));

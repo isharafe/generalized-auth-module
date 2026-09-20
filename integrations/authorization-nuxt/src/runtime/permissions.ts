@@ -24,8 +24,13 @@ export function matchesPermissions(
 }
 
 export function validatePermissionCode(permission: string): string {
-  if (!/^UI:[A-Za-z0-9][A-Za-z0-9_.-]{0,96}$/.test(permission)) {
-    throw new Error(`UI permission codes must use the canonical UI:<code> form: ${permission}`);
+  if (
+    permission.length > 100
+    || !/^[A-Z][A-Z0-9_]*:[A-Za-z0-9][A-Za-z0-9_.-]*$/.test(permission)
+  ) {
+    throw new Error(
+      `Permission codes must use the canonical TYPE:<code> form and contain at most 100 characters: ${permission}`
+    );
   }
   return permission;
 }

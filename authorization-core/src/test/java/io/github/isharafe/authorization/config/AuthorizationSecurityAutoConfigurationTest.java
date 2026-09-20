@@ -16,13 +16,13 @@ class AuthorizationSecurityAutoConfigurationTest {
   @Test
   void publishesInspectablePoliciesForTheDefaultFilterChains() {
     AuthorizationProperties properties = properties();
-    properties.getUiApi().setEndpoint("/custom/ui/permissions");
+    properties.getPermissionsApi().setEndpoint("/custom/user/permissions");
 
     assertThat(AuthorizationSecurityAutoConfiguration.defaultUrlSecurityPolicies(properties))
         .anySatisfy(
             policy -> {
-              assertThat(policy.code()).isEqualTo("AUTHORIZATION_UI_PERMISSIONS");
-              assertThat(policy.pattern()).isEqualTo("*:/custom/ui/permissions");
+              assertThat(policy.code()).isEqualTo("AUTHORIZATION_USER_PERMISSIONS");
+              assertThat(policy.pattern()).isEqualTo("*:/custom/user/permissions");
               assertThat(policy.decision()).isEqualTo(UrlSecurityPolicyDecision.AUTHENTICATED);
             })
         .anySatisfy(
