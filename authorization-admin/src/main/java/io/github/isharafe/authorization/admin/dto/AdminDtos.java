@@ -2,6 +2,7 @@ package io.github.isharafe.authorization.admin.dto;
 
 import io.github.isharafe.authorization.domain.AccessMode;
 import io.github.isharafe.authorization.domain.AssignmentSource;
+import io.github.isharafe.authorization.domain.AssignmentTargetType;
 import io.github.isharafe.authorization.domain.AuditEventKind;
 import io.github.isharafe.authorization.domain.AuthorizationDecision;
 import io.github.isharafe.authorization.domain.AuthorizationReason;
@@ -114,7 +115,7 @@ public final class AdminDtos {
       @NotBlank @Size(max = 50) String sourceSystem,
       @NotBlank @Size(max = 50) String authorityType,
       @NotBlank @Size(max = 1000) String authorityValue,
-      @NotBlank @Size(max = 50) String targetType,
+      @NotNull AssignmentTargetType targetType,
       @NotBlank @Pattern(regexp = CODE_PATTERN) String targetCode,
       Boolean enabled,
       Long version) {}

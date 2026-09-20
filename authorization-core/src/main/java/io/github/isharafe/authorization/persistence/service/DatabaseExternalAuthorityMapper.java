@@ -16,7 +16,7 @@ public class DatabaseExternalAuthorityMapper implements ExternalAuthorityMapper 
         .findBySourceSystemAndAuthorityTypeAndAuthorityValueAndEnabledTrue(
             sourceSystem, authorityType, authorityValue)
         .stream()
-        .map(value -> value.getTargetType() + ":" + value.getTargetCode())
+        .map(value -> value.getTargetType().name() + ":" + value.getTargetCode())
         .collect(Collectors.toUnmodifiableSet());
   }
 }

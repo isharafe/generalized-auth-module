@@ -6,10 +6,12 @@ import java.util.Set;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.BatchSize;
 
 @Getter
 @Setter
 @Entity
+@BatchSize(size = 100)
 @Table(name = "AUTH_PERMISSION_GROUP")
 public class PermissionGroupEntity extends AbstractCodedEntity {
   @Column(nullable = false)
@@ -18,6 +20,7 @@ public class PermissionGroupEntity extends AbstractCodedEntity {
   private String description;
 
   @ManyToMany(fetch = FetchType.LAZY)
+  @BatchSize(size = 100)
   @JoinTable(
       name = "AUTH_PERMISSION_GROUP_PERMISSION",
       joinColumns = @JoinColumn(name = "PERMISSION_GROUP_ID"),

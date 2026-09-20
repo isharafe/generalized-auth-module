@@ -9,6 +9,7 @@ import io.github.isharafe.authorization.domain.AuthenticatedIdentity;
 import io.github.isharafe.authorization.domain.Permission;
 import io.github.isharafe.authorization.domain.ResourceType;
 import io.github.isharafe.authorization.domain.UserEntitlements;
+import io.github.isharafe.authorization.engine.AuthorizationInfrastructureException;
 import io.github.isharafe.authorization.spi.EntitlementProvider;
 import java.time.Instant;
 import java.util.Set;
@@ -67,7 +68,10 @@ class CurrentUserPermissionsEndpointTest {
   @Test
   void mapsEntitlementFailuresToServiceUnavailable() {
     when(identities.resolve(authentication)).thenReturn(identity);
-    when(entitlements.load(identity)).thenThrow(new IllegalStateException("database unavailable"));
+    when(entitlements.load(identity))
+        .thenThrow(
+            new AuthorizationInfrastructureException(
+                "database unavailable", new IllegalStateException("offline")));
 
     assertThatThrownBy(() -> endpoint.permissions(authentication))
         .isInstanceOfSatisfying(

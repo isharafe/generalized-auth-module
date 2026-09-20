@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.github.isharafe.authorization.domain.AssignmentSource;
+import io.github.isharafe.authorization.domain.AssignmentTargetType;
 import io.github.isharafe.authorization.domain.AuthenticatedIdentity;
 import io.github.isharafe.authorization.ldap.client.LdapAuthority;
 import io.github.isharafe.authorization.ldap.client.LdapDirectoryClient;
@@ -117,7 +118,7 @@ class LdapIdentitySynchronizationProviderIntegrationTest {
     PendingUserAssignmentEntity pendingAssignment = new PendingUserAssignmentEntity();
     pendingAssignment.setIssuer(ISSUER);
     pendingAssignment.setSubject("u2");
-    pendingAssignment.setTargetType("ROLE");
+    pendingAssignment.setTargetType(AssignmentTargetType.ROLE);
     pendingAssignment.setTargetCode(pendingRole.getCode());
     pendingAssignment.setSource(AssignmentSource.SEED);
     pending.save(pendingAssignment);
@@ -252,7 +253,7 @@ class LdapIdentitySynchronizationProviderIntegrationTest {
     value.setSourceSystem("LDAP");
     value.setAuthorityType(authorityType);
     value.setAuthorityValue(authority);
-    value.setTargetType(targetType);
+    value.setTargetType(AssignmentTargetType.valueOf(targetType));
     value.setTargetCode(targetCode);
     value.setEnabled(true);
     mappings.saveAndFlush(value);

@@ -1,6 +1,7 @@
 package io.github.isharafe.authorization.persistence.repository;
 
 import io.github.isharafe.authorization.persistence.entity.ExternalAuthorityMappingEntity;
+import io.github.isharafe.authorization.domain.AssignmentTargetType;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
@@ -20,7 +21,7 @@ public interface ExternalAuthorityMappingRepository
           String sourceSystem,
           String authorityType,
           String authorityValue,
-          String targetType,
+          AssignmentTargetType targetType,
           String targetCode);
 
   @Query("""

@@ -1,20 +1,20 @@
 package io.github.isharafe.authorization.seed;
 
 import io.github.isharafe.authorization.domain.AssignmentSource;
+import io.github.isharafe.authorization.domain.AssignmentTargetType;
 import io.github.isharafe.authorization.domain.AuthenticatedIdentity;
 import io.github.isharafe.authorization.persistence.entity.*;
 import io.github.isharafe.authorization.persistence.repository.*;
 import io.github.isharafe.authorization.persistence.service.PendingUserAssignmentResolver;
 import io.github.isharafe.authorization.seed.AuthorizationSeedDefinition.*;
 import io.github.isharafe.authorization.spi.AuthorizationCacheInvalidator;
+import io.github.isharafe.authorization.util.AfterCommitExecutor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.security.MessageDigest;
 import java.util.HexFormat;
 import java.util.List;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
@@ -32,6 +32,7 @@ public class AuthorizationSeedService {
   private final AuthorizationCacheInvalidator cache;
   private final ObjectProvider<PendingUserAssignmentResolver> pendingResolver;
   private final AuthorizationSeedValidator validator;
+  private final AfterCommitExecutor afterCommit;
 
   @Transactional
   public void apply(AuthorizationSeedDefinition seed) {
@@ -148,7 +149,7 @@ public class AuthorizationSeedService {
       return;
     }
     boolean changed = false;
-    if (value.targetType().equals("ROLE")) {
+    if (value.targetType() == AssignmentTargetType.ROLE) {
       RoleEntity role = roles.findByCode(value.targetCode()).orElseThrow();
       UserRoleId id = new UserRoleId(user.getId(), role.getId());
       if (!userRoles.existsById(id)) {
@@ -170,17 +171,7 @@ public class AuthorizationSeedService {
   }
 
   private void invalidateAfterCommit() {
-    if (!TransactionSynchronizationManager.isSynchronizationActive()) {
-      cache.invalidateAll();
-      return;
-    }
-    TransactionSynchronizationManager.registerSynchronization(
-        new TransactionSynchronization() {
-          @Override
-          public void afterCommit() {
-            cache.invalidateAll();
-          }
-        });
+    afterCommit.execute(cache::invalidateAll);
   }
 
   private String checksum(AuthorizationSeedDefinition seed) {

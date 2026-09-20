@@ -13,6 +13,7 @@ import io.github.isharafe.authorization.admin.dto.AuthorizationDataBundle.UserDa
 import io.github.isharafe.authorization.admin.dto.AuthorizationDataImportResult;
 import io.github.isharafe.authorization.domain.AuthorizationChangeAuditEvent;
 import io.github.isharafe.authorization.domain.AuthenticatedIdentity;
+import io.github.isharafe.authorization.domain.AssignmentTargetType;
 import io.github.isharafe.authorization.persistence.entity.ExternalAuthorityMappingEntity;
 import io.github.isharafe.authorization.persistence.entity.PendingUserAssignmentEntity;
 import io.github.isharafe.authorization.persistence.entity.PermissionEntity;
@@ -59,8 +60,6 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @RequiredArgsConstructor
 public class AuthorizationDataTransferService {
@@ -78,6 +77,7 @@ public class AuthorizationDataTransferService {
   private final AuthorizationAuditPublisher audit;
   private final SpringAuthenticationIdentityResolver identityResolver;
   private final EntityManager entityManager;
+  private final AdminChangePublisher changes;
 
   @Transactional(readOnly = true)
   public AuthorizationDataBundle exportData(Authentication authentication) {
@@ -160,7 +160,7 @@ public class AuthorizationDataTransferService {
     AuthenticatedIdentity actor = resolve(authentication);
     deletePortableData();
     AuthorizationDataImportResult result = importPortableData(bundle);
-    afterCommit(
+    changes.publish(
         cache::invalidateAll,
         new AuthorizationChangeAuditEvent(
             "ADMIN_DATA_IMPORT",
@@ -265,7 +265,7 @@ public class AuthorizationDataTransferService {
                       new UserAssignmentSeed(
                           user.issuer(),
                           user.subject(),
-                          "ROLE",
+                          AssignmentTargetType.ROLE,
                           value.targetCode(),
                           value.source())));
       user.permissionGroups()
@@ -275,7 +275,7 @@ public class AuthorizationDataTransferService {
                       new UserAssignmentSeed(
                           user.issuer(),
                           user.subject(),
-                          "PERMISSION_GROUP",
+                          AssignmentTargetType.PERMISSION_GROUP,
                           value.targetCode(),
                           value.source())));
     }
@@ -305,7 +305,7 @@ public class AuthorizationDataTransferService {
                         value.sourceSystem(),
                         value.authorityType(),
                         value.authorityValue(),
-                        value.targetType(),
+                        value.targetType().name(),
                         value.targetCode()))
             .toList(),
         "external mapping");
@@ -317,7 +317,7 @@ public class AuthorizationDataTransferService {
                         "\u0000",
                         value.issuer(),
                         value.subject(),
-                        value.targetType(),
+                        value.targetType().name(),
                         value.targetCode(),
                         value.source().name()))
             .toList(),
@@ -648,23 +648,6 @@ public class AuthorizationDataTransferService {
             "AUTHORIZATION_DATA",
             action,
             details));
-  }
-
-  private void afterCommit(Runnable invalidation, AuthorizationChangeAuditEvent event) {
-    Runnable callback =
-        () -> {
-          invalidation.run();
-          audit.publishChange(event);
-        };
-    if (TransactionSynchronizationManager.isSynchronizationActive())
-      TransactionSynchronizationManager.registerSynchronization(
-          new TransactionSynchronization() {
-            @Override
-            public void afterCommit() {
-              callback.run();
-            }
-          });
-    else callback.run();
   }
 
   private String summary(AuthorizationDataBundle bundle) {

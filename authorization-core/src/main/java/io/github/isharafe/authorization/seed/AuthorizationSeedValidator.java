@@ -1,6 +1,7 @@
 package io.github.isharafe.authorization.seed;
 
 import io.github.isharafe.authorization.domain.Permission;
+import io.github.isharafe.authorization.domain.AssignmentTargetType;
 import io.github.isharafe.authorization.domain.ResourceRule;
 import io.github.isharafe.authorization.domain.ResourceType;
 import io.github.isharafe.authorization.security.DefaultPermissionMatcher;
@@ -45,9 +46,9 @@ public final class AuthorizationSeedValidator {
           fail("Role " + role.code() + " references unknown permission group " + code);
     for (UserAssignmentSeed assignment : seed.getUserAssignments()) {
       boolean valid =
-          assignment.targetType().equals("ROLE")
+          assignment.targetType() == AssignmentTargetType.ROLE
               ? roles.contains(assignment.targetCode())
-              : assignment.targetType().equals("PERMISSION_GROUP")
+              : assignment.targetType() == AssignmentTargetType.PERMISSION_GROUP
                   && groups.contains(assignment.targetCode());
       if (!valid)
         fail(
@@ -106,9 +107,9 @@ public final class AuthorizationSeedValidator {
     if (value.target() == null || value.target().type() == null || value.target().code() == null)
       fail("External authority mapping target is required");
     boolean valid =
-        value.target().type().equals("ROLE")
+        value.target().type() == AssignmentTargetType.ROLE
             ? roles.contains(value.target().code())
-            : value.target().type().equals("PERMISSION_GROUP")
+            : value.target().type() == AssignmentTargetType.PERMISSION_GROUP
                 && groups.contains(value.target().code());
     if (!valid)
       fail(

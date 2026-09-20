@@ -7,6 +7,7 @@ import java.util.Set;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.BatchSize;
 
 @Getter
 @Setter
@@ -55,10 +56,12 @@ public class UserEntity {
 
   @Setter(AccessLevel.NONE)
   @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+  @BatchSize(size = 100)
   private Set<UserRoleEntity> roles = new LinkedHashSet<>();
 
   @Setter(AccessLevel.NONE)
   @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+  @BatchSize(size = 100)
   private Set<UserPermissionGroupEntity> permissionGroups = new LinkedHashSet<>();
 
   public void incrementEntitlementVersion() {

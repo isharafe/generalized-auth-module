@@ -2,6 +2,7 @@ package io.github.isharafe.authorization.security;
 
 import io.github.isharafe.authorization.domain.AuthenticatedIdentity;
 import io.github.isharafe.authorization.domain.UserEntitlements;
+import io.github.isharafe.authorization.engine.AuthorizationInfrastructureException;
 import io.github.isharafe.authorization.spi.EntitlementProvider;
 import java.util.List;
 import org.springframework.http.CacheControl;
@@ -35,7 +36,7 @@ public final class CurrentUserPermissionsEndpoint {
     UserEntitlements loaded;
     try {
       loaded = entitlements.load(identity);
-    } catch (RuntimeException failure) {
+    } catch (AuthorizationInfrastructureException failure) {
       throw new ResponseStatusException(
           HttpStatus.SERVICE_UNAVAILABLE,
           "Authorization infrastructure unavailable",

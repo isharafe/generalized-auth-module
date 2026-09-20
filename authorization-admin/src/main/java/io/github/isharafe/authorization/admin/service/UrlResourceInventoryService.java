@@ -3,11 +3,11 @@ package io.github.isharafe.authorization.admin.service;
 import io.github.isharafe.authorization.admin.dto.AdminDtos;
 import io.github.isharafe.authorization.domain.AccessMode;
 import io.github.isharafe.authorization.domain.AuthorizationReason;
-import io.github.isharafe.authorization.domain.AuthorizationResult;
 import io.github.isharafe.authorization.domain.ProtectedResource;
 import io.github.isharafe.authorization.domain.ResourceRule;
 import io.github.isharafe.authorization.domain.ResourceType;
-import io.github.isharafe.authorization.engine.AuthorizationEngine;
+import io.github.isharafe.authorization.engine.AuthorizationConfigurationException;
+import io.github.isharafe.authorization.engine.ResourceRuleSelector;
 import io.github.isharafe.authorization.persistence.repository.ResourceRuleRepository;
 import io.github.isharafe.authorization.security.UrlSecurityPolicy;
 import io.github.isharafe.authorization.security.UrlSecurityPolicyDecision;
@@ -22,7 +22,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.ObjectProvider;
@@ -58,21 +57,12 @@ public class UrlResourceInventoryService {
       Pageable pageable) {
     List<ResourceRule> enabledRules =
         rules.findByEnabledTrue().stream().map(value -> value.toDomain()).toList();
-    Map<String, ResourceRule> rulesByCode =
-        enabledRules.stream().collect(Collectors.toMap(ResourceRule::code, Function.identity()));
-    AuthorizationEngine snapshotEngine =
-        new AuthorizationEngine(
-            () -> enabledRules,
-            identity -> {
-              throw new IllegalStateException("Entitlements are not loaded for route coverage");
-            },
-            matcher);
     List<UrlSecurityPolicy> securityPolicies = securityPolicies();
 
     String normalizedSearch = search == null ? "" : search.trim().toLowerCase(Locale.ROOT);
     List<AdminDtos.UrlResourceInventoryItem> items =
         discover().stream()
-            .map(value -> evaluate(value, snapshotEngine, rulesByCode, securityPolicies))
+            .map(value -> evaluate(value, enabledRules, securityPolicies))
             .filter(value -> matchesSearch(value, normalizedSearch))
             .filter(value -> coverage == null || value.coverageStatus() == coverage)
             .filter(value -> accessMode == null || value.accessMode() == accessMode)
@@ -136,8 +126,7 @@ public class UrlResourceInventoryService {
 
   private AdminDtos.UrlResourceInventoryItem evaluate(
       DiscoveredUrl route,
-      AuthorizationEngine engine,
-      Map<String, ResourceRule> rulesByCode,
+      List<ResourceRule> rules,
       List<UrlSecurityPolicy> securityPolicies) {
     String pattern = route.method() + ":" + route.path();
     UrlSecurityPolicy securityPolicy = matchingSecurityPolicy(pattern, securityPolicies);
@@ -145,17 +134,18 @@ public class UrlResourceInventoryService {
     if (securityPolicy.decision() != UrlSecurityPolicyDecision.RESOURCE_RULES)
       return securityPolicy(route, pattern, securityPolicy);
 
-    AuthorizationResult result =
-        engine.authorize(new ProtectedResource(ResourceType.URL, pattern), null);
-    ResourceRule matched =
-        result.matchedRuleCode() == null ? null : rulesByCode.get(result.matchedRuleCode());
+    ResourceRule matched;
+    try {
+      matched =
+          ResourceRuleSelector.select(
+              rules, new ProtectedResource(ResourceType.URL, pattern), matcher);
+    } catch (AuthorizationConfigurationException conflict) {
+      return indeterminateResourceRule(route, pattern, securityPolicy);
+    }
     AdminDtos.UrlCoverageStatus status =
-        result.reason() == AuthorizationReason.NO_MATCHING_RULE
+        matched == null
             ? AdminDtos.UrlCoverageStatus.UNMATCHED
-            : result.reason() == AuthorizationReason.CONFLICTING_RULES
-                || result.reason() == AuthorizationReason.PROVIDER_UNAVAILABLE
-                ? AdminDtos.UrlCoverageStatus.INDETERMINATE
-                : AdminDtos.UrlCoverageStatus.MATCHED;
+            : AdminDtos.UrlCoverageStatus.MATCHED;
     return new AdminDtos.UrlResourceInventoryItem(
         ResourceType.URL,
         route.method(),
@@ -165,12 +155,39 @@ public class UrlResourceInventoryService {
         matched == null ? null : matched.accessMode(),
         matched == null ? null : matched.code(),
         matched == null ? null : matched.priority(),
-        result.reason(),
+        matched == null ? AuthorizationReason.NO_MATCHING_RULE : reason(matched.accessMode()),
         AdminDtos.UrlEnforcementSource.RESOURCE_RULE,
         securityPolicy.code(),
         securityPolicy.decision(),
         route.origins(),
         route.handlers());
+  }
+
+  private AdminDtos.UrlResourceInventoryItem indeterminateResourceRule(
+      DiscoveredUrl route, String pattern, UrlSecurityPolicy securityPolicy) {
+    return new AdminDtos.UrlResourceInventoryItem(
+        ResourceType.URL,
+        route.method(),
+        route.path(),
+        pattern,
+        AdminDtos.UrlCoverageStatus.INDETERMINATE,
+        null,
+        null,
+        null,
+        AuthorizationReason.CONFLICTING_RULES,
+        AdminDtos.UrlEnforcementSource.RESOURCE_RULE,
+        securityPolicy.code(),
+        securityPolicy.decision(),
+        route.origins(),
+        route.handlers());
+  }
+
+  private AuthorizationReason reason(AccessMode accessMode) {
+    return switch (accessMode) {
+      case PERMIT_ALL -> AuthorizationReason.PUBLIC_RESOURCE;
+      case AUTHENTICATED, AUTHORIZED -> AuthorizationReason.AUTHENTICATION_REQUIRED;
+      case DENY_ALL -> AuthorizationReason.EXPLICIT_DENY;
+    };
   }
 
   private UrlSecurityPolicy matchingSecurityPolicy(

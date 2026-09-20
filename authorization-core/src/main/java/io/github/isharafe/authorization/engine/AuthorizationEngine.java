@@ -2,10 +2,8 @@ package io.github.isharafe.authorization.engine;
 
 import io.github.isharafe.authorization.domain.*;
 import io.github.isharafe.authorization.spi.*;
-import java.util.Comparator;
-import java.util.List;
-
 import lombok.RequiredArgsConstructor;
+
 @RequiredArgsConstructor
 public final class AuthorizationEngine {
   private final ResourceRuleProvider rules;
@@ -14,7 +12,7 @@ public final class AuthorizationEngine {
 
   public AuthorizationResult authorize(ProtectedResource resource, AuthenticatedIdentity identity) {
     try {
-      ResourceRule rule = selectRule(resource);
+      ResourceRule rule = ResourceRuleSelector.select(rules.findEnabledRules(), resource, matcher);
       if (rule == null)
         return AuthorizationResult.of(
             AuthorizationDecision.DENIED,
@@ -55,7 +53,7 @@ public final class AuthorizationEngine {
           null,
           null,
           identity);
-    } catch (RuntimeException ex) {
+    } catch (AuthorizationInfrastructureException ex) {
       return AuthorizationResult.of(
           AuthorizationDecision.INDETERMINATE,
           AuthorizationReason.PROVIDER_UNAVAILABLE,
@@ -89,34 +87,4 @@ public final class AuthorizationEngine {
         identity);
   }
 
-  private ResourceRule selectRule(ProtectedResource resource) {
-    List<ResourceRule> matches =
-        rules.findEnabledRules().stream()
-            .filter(rule -> matcher.matches(rule, resource))
-            .sorted(ruleComparator())
-            .toList();
-    if (matches.isEmpty()) return null;
-    ResourceRule best = matches.getFirst();
-    for (ResourceRule candidate : matches.subList(1, matches.size())) {
-      if (!sameRank(best, candidate)) break;
-      if (best.accessMode() != candidate.accessMode()) {
-        throw new AuthorizationConfigurationException(
-            "Conflicting resource rules: " + best.code() + ", " + candidate.code());
-      }
-    }
-    return best;
-  }
-
-  private Comparator<ResourceRule> ruleComparator() {
-    return (left, right) -> {
-      int comparison = matcher.compareSpecificity(left, right);
-      if (comparison != 0) return comparison;
-      comparison = Integer.compare(right.priority(), left.priority());
-      return comparison != 0 ? comparison : left.code().compareTo(right.code());
-    };
-  }
-
-  private boolean sameRank(ResourceRule left, ResourceRule right) {
-    return matcher.compareSpecificity(left, right) == 0 && left.priority() == right.priority();
-  }
 }

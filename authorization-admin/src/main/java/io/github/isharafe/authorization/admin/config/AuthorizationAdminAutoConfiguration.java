@@ -1,13 +1,18 @@
 package io.github.isharafe.authorization.admin.config;
 
 import io.github.isharafe.authorization.admin.api.AdminApiExceptionHandler;
-import io.github.isharafe.authorization.admin.api.AuthorizationAdminController;
+import io.github.isharafe.authorization.admin.api.AuthorizationCatalogController;
 import io.github.isharafe.authorization.admin.api.AuthorizationCapabilitiesController;
 import io.github.isharafe.authorization.admin.api.AuthorizationDataTransferController;
+import io.github.isharafe.authorization.admin.api.AuthorizationOperationsController;
+import io.github.isharafe.authorization.admin.api.AuthorizationUserController;
 import io.github.isharafe.authorization.admin.api.UrlResourceInventoryController;
 import io.github.isharafe.authorization.admin.seed.AdminSeedResourceContributor;
-import io.github.isharafe.authorization.admin.service.AuthorizationAdminService;
+import io.github.isharafe.authorization.admin.service.AdminChangePublisher;
+import io.github.isharafe.authorization.admin.service.AuthorizationCatalogAdminService;
 import io.github.isharafe.authorization.admin.service.AuthorizationDataTransferService;
+import io.github.isharafe.authorization.admin.service.AuthorizationOperationsAdminService;
+import io.github.isharafe.authorization.admin.service.AuthorizationUserAdminService;
 import io.github.isharafe.authorization.admin.service.UrlResourceInventoryService;
 import io.github.isharafe.authorization.config.AuthorizationAutoConfiguration;
 import io.github.isharafe.authorization.config.AuthorizationProperties;
@@ -29,6 +34,7 @@ import io.github.isharafe.authorization.spi.EntitlementProvider;
 import io.github.isharafe.authorization.spi.IdentitySynchronizationProvider;
 import io.github.isharafe.authorization.spi.PermissionMatcher;
 import io.github.isharafe.authorization.spi.UrlSecurityPolicyContributor;
+import io.github.isharafe.authorization.util.AfterCommitExecutor;
 import jakarta.persistence.EntityManager;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -47,6 +53,15 @@ import org.springframework.web.servlet.mvc.method.RequestMappingInfoHandlerMappi
     matchIfMissing = true)
 public class AuthorizationAdminAutoConfiguration {
   @Bean
+  AdminChangePublisher adminChangePublisher(
+      AuthorizationCacheInvalidator cache,
+      AuthorizationAuditPublisher audit,
+      SpringAuthenticationIdentityResolver identityResolver,
+      AfterCommitExecutor afterCommit) {
+    return new AdminChangePublisher(cache, audit, identityResolver, afterCommit);
+  }
+
+  @Bean
   AdminSeedResourceContributor adminSeedResourceContributor(
       AuthorizationAdminProperties properties) {
     return new AdminSeedResourceContributor(
@@ -60,40 +75,16 @@ public class AuthorizationAdminAutoConfiguration {
       name = "enabled",
       havingValue = "true",
       matchIfMissing = true)
-  AuthorizationAdminService authorizationAdminService(
+  AuthorizationCatalogAdminService authorizationCatalogAdminService(
       RoleRepository roles,
       PermissionGroupRepository groups,
       PermissionRepository permissions,
       ResourceRuleRepository rules,
-      UserRepository users,
       UserRoleRepository userRoles,
-      UserPermissionGroupRepository userGroups,
-      ExternalAuthorityMappingRepository externalMappings,
-      AuditEventRepository auditEvents,
-      EntitlementProvider entitlements,
-      AuthorizationEngine engine,
       PermissionMatcher matcher,
-      IdentitySynchronizationProvider synchronization,
-      AuthorizationCacheInvalidator cache,
-      AuthorizationAuditPublisher audit,
-      SpringAuthenticationIdentityResolver identityResolver) {
-    return new AuthorizationAdminService(
-        roles,
-        groups,
-        permissions,
-        rules,
-        users,
-        userRoles,
-        userGroups,
-        externalMappings,
-        auditEvents,
-        entitlements,
-        engine,
-        matcher,
-        synchronization,
-        cache,
-        audit,
-        identityResolver);
+      AdminChangePublisher changes) {
+    return new AuthorizationCatalogAdminService(
+        roles, groups, permissions, rules, userRoles, matcher, changes);
   }
 
   @Bean
@@ -103,9 +94,81 @@ public class AuthorizationAdminAutoConfiguration {
       name = "enabled",
       havingValue = "true",
       matchIfMissing = true)
-  AuthorizationAdminController authorizationAdminController(
-      AuthorizationAdminService service) {
-    return new AuthorizationAdminController(service);
+  AuthorizationUserAdminService authorizationUserAdminService(
+      RoleRepository roles,
+      PermissionGroupRepository groups,
+      UserRepository users,
+      UserRoleRepository userRoles,
+      UserPermissionGroupRepository userGroups,
+      EntitlementProvider entitlements,
+      AuthorizationEngine engine,
+      PermissionMatcher matcher,
+      SpringAuthenticationIdentityResolver identityResolver,
+      AdminChangePublisher changes) {
+    return new AuthorizationUserAdminService(
+        roles,
+        groups,
+        users,
+        userRoles,
+        userGroups,
+        entitlements,
+        engine,
+        matcher,
+        identityResolver,
+        changes);
+  }
+
+  @Bean
+  @ConditionalOnMissingBean
+  @ConditionalOnProperty(
+      prefix = "authorization.admin.api",
+      name = "enabled",
+      havingValue = "true",
+      matchIfMissing = true)
+  AuthorizationOperationsAdminService authorizationOperationsAdminService(
+      RoleRepository roles,
+      PermissionGroupRepository groups,
+      ExternalAuthorityMappingRepository externalMappings,
+      AuditEventRepository auditEvents,
+      IdentitySynchronizationProvider synchronization,
+      AdminChangePublisher changes) {
+    return new AuthorizationOperationsAdminService(
+        roles, groups, externalMappings, auditEvents, synchronization, changes);
+  }
+
+  @Bean
+  @ConditionalOnMissingBean
+  @ConditionalOnProperty(
+      prefix = "authorization.admin.api",
+      name = "enabled",
+      havingValue = "true",
+      matchIfMissing = true)
+  AuthorizationCatalogController authorizationCatalogController(
+      AuthorizationCatalogAdminService service) {
+    return new AuthorizationCatalogController(service);
+  }
+
+  @Bean
+  @ConditionalOnMissingBean
+  @ConditionalOnProperty(
+      prefix = "authorization.admin.api",
+      name = "enabled",
+      havingValue = "true",
+      matchIfMissing = true)
+  AuthorizationUserController authorizationUserController(AuthorizationUserAdminService service) {
+    return new AuthorizationUserController(service);
+  }
+
+  @Bean
+  @ConditionalOnMissingBean
+  @ConditionalOnProperty(
+      prefix = "authorization.admin.api",
+      name = "enabled",
+      havingValue = "true",
+      matchIfMissing = true)
+  AuthorizationOperationsController authorizationOperationsController(
+      AuthorizationOperationsAdminService service) {
+    return new AuthorizationOperationsController(service);
   }
 
   @Bean
@@ -156,7 +219,8 @@ public class AuthorizationAdminAutoConfiguration {
       AuthorizationCacheInvalidator cache,
       AuthorizationAuditPublisher audit,
       SpringAuthenticationIdentityResolver identityResolver,
-      EntityManager entityManager) {
+      EntityManager entityManager,
+      AdminChangePublisher changes) {
     return new AuthorizationDataTransferService(
         permissions,
         groups,
@@ -171,7 +235,8 @@ public class AuthorizationAdminAutoConfiguration {
         cache,
         audit,
         identityResolver,
-        entityManager);
+        entityManager,
+        changes);
   }
 
   @Bean
