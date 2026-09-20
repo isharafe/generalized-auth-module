@@ -2,7 +2,7 @@ package io.github.isharafe.authorization.security;
 
 import io.github.isharafe.authorization.domain.ResourceType;
 import io.github.isharafe.authorization.spi.ResourcePatternMatcher;
-import io.github.isharafe.authorization.util.UIResourceUtil;
+import java.util.Objects;
 
 public final class UiResourcePatternMatcher implements ResourcePatternMatcher {
   @Override
@@ -12,7 +12,7 @@ public final class UiResourcePatternMatcher implements ResourcePatternMatcher {
 
   @Override
   public boolean matches(String expectedPattern, String actualPattern) {
-    return UIResourceUtil.matches(expectedPattern, actualPattern);
+    return Objects.equals(expectedPattern, actualPattern);
   }
 
   @Override

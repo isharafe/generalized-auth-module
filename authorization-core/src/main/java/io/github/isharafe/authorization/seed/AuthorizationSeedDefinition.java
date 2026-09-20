@@ -2,6 +2,7 @@ package io.github.isharafe.authorization.seed;
 
 import io.github.isharafe.authorization.domain.AccessMode;
 import io.github.isharafe.authorization.domain.AssignmentSource;
+import io.github.isharafe.authorization.domain.AssignmentTargetType;
 import io.github.isharafe.authorization.domain.ResourceType;
 import java.util.ArrayList;
 import java.util.List;
@@ -114,7 +115,7 @@ public class AuthorizationSeedDefinition {
       ExternalAuthorityTargetSeed target,
       Boolean enabled) {}
 
-  public record ExternalAuthorityTargetSeed(String type, String code) {}
+  public record ExternalAuthorityTargetSeed(AssignmentTargetType type, String code) {}
 
   public record UserSeed(
       String issuer,
@@ -128,7 +129,7 @@ public class AuthorizationSeedDefinition {
   public record UserAssignmentSeed(
       String issuer,
       String subject,
-      String targetType,
+      AssignmentTargetType targetType,
       String targetCode,
       AssignmentSource source) {}
 }

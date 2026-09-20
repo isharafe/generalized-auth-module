@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.github.isharafe.authorization.domain.AccessMode;
+import io.github.isharafe.authorization.domain.AssignmentTargetType;
 import io.github.isharafe.authorization.domain.ResourceType;
 import io.github.isharafe.authorization.seed.AuthorizationSeedDefinition.*;
 import java.util.List;
@@ -152,7 +153,7 @@ class AuthorizationSeedValidatorTest {
         "KEYCLOAK",
         authorityType,
         authority,
-        new ExternalAuthorityTargetSeed(targetType, targetCode),
+        new ExternalAuthorityTargetSeed(AssignmentTargetType.valueOf(targetType), targetCode),
         true);
   }
 }

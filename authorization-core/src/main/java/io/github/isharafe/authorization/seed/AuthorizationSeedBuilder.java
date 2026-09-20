@@ -2,6 +2,7 @@ package io.github.isharafe.authorization.seed;
 
 import io.github.isharafe.authorization.domain.AccessMode;
 import io.github.isharafe.authorization.domain.AssignmentSource;
+import io.github.isharafe.authorization.domain.AssignmentTargetType;
 import io.github.isharafe.authorization.domain.ResourceType;
 import io.github.isharafe.authorization.seed.AuthorizationSeedDefinition.*;
 import java.util.List;
@@ -40,7 +41,7 @@ public final class AuthorizationSeedBuilder {
       String sourceSystem,
       String authorityType,
       String authority,
-      String targetType,
+      AssignmentTargetType targetType,
       String targetCode) {
     definition
         .getExternalAuthorityMappings()
@@ -62,7 +63,9 @@ public final class AuthorizationSeedBuilder {
   public AuthorizationSeedBuilder assignRole(String issuer, String subject, String role) {
     definition
         .getUserAssignments()
-        .add(new UserAssignmentSeed(issuer, subject, "ROLE", role, AssignmentSource.SEED));
+        .add(
+            new UserAssignmentSeed(
+                issuer, subject, AssignmentTargetType.ROLE, role, AssignmentSource.SEED));
     return this;
   }
 
@@ -72,7 +75,11 @@ public final class AuthorizationSeedBuilder {
         .getUserAssignments()
         .add(
             new UserAssignmentSeed(
-                issuer, subject, "PERMISSION_GROUP", group, AssignmentSource.SEED));
+                issuer,
+                subject,
+                AssignmentTargetType.PERMISSION_GROUP,
+                group,
+                AssignmentSource.SEED));
     return this;
   }
 

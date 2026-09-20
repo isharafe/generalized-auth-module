@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.github.isharafe.authorization.domain.AuthenticatedIdentity;
+import io.github.isharafe.authorization.domain.AssignmentTargetType;
 import io.github.isharafe.authorization.persistence.entity.UserEntity;
 import io.github.isharafe.authorization.persistence.repository.ExternalAuthorityMappingRepository;
 import io.github.isharafe.authorization.persistence.repository.PendingUserAssignmentRepository;
@@ -25,6 +26,7 @@ import io.github.isharafe.authorization.seed.AuthorizationSeedDefinition.Externa
 import io.github.isharafe.authorization.seed.AuthorizationSeedDefinition.RoleSeed;
 import io.github.isharafe.authorization.seed.AuthorizationSeedDefinition.UserSeed;
 import io.github.isharafe.authorization.spi.AuthorizationCacheInvalidator;
+import io.github.isharafe.authorization.util.AfterCommitExecutor;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -87,14 +89,14 @@ class AuthorizationSeedServiceTest {
                 "KEYCLOAK",
                 "GROUP",
                 "/Finance",
-                new ExternalAuthorityTargetSeed("ROLE", "FINANCE"),
+                new ExternalAuthorityTargetSeed(AssignmentTargetType.ROLE, "FINANCE"),
                 true)));
 
     service(provider()).apply(seed);
 
     verify(externalMappings)
         .findBySourceSystemAndAuthorityTypeAndAuthorityValueAndTargetTypeAndTargetCode(
-            "KEYCLOAK", "GROUP", "/Finance", "ROLE", "FINANCE");
+            "KEYCLOAK", "GROUP", "/Finance", AssignmentTargetType.ROLE, "FINANCE");
     verify(externalMappings)
         .save(
             argThat(
@@ -102,7 +104,7 @@ class AuthorizationSeedServiceTest {
                     mapping.getSourceSystem().equals("KEYCLOAK")
                         && mapping.getAuthorityType().equals("GROUP")
                         && mapping.getAuthorityValue().equals("/Finance")
-                        && mapping.getTargetType().equals("ROLE")
+                        && mapping.getTargetType() == AssignmentTargetType.ROLE
                         && mapping.getTargetCode().equals("FINANCE")
                         && mapping.isEnabled()));
   }
@@ -122,7 +124,8 @@ class AuthorizationSeedServiceTest {
         history,
         cache,
         resolver,
-        new AuthorizationSeedValidator());
+        new AuthorizationSeedValidator(),
+        new AfterCommitExecutor());
   }
 
   private ObjectProvider<PendingUserAssignmentResolver> provider(

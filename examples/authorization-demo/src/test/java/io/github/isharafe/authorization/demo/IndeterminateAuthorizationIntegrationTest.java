@@ -3,6 +3,7 @@ package io.github.isharafe.authorization.demo;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import io.github.isharafe.authorization.engine.AuthorizationInfrastructureException;
 import io.github.isharafe.authorization.spi.ResourceRuleProvider;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,7 +33,8 @@ class IndeterminateAuthorizationIntegrationTest {
     @Bean
     ResourceRuleProvider failingResourceRuleProvider() {
       return () -> {
-        throw new IllegalStateException("database unavailable");
+        throw new AuthorizationInfrastructureException(
+            "database unavailable", new IllegalStateException("connection failed"));
       };
     }
   }

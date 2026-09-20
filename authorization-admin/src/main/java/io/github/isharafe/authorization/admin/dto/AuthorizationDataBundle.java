@@ -2,6 +2,7 @@ package io.github.isharafe.authorization.admin.dto;
 
 import io.github.isharafe.authorization.domain.AccessMode;
 import io.github.isharafe.authorization.domain.AssignmentSource;
+import io.github.isharafe.authorization.domain.AssignmentTargetType;
 import io.github.isharafe.authorization.domain.ResourceType;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -25,7 +26,6 @@ public record AuthorizationDataBundle(
   private static final String CODE_PATTERN = "[A-Za-z0-9][A-Za-z0-9_.-]{0,99}";
   private static final String PERMISSION_CODE_PATTERN =
       "[A-Za-z0-9][A-Za-z0-9_.:-]{0,99}";
-  private static final String TARGET_TYPE_PATTERN = "ROLE|PERMISSION_GROUP";
 
   public AuthorizationDataBundle {
     permissions = copy(permissions);
@@ -103,14 +103,14 @@ public record AuthorizationDataBundle(
       @NotBlank @Size(max = 50) String sourceSystem,
       @NotBlank @Size(max = 50) String authorityType,
       @NotBlank @Size(max = 1000) String authorityValue,
-      @NotBlank @Pattern(regexp = TARGET_TYPE_PATTERN) String targetType,
+      @NotNull AssignmentTargetType targetType,
       @NotBlank @Pattern(regexp = CODE_PATTERN) String targetCode,
       @NotNull Boolean enabled) {}
 
   public record PendingAssignmentData(
       @NotBlank @Size(max = 500) String issuer,
       @NotBlank @Size(max = 500) String subject,
-      @NotBlank @Pattern(regexp = TARGET_TYPE_PATTERN) String targetType,
+      @NotNull AssignmentTargetType targetType,
       @NotBlank @Pattern(regexp = CODE_PATTERN) String targetCode,
       @NotNull AssignmentSource source) {}
 

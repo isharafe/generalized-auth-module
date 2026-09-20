@@ -1,21 +1,17 @@
 package io.github.isharafe.authorization.admin.api;
 
+import static io.github.isharafe.authorization.admin.api.AdminPageableFactory.create;
+
 import io.github.isharafe.authorization.admin.dto.AdminDtos;
-import io.github.isharafe.authorization.admin.service.AuthorizationAdminService;
-import io.github.isharafe.authorization.domain.AuditEventKind;
-import io.github.isharafe.authorization.domain.AuthenticatedIdentity;
+import io.github.isharafe.authorization.admin.service.AuthorizationCatalogAdminService;
 import io.github.isharafe.authorization.domain.ResourceType;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -37,14 +33,9 @@ import org.springframework.web.bind.annotation.RestController;
     matchIfMissing = true)
 @RequiredArgsConstructor
 @RequestMapping("${authorization.admin.api.base-path:/authorization-admin/api}")
-public class AuthorizationAdminController {
-  private static final Set<String> CODE_SORTS = Set.of("code", "name", "enabled", "version");
-  private final AuthorizationAdminService service;
-
-  @GetMapping("/current-user")
-  public AdminDtos.CurrentUser currentUser(Authentication authentication) {
-    return service.currentUser(authentication);
-  }
+public class AuthorizationCatalogController {
+  private static final Set<String> SORTS = Set.of("code", "name", "enabled", "version");
+  private final AuthorizationCatalogAdminService service;
 
   @GetMapping("/roles")
   public AdminDtos.Page<AdminDtos.Role> roles(
@@ -52,7 +43,7 @@ public class AuthorizationAdminController {
       @RequestParam(defaultValue = "20") int size,
       @RequestParam(defaultValue = "code,asc") String sort,
       @RequestParam(defaultValue = "") String search) {
-    return service.roles(search, pageable(page, size, sort, "code", CODE_SORTS));
+    return service.roles(search, create(page, size, sort, "code", SORTS));
   }
 
   @PostMapping("/roles")
@@ -102,7 +93,7 @@ public class AuthorizationAdminController {
       @RequestParam(defaultValue = "20") int size,
       @RequestParam(defaultValue = "code,asc") String sort,
       @RequestParam(defaultValue = "") String search) {
-    return service.permissionGroups(search, pageable(page, size, sort, "code", CODE_SORTS));
+    return service.permissionGroups(search, create(page, size, sort, "code", SORTS));
   }
 
   @PostMapping("/permission-groups")
@@ -148,13 +139,12 @@ public class AuthorizationAdminController {
       @RequestParam(defaultValue = "20") int size,
       @RequestParam(defaultValue = "code,asc") String sort,
       @RequestParam(defaultValue = "") String search) {
-    return service.permissions(search, pageable(page, size, sort, "code", CODE_SORTS));
+    return service.permissions(search, create(page, size, sort, "code", SORTS));
   }
 
   @PostMapping("/permissions")
   @ResponseStatus(HttpStatus.CREATED)
-  public AdminDtos.Permission createPermission(
-      @Valid @RequestBody AdminDtos.Permission request) {
+  public AdminDtos.Permission createPermission(@Valid @RequestBody AdminDtos.Permission request) {
     return service.createPermission(request);
   }
 
@@ -184,7 +174,7 @@ public class AuthorizationAdminController {
       @RequestParam(defaultValue = "") String search,
       @RequestParam(required = false) ResourceType resourceType) {
     return service.resourceRules(
-        search, resourceType, pageable(page, size, sort, "code", CODE_SORTS));
+        search, resourceType, create(page, size, sort, "code", SORTS));
   }
 
   @PostMapping("/resource-rules")
@@ -210,178 +200,5 @@ public class AuthorizationAdminController {
       @PathVariable String code, @RequestParam Long version) {
     service.disableResourceRule(code, version);
     return ResponseEntity.noContent().build();
-  }
-
-  @GetMapping("/users")
-  public AdminDtos.Page<AdminDtos.User> users(
-      @RequestParam(defaultValue = "0") int page,
-      @RequestParam(defaultValue = "20") int size,
-      @RequestParam(defaultValue = "id,asc") String sort,
-      @RequestParam(defaultValue = "") String search) {
-    return service.users(
-        search,
-        pageable(
-            page,
-            size,
-            sort,
-            "id",
-            Set.of("id", "issuer", "subject", "username", "email", "enabled", "version")));
-  }
-
-  @GetMapping("/users/{id}")
-  public AdminDtos.User user(@PathVariable Long id) {
-    return service.user(id);
-  }
-
-  @PutMapping("/users/{id}/roles/{roleCode}")
-  public AdminDtos.User addUserRole(@PathVariable Long id, @PathVariable String roleCode) {
-    return service.addUserRole(id, roleCode);
-  }
-
-  @DeleteMapping("/users/{id}/roles/{roleCode}")
-  public AdminDtos.User removeUserRole(@PathVariable Long id, @PathVariable String roleCode) {
-    return service.removeUserRole(id, roleCode);
-  }
-
-  @PutMapping("/users/{id}/permission-groups/{groupCode}")
-  public AdminDtos.User addUserPermissionGroup(
-      @PathVariable Long id, @PathVariable String groupCode) {
-    return service.addUserPermissionGroup(id, groupCode);
-  }
-
-  @DeleteMapping("/users/{id}/permission-groups/{groupCode}")
-  public AdminDtos.User removeUserPermissionGroup(
-      @PathVariable Long id, @PathVariable String groupCode) {
-    return service.removeUserPermissionGroup(id, groupCode);
-  }
-
-  @GetMapping("/users/{id}/effective-permissions")
-  public AdminDtos.EffectiveEntitlements effectivePermissions(@PathVariable Long id) {
-    return service.effectivePermissions(id);
-  }
-
-  @PostMapping("/authorization-test")
-  public AdminDtos.AuthorizationTestResponse testAuthorization(
-      @Valid @RequestBody AdminDtos.AuthorizationTestRequest request) {
-    return service.testAuthorization(request);
-  }
-
-  @GetMapping("/external-mappings")
-  public AdminDtos.Page<AdminDtos.ExternalMapping> externalMappings(
-      @RequestParam(defaultValue = "0") int page,
-      @RequestParam(defaultValue = "20") int size,
-      @RequestParam(defaultValue = "id,asc") String sort,
-      @RequestParam(defaultValue = "") String search) {
-    return service.externalMappings(
-        search,
-        pageable(
-            page,
-            size,
-            sort,
-            "id",
-            Set.of(
-                "id",
-                "sourceSystem",
-                "authorityType",
-                "authorityValue",
-                "targetType",
-                "targetCode",
-                "enabled",
-                "version")));
-  }
-
-  @PostMapping("/external-mappings")
-  @ResponseStatus(HttpStatus.CREATED)
-  public AdminDtos.ExternalMapping createExternalMapping(
-      @Valid @RequestBody AdminDtos.ExternalMapping request) {
-    return service.createExternalMapping(request);
-  }
-
-  @GetMapping("/external-mappings/{id}")
-  public AdminDtos.ExternalMapping externalMapping(@PathVariable Long id) {
-    return service.externalMapping(id);
-  }
-
-  @PutMapping("/external-mappings/{id}")
-  public AdminDtos.ExternalMapping updateExternalMapping(
-      @PathVariable Long id, @Valid @RequestBody AdminDtos.ExternalMapping request) {
-    return service.updateExternalMapping(id, request);
-  }
-
-  @DeleteMapping("/external-mappings/{id}")
-  public ResponseEntity<Void> deleteExternalMapping(
-      @PathVariable Long id, @RequestParam Long version) {
-    service.deleteExternalMapping(id, version);
-    return ResponseEntity.noContent().build();
-  }
-
-  @GetMapping("/audit")
-  public AdminDtos.Page<AdminDtos.AuditEvent> audit(
-      @RequestParam(defaultValue = "0") int page,
-      @RequestParam(defaultValue = "20") int size,
-      @RequestParam(defaultValue = "timestamp,desc") String sort,
-      @RequestParam(required = false) AuditEventKind eventKind,
-      @RequestParam(required = false) String eventType,
-      @RequestParam(required = false) String actor,
-      @RequestParam(required = false) String target) {
-    return service.audit(
-        eventKind,
-        eventType,
-        actor,
-        target,
-        pageable(
-            page,
-            size,
-            sort,
-            "timestamp",
-            Set.of(
-                "id",
-                "timestamp",
-                "eventKind",
-                "eventType",
-                "actorIssuer",
-                "actorSubject",
-                "target")));
-  }
-
-  @GetMapping("/sync/status")
-  public AdminDtos.SyncStatus syncStatus() {
-    return service.syncStatus();
-  }
-
-  @PostMapping("/sync/full")
-  public AdminDtos.SyncStatus synchronizeAll() {
-    return service.synchronizeAll();
-  }
-
-  @PostMapping("/sync/incremental")
-  public AdminDtos.SyncStatus synchronizeIncremental() {
-    return service.synchronizeIncremental();
-  }
-
-  @PostMapping("/sync/users/{subject}")
-  public AdminDtos.SyncStatus synchronizeIdentity(
-      @PathVariable String subject,
-      @RequestParam(defaultValue = "external") String issuer) {
-    return service.synchronizeIdentity(new AuthenticatedIdentity(issuer, subject, subject));
-  }
-
-  private Pageable pageable(
-      int page,
-      int size,
-      String requestedSort,
-      String defaultProperty,
-      Set<String> allowedProperties) {
-    if (page < 0) throw AdminApiException.validation("page must be zero or greater");
-    if (size < 1 || size > 100)
-      throw AdminApiException.validation("size must be between 1 and 100");
-    String[] parts = requestedSort == null ? new String[0] : requestedSort.split(",", 2);
-    String property =
-        parts.length > 0 && allowedProperties.contains(parts[0]) ? parts[0] : defaultProperty;
-    Sort.Direction direction =
-        parts.length > 1 && "desc".equalsIgnoreCase(parts[1])
-            ? Sort.Direction.DESC
-            : Sort.Direction.ASC;
-    return PageRequest.of(page, size, Sort.by(direction, property));
   }
 }

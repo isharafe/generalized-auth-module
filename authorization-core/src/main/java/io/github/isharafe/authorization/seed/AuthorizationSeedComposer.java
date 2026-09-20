@@ -116,4 +116,8 @@ final class AuthorizationSeedComposer {
   private static String text(String value) {
     return value == null ? "" : value;
   }
+
+  private static String text(Enum<?> value) {
+    return value == null ? "" : value.name();
+  }
 }

@@ -10,6 +10,7 @@ import io.github.isharafe.authorization.persistence.service.*;
 import io.github.isharafe.authorization.security.*;
 import io.github.isharafe.authorization.seed.*;
 import io.github.isharafe.authorization.spi.*;
+import io.github.isharafe.authorization.util.AfterCommitExecutor;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.time.Clock;
 import java.util.List;
@@ -33,6 +34,12 @@ import org.springframework.scheduling.annotation.EnableScheduling;
     matchIfMissing = true)
 @Import(AuthorizationPersistenceConfiguration.class)
 public class AuthorizationAutoConfiguration {
+  @Bean
+  @ConditionalOnMissingBean
+  AfterCommitExecutor authorizationAfterCommitExecutor() {
+    return new AfterCommitExecutor();
+  }
+
   @Bean
   @ConditionalOnBean(MeterRegistry.class)
   @ConditionalOnMissingBean(AuthorizationObservation.class)
@@ -224,7 +231,8 @@ public class AuthorizationAutoConfiguration {
       SeedHistoryRepository history,
       AuthorizationCacheInvalidator cache,
       ObjectProvider<PendingUserAssignmentResolver> pendingResolver,
-      AuthorizationSeedValidator validator) {
+      AuthorizationSeedValidator validator,
+      AfterCommitExecutor afterCommit) {
     return new AuthorizationSeedService(
         permissions,
         groups,
@@ -238,7 +246,8 @@ public class AuthorizationAutoConfiguration {
         history,
         cache,
         pendingResolver,
-        validator);
+        validator,
+        afterCommit);
   }
 
   @Bean

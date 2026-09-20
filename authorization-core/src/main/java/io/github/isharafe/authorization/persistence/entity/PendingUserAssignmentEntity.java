@@ -1,6 +1,7 @@
 package io.github.isharafe.authorization.persistence.entity;
 
 import io.github.isharafe.authorization.domain.AssignmentSource;
+import io.github.isharafe.authorization.domain.AssignmentTargetType;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -32,8 +33,9 @@ public class PendingUserAssignmentEntity {
   @Column(name = "EXTERNAL_SUBJECT", nullable = false)
   private String subject;
 
+  @Enumerated(EnumType.STRING)
   @Column(name = "TARGET_TYPE", nullable = false)
-  private String targetType;
+  private AssignmentTargetType targetType;
 
   @Column(name = "TARGET_CODE", nullable = false)
   private String targetCode;

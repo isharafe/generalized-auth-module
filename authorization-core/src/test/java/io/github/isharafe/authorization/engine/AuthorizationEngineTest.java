@@ -1,6 +1,7 @@
 package io.github.isharafe.authorization.engine;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.github.isharafe.authorization.domain.*;
 import io.github.isharafe.authorization.security.DefaultPermissionMatcher;
@@ -77,12 +78,28 @@ class AuthorizationEngineTest {
     AuthorizationEngine engine =
         new AuthorizationEngine(
             () -> {
-              throw new IllegalStateException("database down");
+              throw new AuthorizationInfrastructureException(
+                  "database down", new IllegalStateException("offline"));
             },
             identity -> entitlements(Set.of()),
             matcher);
     assertThat(engine.authorize(GET_EMPLOYEE, USER).decision())
         .isEqualTo(AuthorizationDecision.INDETERMINATE);
+  }
+
+  @Test
+  void unexpectedProviderBugIsNotMisreportedAsInfrastructureFailure() {
+    AuthorizationEngine engine =
+        new AuthorizationEngine(
+            () -> {
+              throw new IllegalStateException("programming error");
+            },
+            identity -> entitlements(Set.of()),
+            matcher);
+
+    assertThatThrownBy(() -> engine.authorize(GET_EMPLOYEE, USER))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessage("programming error");
   }
 
   @Test
