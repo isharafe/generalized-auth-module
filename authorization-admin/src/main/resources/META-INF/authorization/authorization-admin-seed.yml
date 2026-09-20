@@ -1,0 +1,167 @@
+authorization:
+  seed:
+    permissions:
+      - code: URL:AUTHZ_ADMIN_VIEW
+        name: View authorization administration
+        type: URL
+        pattern: "GET:{{adminApiBasePath}}/capabilities"
+      - code: URL:AUTHZ_ADMIN_CURRENT_USER
+        name: View the current authorization administrator
+        type: URL
+        pattern: "GET:{{adminApiBasePath}}/current-user"
+      - code: URL:AUTHZ_ADMIN_UI
+        name: Use authorization administration UI
+        type: URL
+        pattern: "GET:{{adminUiBasePath}}"
+      - code: URL:AUTHZ_ADMIN_UI_INDEX
+        name: Load authorization administration UI
+        type: URL
+        pattern: "GET:{{adminUiBasePath}}/"
+      - code: URL:AUTHZ_ADMIN_UI_CONFIG
+        name: Load authorization administration UI configuration
+        type: URL
+        pattern: "GET:{{adminUiBasePath}}/config"
+      - code: URL:AUTHZ_ADMIN_UI_ASSETS
+        name: Load authorization administration UI assets
+        type: URL
+        pattern: "GET:{{adminUiBasePath}}/assets/**"
+      - code: URL:AUTHZ_USER_VIEW
+        name: View users
+        type: URL
+        pattern: "GET:{{adminApiBasePath}}/users/**"
+      - code: URL:AUTHZ_USER_MANAGE
+        name: Manage users
+        type: URL
+        pattern: "*:{{adminApiBasePath}}/users/**"
+      - code: URL:AUTHZ_ROLE_VIEW
+        name: View roles
+        type: URL
+        pattern: "GET:{{adminApiBasePath}}/roles/**"
+      - code: URL:AUTHZ_ROLE_MANAGE
+        name: Manage roles
+        type: URL
+        pattern: "*:{{adminApiBasePath}}/roles/**"
+      - code: URL:AUTHZ_PERMISSION_VIEW
+        name: View permissions
+        type: URL
+        pattern: "GET:{{adminApiBasePath}}/permissions/**"
+      - code: URL:AUTHZ_PERMISSION_MANAGE
+        name: Manage permissions
+        type: URL
+        pattern: "*:{{adminApiBasePath}}/permissions/**"
+      - code: URL:AUTHZ_PERMISSION_GROUP_VIEW
+        name: View permission groups
+        type: URL
+        pattern: "GET:{{adminApiBasePath}}/permission-groups/**"
+      - code: URL:AUTHZ_PERMISSION_GROUP_MANAGE
+        name: Manage permission groups
+        type: URL
+        pattern: "*:{{adminApiBasePath}}/permission-groups/**"
+      - code: URL:AUTHZ_RESOURCE_RULE_VIEW
+        name: View resource rules
+        type: URL
+        pattern: "GET:{{adminApiBasePath}}/resource-rules/**"
+      - code: URL:AUTHZ_RESOURCE_RULE_MANAGE
+        name: Manage resource rules
+        type: URL
+        pattern: "*:{{adminApiBasePath}}/resource-rules/**"
+      - code: URL:AUTHZ_RESOURCE_INVENTORY_VIEW
+        name: View available URL resources and rule coverage
+        type: URL
+        pattern: "GET:{{adminApiBasePath}}/resource-inventory/urls"
+      - code: URL:AUTHZ_EXTERNAL_MAPPING_VIEW
+        name: View external mappings
+        type: URL
+        pattern: "GET:{{adminApiBasePath}}/external-mappings/**"
+      - code: URL:AUTHZ_EXTERNAL_MAPPING_MANAGE
+        name: Manage external mappings
+        type: URL
+        pattern: "*:{{adminApiBasePath}}/external-mappings/**"
+      - code: URL:AUTHZ_SYNC_VIEW
+        name: View synchronization
+        type: URL
+        pattern: "GET:{{adminApiBasePath}}/sync/**"
+      - code: URL:AUTHZ_SYNC_RUN
+        name: Run synchronization
+        type: URL
+        pattern: "POST:{{adminApiBasePath}}/sync/**"
+      - code: URL:AUTHZ_AUDIT_VIEW
+        name: View audit
+        type: URL
+        pattern: "GET:{{adminApiBasePath}}/audit"
+      - code: URL:AUTHZ_AUTHORIZATION_TEST
+        name: Test authorization decisions
+        type: URL
+        pattern: "POST:{{adminApiBasePath}}/authorization-test"
+      - code: URL:AUTHZ_DATA_EXPORT
+        name: Export authorization data
+        type: URL
+        pattern: "POST:{{adminApiBasePath}}/data/export"
+      - code: URL:AUTHZ_DATA_IMPORT
+        name: Replace authorization data from an export
+        type: URL
+        pattern: "POST:{{adminApiBasePath}}/data/import"
+    permission-groups:
+      - code: AUTHZ_SYSTEM_VIEWER
+        name: Authorization system viewer
+        permissions:
+          - URL:AUTHZ_ADMIN_VIEW
+          - URL:AUTHZ_ADMIN_CURRENT_USER
+          - URL:AUTHZ_ADMIN_UI
+          - URL:AUTHZ_ADMIN_UI_INDEX
+          - URL:AUTHZ_ADMIN_UI_CONFIG
+          - URL:AUTHZ_ADMIN_UI_ASSETS
+          - URL:AUTHZ_USER_VIEW
+          - URL:AUTHZ_ROLE_VIEW
+          - URL:AUTHZ_PERMISSION_VIEW
+          - URL:AUTHZ_PERMISSION_GROUP_VIEW
+          - URL:AUTHZ_RESOURCE_RULE_VIEW
+          - URL:AUTHZ_RESOURCE_INVENTORY_VIEW
+          - URL:AUTHZ_EXTERNAL_MAPPING_VIEW
+          - URL:AUTHZ_SYNC_VIEW
+          - URL:AUTHZ_AUDIT_VIEW
+          - URL:AUTHZ_AUTHORIZATION_TEST
+      - code: AUTHZ_SYSTEM_ADMIN
+        name: Authorization system administrator
+        permissions:
+          - URL:AUTHZ_ADMIN_VIEW
+          - URL:AUTHZ_ADMIN_CURRENT_USER
+          - URL:AUTHZ_ADMIN_UI
+          - URL:AUTHZ_ADMIN_UI_INDEX
+          - URL:AUTHZ_ADMIN_UI_CONFIG
+          - URL:AUTHZ_ADMIN_UI_ASSETS
+          - URL:AUTHZ_USER_VIEW
+          - URL:AUTHZ_USER_MANAGE
+          - URL:AUTHZ_ROLE_VIEW
+          - URL:AUTHZ_ROLE_MANAGE
+          - URL:AUTHZ_PERMISSION_VIEW
+          - URL:AUTHZ_PERMISSION_MANAGE
+          - URL:AUTHZ_PERMISSION_GROUP_VIEW
+          - URL:AUTHZ_PERMISSION_GROUP_MANAGE
+          - URL:AUTHZ_RESOURCE_RULE_VIEW
+          - URL:AUTHZ_RESOURCE_RULE_MANAGE
+          - URL:AUTHZ_RESOURCE_INVENTORY_VIEW
+          - URL:AUTHZ_EXTERNAL_MAPPING_VIEW
+          - URL:AUTHZ_EXTERNAL_MAPPING_MANAGE
+          - URL:AUTHZ_SYNC_VIEW
+          - URL:AUTHZ_SYNC_RUN
+          - URL:AUTHZ_AUDIT_VIEW
+          - URL:AUTHZ_AUTHORIZATION_TEST
+          - URL:AUTHZ_DATA_EXPORT
+          - URL:AUTHZ_DATA_IMPORT
+    roles:
+      - code: AUTHZ_SYSTEM_VIEWER
+        name: Authorization system viewer
+        permission-groups: [AUTHZ_SYSTEM_VIEWER]
+      - code: AUTHZ_SYSTEM_ADMIN
+        name: Authorization system administrator
+        permission-groups: [AUTHZ_SYSTEM_ADMIN]
+    resource-rules:
+      - code: AUTHZ_ADMIN_API
+        type: URL
+        pattern: "*:{{adminApiBasePath}}/**"
+        access-mode: AUTHORIZED
+      - code: AUTHZ_ADMIN_UI
+        type: URL
+        pattern: "*:{{adminUiBasePath}}/**"
+        access-mode: AUTHORIZED
