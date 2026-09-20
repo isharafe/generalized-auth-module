@@ -255,12 +255,14 @@ public class AuthorizationAutoConfiguration {
       matchIfMissing = true)
   AuthorizationSeedRunner authorizationSeedRunner(
       AuthorizationSeedLoader loader,
+      List<AuthorizationSeedResourceContributor> resourceContributors,
       List<AuthorizationSeedContributor> contributors,
       AuthorizationSeedInitializationService service,
       AuthorizationProperties properties) {
     return new AuthorizationSeedRunner(
         loader,
         properties.getSeed().getLocations(),
+        resourceContributors,
         contributors,
         service,
         properties.getSeed().isFailOnError());

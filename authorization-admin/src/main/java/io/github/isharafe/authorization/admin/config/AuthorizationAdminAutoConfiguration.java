@@ -5,7 +5,7 @@ import io.github.isharafe.authorization.admin.api.AuthorizationAdminController;
 import io.github.isharafe.authorization.admin.api.AuthorizationCapabilitiesController;
 import io.github.isharafe.authorization.admin.api.AuthorizationDataTransferController;
 import io.github.isharafe.authorization.admin.api.UrlResourceInventoryController;
-import io.github.isharafe.authorization.admin.seed.FrameworkAdminSeedContributor;
+import io.github.isharafe.authorization.admin.seed.AdminSeedResourceContributor;
 import io.github.isharafe.authorization.admin.service.AuthorizationAdminService;
 import io.github.isharafe.authorization.admin.service.AuthorizationDataTransferService;
 import io.github.isharafe.authorization.admin.service.UrlResourceInventoryService;
@@ -47,9 +47,9 @@ import org.springframework.web.servlet.mvc.method.RequestMappingInfoHandlerMappi
     matchIfMissing = true)
 public class AuthorizationAdminAutoConfiguration {
   @Bean
-  FrameworkAdminSeedContributor frameworkAdminSeedContributor(
+  AdminSeedResourceContributor adminSeedResourceContributor(
       AuthorizationAdminProperties properties) {
-    return new FrameworkAdminSeedContributor(
+    return new AdminSeedResourceContributor(
         properties.getApi().getBasePath(), properties.getUi().getBasePath());
   }
 

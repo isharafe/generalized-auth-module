@@ -5,6 +5,7 @@ import io.github.isharafe.authorization.domain.AssignmentSource;
 import io.github.isharafe.authorization.domain.ResourceType;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 import lombok.Getter;
 
 @Getter
@@ -53,6 +54,27 @@ public class AuthorizationSeedDefinition {
     externalAuthorityMappings.addAll(other.externalAuthorityMappings);
     users.addAll(other.users);
     userAssignments.addAll(other.userAssignments);
+  }
+
+  void overlay(AuthorizationSeedDefinition other) {
+    overlay(permissions, other.permissions, PermissionSeed::code);
+    overlay(permissionGroups, other.permissionGroups, PermissionGroupSeed::code);
+    overlay(roles, other.roles, RoleSeed::code);
+    overlay(resourceRules, other.resourceRules, ResourceRuleSeed::code);
+    overlay(
+        externalAuthorityMappings,
+        other.externalAuthorityMappings,
+        AuthorizationSeedComposer::mappingKey);
+    overlay(users, other.users, AuthorizationSeedComposer::userKey);
+    overlay(userAssignments, other.userAssignments, AuthorizationSeedComposer::assignmentKey);
+  }
+
+  private static <T> void overlay(List<T> target, List<T> values, Function<T, String> key) {
+    for (T value : values) {
+      String identity = key.apply(value);
+      target.removeIf(existing -> key.apply(existing).equals(identity));
+      target.add(value);
+    }
   }
 
   private static <T> List<T> list(List<T> value) {

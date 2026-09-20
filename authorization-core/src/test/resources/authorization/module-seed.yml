@@ -1,0 +1,7 @@
+authorization:
+  seed:
+    permissions:
+      - code: URL:MODULE_VIEW
+        name: Module view
+        type: URL
+        pattern: "GET:{{moduleBasePath}}/items/**"
