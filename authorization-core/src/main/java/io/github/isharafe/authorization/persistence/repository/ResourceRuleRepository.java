@@ -1,6 +1,7 @@
 package io.github.isharafe.authorization.persistence.repository;
 
 import io.github.isharafe.authorization.persistence.entity.ResourceRuleEntity;
+import io.github.isharafe.authorization.domain.ResourceType;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
@@ -21,4 +22,16 @@ public interface ResourceRuleRepository extends JpaRepository<ResourceRuleEntity
          or lower(r.pattern) like lower(concat('%', :search, '%'))
       """)
   Page<ResourceRuleEntity> search(@Param("search") String search, Pageable pageable);
+
+  @Query("""
+      select r from ResourceRuleEntity r
+      where r.resourceType = :resourceType
+        and (:search = ''
+          or lower(r.code) like lower(concat('%', :search, '%'))
+          or lower(r.pattern) like lower(concat('%', :search, '%')))
+      """)
+  Page<ResourceRuleEntity> searchByResourceType(
+      @Param("resourceType") ResourceType resourceType,
+      @Param("search") String search,
+      Pageable pageable);
 }

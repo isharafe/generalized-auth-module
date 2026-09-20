@@ -107,6 +107,14 @@ Always expose source:
 
 Do not silently allow deleting an `IDENTITY_SYNC` assignment as if it were manual; the next sync would recreate it. UI/API should make source ownership clear.
 
+## URL resource inventory DTO
+
+`GET /resource-inventory/urls` returns the standard page envelope. Each item contains the canonical
+`METHOD:/path`, separate `method` and `path` fields, `coverageStatus`, the effective `accessMode`,
+matched rule code/priority, decision reason, handler origins, and handler names. Coverage statuses
+are `MATCHED`, `UNMATCHED`, and `INDETERMINATE`; unmatched items have no rule/access mode and are
+denied by default.
+
 ## Current-user DTO
 
 ```json

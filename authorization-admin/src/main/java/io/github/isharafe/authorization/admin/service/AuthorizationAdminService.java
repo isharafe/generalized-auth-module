@@ -297,8 +297,12 @@ public class AuthorizationAdminService {
 
   @Transactional(readOnly = true)
   public AdminDtos.Page<AdminDtos.ResourceRule> resourceRules(
-      String search, Pageable pageable) {
-    return page(rules.search(text(search), pageable), this::rule);
+      String search, ResourceType resourceType, Pageable pageable) {
+    return page(
+        resourceType == null
+            ? rules.search(text(search), pageable)
+            : rules.searchByResourceType(resourceType, text(search), pageable),
+        this::rule);
   }
 
   @Transactional(readOnly = true)

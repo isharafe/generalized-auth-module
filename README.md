@@ -233,6 +233,11 @@ UI permissions deliberately do not overlap the `/authorization-admin/api/**` nam
 consuming application remains responsible for applicable `AUTHORIZED` resource rules and an
 appropriate admin assignment.
 
+The Resources workspace compares registered Spring MVC URL mappings with their effective resource
+rules. It distinguishes public, authenticated, permission-controlled, explicitly denied, default
+denied, and conflicting mappings, and can prefill a new rule from an uncovered route. Resource-type
+tabs keep URL and opaque UI rules together while leaving room for future types such as entities.
+
 The Data transfer page exports a versioned JSON snapshot containing all permissions, permission
 groups, roles, relationships, resource rules, users, user assignments, pending assignments, and
 external authority mappings. Import is deliberately replacement-only: the complete file is

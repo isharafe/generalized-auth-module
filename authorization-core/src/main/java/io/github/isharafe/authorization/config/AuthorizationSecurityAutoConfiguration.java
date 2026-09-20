@@ -13,7 +13,12 @@ import io.github.isharafe.authorization.security.OAuth2CookieRefreshService;
 import io.github.isharafe.authorization.security.OAuth2RefreshTokenRevokingLogoutHandler;
 import io.github.isharafe.authorization.security.OidcCookieLogoutSuccessHandler;
 import io.github.isharafe.authorization.security.SpringAuthenticationIdentityResolver;
+import io.github.isharafe.authorization.security.UrlSecurityPolicy;
+import io.github.isharafe.authorization.security.UrlSecurityPolicyDecision;
 import io.github.isharafe.authorization.spi.IdentitySynchronizationProvider;
+import io.github.isharafe.authorization.spi.UrlSecurityPolicyContributor;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.ApplicationRunner;
@@ -270,6 +275,12 @@ public class AuthorizationSecurityAutoConfiguration {
   @ConditionalOnMissingBean(SecurityFilterChain.class)
   static class DefaultSecurityChains {
     @Bean
+    UrlSecurityPolicyContributor authorizationDefaultUrlSecurityPolicyContributor(
+        AuthorizationProperties properties) {
+      return () -> defaultUrlSecurityPolicies(properties);
+    }
+
+    @Bean
     @Order(0)
     SecurityFilterChain authorizationOAuth2LoginSecurityFilterChain(
         HttpSecurity http,
@@ -381,5 +392,66 @@ public class AuthorizationSecurityAutoConfiguration {
         if (customizer.supports(chain)) customizer.customize(chain, http);
       }
     }
+  }
+
+  static List<UrlSecurityPolicy> defaultUrlSecurityPolicies(
+      AuthorizationProperties properties) {
+    List<UrlSecurityPolicy> policies = new ArrayList<>();
+    policies.add(
+        new UrlSecurityPolicy(
+            "AUTHORIZATION_OAUTH2",
+            "*:/oauth2/**",
+            UrlSecurityPolicyDecision.PERMIT_ALL,
+            0,
+            0));
+    policies.add(
+        new UrlSecurityPolicy(
+            "AUTHORIZATION_LOGIN",
+            "*:/login/**",
+            UrlSecurityPolicyDecision.PERMIT_ALL,
+            0,
+            1));
+
+    int matcherOrder = 0;
+    if (properties.getUiApi().isEnabled()) {
+      policies.add(
+          new UrlSecurityPolicy(
+              "AUTHORIZATION_UI_PERMISSIONS",
+              "*:" + properties.getUiApi().getEndpoint(),
+              UrlSecurityPolicyDecision.AUTHENTICATED,
+              1,
+              matcherOrder++));
+    }
+    AuthorizationProperties.CookieOauth2 cookie =
+        properties.getSecurity().getCookieOauth2();
+    policies.add(
+        new UrlSecurityPolicy(
+            "AUTHORIZATION_CSRF",
+            "*:" + cookie.getCsrfEndpoint(),
+            UrlSecurityPolicyDecision.PERMIT_ALL,
+            1,
+            matcherOrder++));
+    policies.add(
+        new UrlSecurityPolicy(
+            "AUTHORIZATION_TOKEN_REFRESH",
+            "*:" + cookie.getRefreshEndpoint(),
+            UrlSecurityPolicyDecision.PERMIT_ALL,
+            1,
+            matcherOrder++));
+    policies.add(
+        new UrlSecurityPolicy(
+            "AUTHORIZATION_LOGOUT",
+            "*:" + cookie.getLogoutEndpoint(),
+            UrlSecurityPolicyDecision.PERMIT_ALL,
+            1,
+            matcherOrder++));
+    policies.add(
+        new UrlSecurityPolicy(
+            "AUTHORIZATION_RESOURCE_RULES",
+            "*:/**",
+            UrlSecurityPolicyDecision.RESOURCE_RULES,
+            1,
+            matcherOrder));
+    return List.copyOf(policies);
   }
 }

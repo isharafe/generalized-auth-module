@@ -31,6 +31,13 @@ class FrameworkAdminSeedContributorTest {
             permission ->
                 assertThat(permission.code()).isEqualTo("URL:AUTHZ_AUTHORIZATION_TEST"));
     assertThat(builder.build().getPermissions())
+        .anySatisfy(
+            permission -> {
+              assertThat(permission.code()).isEqualTo("URL:AUTHZ_RESOURCE_INVENTORY_VIEW");
+              assertThat(permission.pattern())
+                  .isEqualTo("GET:/company/authorization/api/resource-inventory/urls");
+            });
+    assertThat(builder.build().getPermissions())
         .filteredOn(permission -> permission.code().startsWith("URL:AUTHZ_ADMIN_UI"))
         .extracting(permission -> permission.pattern())
         .containsExactlyInAnyOrder(

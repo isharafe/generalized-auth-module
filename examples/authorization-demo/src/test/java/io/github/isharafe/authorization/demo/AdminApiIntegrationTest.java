@@ -58,6 +58,7 @@ class AdminApiIntegrationTest {
             "/permission-groups",
             "/permissions",
             "/resource-rules",
+            "/resource-inventory/urls",
             "/external-mappings",
             "/sync/status",
             "/audit")) {
@@ -76,6 +77,24 @@ class AdminApiIntegrationTest {
       mvc.perform(post(BASE + path).header("X-Demo-User", "emma"))
           .andExpect(status().isForbidden());
     }
+  }
+
+  @Test
+  void urlInventoryShowsRegisteredRoutesAndTheirEffectiveCoverage() throws Exception {
+    mvc.perform(
+            get(BASE + "/resource-inventory/urls")
+                .header("X-Demo-User", ADMIN)
+                .param("search", "/demo/public")
+                .param("size", "10"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.content", hasSize(1)))
+        .andExpect(jsonPath("$.content[0].pattern", is("GET:/demo/public")))
+        .andExpect(jsonPath("$.content[0].coverageStatus", is("MATCHED")))
+        .andExpect(jsonPath("$.content[0].accessMode", is("PERMIT_ALL")))
+        .andExpect(jsonPath("$.content[0].matchedRule", is("DEMO_PUBLIC")))
+        .andExpect(jsonPath("$.content[0].enforcementSource", is("RESOURCE_RULE")))
+        .andExpect(jsonPath("$.content[0].matchedSecurityPolicy", is("TEST_RESOURCE_RULES")))
+        .andExpect(jsonPath("$.content[0].origins", hasItem("APPLICATION")));
   }
 
   @Test

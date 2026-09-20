@@ -297,7 +297,7 @@ describe("Authorization admin UI", () => {
   });
 
   it("shows the resource type for resource rules", async () => {
-    window.location.hash = "#/rules";
+    window.location.hash = "#/resources";
     vi.stubGlobal("fetch", vi.fn((input: RequestInfo | URL) => {
       const url = String(input);
       if (url.endsWith("/capabilities"))
@@ -311,9 +311,68 @@ describe("Authorization admin UI", () => {
     }));
     render(<App config={config} api={new AdminApi(config.apiBasePath)} />);
 
+    fireEvent.click(await screen.findByRole("button", { name: "Rules" }));
+
     const rule = (await screen.findByText("EMPLOYEE_API")).closest("article");
     expect(rule).not.toBeNull();
     expect(within(rule!).getByText("URL")).toBeVisible();
+  });
+
+  it("shows URL coverage and prefills a rule for an uncovered route", async () => {
+    window.location.hash = "#/resources";
+    vi.stubGlobal("fetch", vi.fn((input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.endsWith("/capabilities"))
+        return response({ source: "DATABASE", identitySynchronization: false,
+          externalAuthorityMapping: true, syncProvider: null });
+      if (url.includes("/resource-inventory/urls"))
+        return response(page([{ resourceType: "URL", method: "PUT",
+          path: "/api/employees/{id}", pattern: "PUT:/api/employees/{id}",
+          coverageStatus: "UNMATCHED", accessMode: null, matchedRule: null,
+          priority: null, reason: "NO_MATCHING_RULE", enforcementSource: "RESOURCE_RULE",
+          matchedSecurityPolicy: "AUTHORIZATION_RESOURCE_RULES",
+          securityDecision: "RESOURCE_RULES", origins: ["APPLICATION"],
+          handlers: ["example.EmployeeController#update"] }]));
+      if (url.includes("/resource-rules")) return response(page([]));
+      throw new Error(`Unexpected request ${url}`);
+    }));
+
+    render(<App config={config} api={new AdminApi(config.apiBasePath)} />);
+
+    expect(await screen.findByText("Default denied")).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Create rule" }));
+
+    expect(await screen.findByDisplayValue("PUT")).toBeVisible();
+    expect(screen.getByDisplayValue("/api/employees/{id}")).toBeVisible();
+    expect(screen.getByDisplayValue("AUTHORIZED")).toBeVisible();
+    expect(screen.getByLabelText("Code")).toHaveValue("");
+  });
+
+  it("shows URL access enforced by the security filter chain", async () => {
+    window.location.hash = "#/resources";
+    vi.stubGlobal("fetch", vi.fn((input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.endsWith("/capabilities"))
+        return response({ source: "DATABASE", identitySynchronization: false,
+          externalAuthorityMapping: true, syncProvider: null });
+      if (url.includes("/resource-inventory/urls"))
+        return response(page([{ resourceType: "URL", method: "GET",
+          path: "/authorization/ui/permissions",
+          pattern: "GET:/authorization/ui/permissions", coverageStatus: "MATCHED",
+          accessMode: "AUTHENTICATED", matchedRule: null, priority: null, reason: null,
+          enforcementSource: "SECURITY_FILTER_CHAIN",
+          matchedSecurityPolicy: "AUTHORIZATION_UI_PERMISSIONS",
+          securityDecision: "AUTHENTICATED", origins: ["AUTHORIZATION_FRAMEWORK"],
+          handlers: ["CurrentUserUiPermissionsEndpoint#current"] }]));
+      throw new Error(`Unexpected request ${url}`);
+    }));
+
+    render(<App config={config} api={new AdminApi(config.apiBasePath)} />);
+
+    expect(await screen.findByText("Sign-in required")).toBeVisible();
+    expect(screen.getByText("SECURITY FILTER CHAIN")).toBeVisible();
+    expect(screen.getByText("AUTHORIZATION_UI_PERMISSIONS")).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Create rule" })).not.toBeInTheDocument();
   });
 
   it("shows synchronization only when the provider supports it", async () => {
