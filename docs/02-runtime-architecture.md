@@ -65,7 +65,9 @@ When multiple rules match:
 
 `DefaultPermissionMatcher` delegates matching, validation, and specificity comparison to a
 `ResourcePatternMatcher` registry keyed by `ResourceType`. The built-in strategies cover URL and UI,
-and an application can supply a strategy bean to override the behavior for a type.
+and an application can supply a strategy bean to override either existing type. Introducing another
+type requires adding it to the core `ResourceType` enum and registering its matcher; admin editors
+and discovery support must then be extended where applicable.
 
 ### URL matching
 

@@ -11,7 +11,11 @@ UI
 
 URL patterns use `METHOD:/path` with Spring path matching. UI patterns are opaque identifiers
 matched exactly. Matching, validation, and specificity are delegated through a strategy registry
-keyed by `ResourceType`; additional types add a `ResourcePatternMatcher` strategy.
+keyed by `ResourceType`. Applications can replace the matcher for an existing type with a
+`ResourcePatternMatcher` bean. Because `ResourceType` is currently an enum, adding a new type such
+as `ENTITY` is a framework change that must add the enum value, its matcher, and corresponding
+management UI support; an application cannot introduce an arbitrary type through configuration
+alone.
 
 ## ResourceRule
 

@@ -33,6 +33,12 @@ Test:
 - `/*`/`/**` behavior
 - encoded/repeated/trailing slash cases
 
+## Current-user permissions API
+
+Test that the authenticated endpoint returns every enabled effective permission type in stable
+order with the entitlement version and `no-store`, excludes disabled permissions, returns 401 when
+no stable identity resolves, and maps entitlement infrastructure failure to 503.
+
 ## Persistence
 
 Test:
@@ -105,8 +111,9 @@ The Maven lifecycle runs the frontend production build and Vitest suite. Tests c
 The demo integration suite also verifies packaged-index delivery, runtime path configuration, 401/403 protection, authorized access, and the demo browser-session bootstrap. Optional browser E2E remains encouraged.
 
 Resource-inventory coverage verifies MVC mapping discovery, method/path flattening, effective rule
-selection, disabled/unmatched rules, filtering and pagination, dedicated admin authorization, and
-the UI workflow that prefills but does not automatically save a new rule.
+selection, direct security-filter-chain policies, unknown custom-chain metadata, disabled/unmatched
+rules, filtering and pagination, dedicated admin authorization, and the UI workflow that prefills
+but does not automatically save a new rule.
 
 ## Current implemented coverage
 

@@ -1,9 +1,9 @@
 # Nuxt/Nitro integration
 
-`integrations/authorization-nuxt` is a source-only Nuxt 3/4 module. It consumes local `UI:*`
-permissions for presentation decisions and sends application requests through a fixed same-origin
-Nitro proxy. The browser never reads access, refresh, or ID tokens; Spring owns those HttpOnly
-cookies and remains the enforcement boundary.
+`integrations/authorization-nuxt` is a source-only Nuxt 3/4 module. It consumes the current user's
+enabled application permissions for presentation decisions and sends application requests through
+a fixed same-origin Nitro proxy. The browser never reads access, refresh, or ID tokens; Spring owns
+those HttpOnly cookies and remains the enforcement boundary.
 
 ## Install and configure
 
@@ -34,9 +34,9 @@ server:
   forward-headers-strategy: framework
 
 authorization:
-  ui-api:
+  permissions-api:
     enabled: true
-    endpoint: /authorization/ui/permissions
+    endpoint: /authorization/user/permissions
   security:
     cookie-oauth2:
       enabled: true
@@ -56,7 +56,7 @@ Available module options and defaults are:
 | `publicBaseUrl` | empty | Browser-visible Nuxt origin used in forwarded headers |
 | `apiProxyPrefix` | `/api/_authorization/backend` | Fixed prefix for application API calls |
 | `backendProxyPrefixes` | `[]` | Additional Spring path prefixes preserved by Nitro |
-| `permissionsEndpoint` | `/authorization/ui/permissions` | Current-user UI snapshot |
+| `permissionsEndpoint` | `/authorization/user/permissions` | Current-user permission snapshot |
 | `csrfEndpoint` | `/authorization/security/csrf` | CSRF token initialization |
 | `refreshEndpoint` | `/authorization/security/token/refresh` | Access-token refresh |
 | `logoutEndpoint` | `/authorization/security/logout` | CSRF-protected logout |
@@ -71,14 +71,14 @@ Use `backendProxyPrefixes: ['/authorization-admin']` when the optional Spring-se
 UI must share the Nuxt origin. Each prefix registers its exact path and descendants without
 stripping the prefix. Root and API-proxy-overlapping prefixes are rejected.
 
-## UI permissions
+## Current-user permissions
 
-Core's endpoint resolves the stable `(issuer, subject)` identity and returns only enabled `UI`
-permissions:
+Core's endpoint resolves the stable `(issuer, subject)` identity and returns every enabled
+effective permission code in sorted order:
 
 ```json
 {
-  "permissions": ["UI:EMPLOYEE_EDIT", "UI:EMPLOYEE_VIEW"],
+  "permissions": ["UI:EMPLOYEE_VIEW", "URL:EMPLOYEE_EDIT"],
   "entitlementVersion": 12
 }
 ```
@@ -87,6 +87,11 @@ The endpoint is authenticated by the default core cookie-OAuth2 chain and sends
 `Cache-Control: no-store`. If the application supplies its own `SecurityFilterChain`, it must
 protect this path itself. The endpoint returns 401 for no stable authenticated identity and 503
 for entitlement-provider failure; infrastructure failure is never treated as an empty grant set.
+
+UI logic can reuse an existing `URL:*` permission when a control represents that same backend
+capability, or use a dedicated `UI:*` permission when presentation access has independent meaning.
+Receiving URL permissions does not move enforcement into the browser; Spring Security must still
+authorize every backend request.
 
 All client checks reject non-canonical codes. They are fail-closed while state is idle, loading,
 unauthenticated, or failed. Multiple permissions require all by default.
@@ -104,7 +109,7 @@ unauthenticated, or failed. Multiple permissions require all by default.
   <EmployeeActions />
 </Authorized>
 
-<button v-authorization.disable="'UI:EMPLOYEE_EDIT'">Save</button>
+<button v-authorization.disable="'URL:EMPLOYEE_EDIT'">Save</button>
 <section v-authorization="['UI:EMPLOYEE_VIEW', 'UI:EMPLOYEE_EXPORT']">
   ...
 </section>
@@ -119,7 +124,7 @@ Programmatic checks are reactive:
 const authorization = useAuthorization()
 
 authorization.can('UI:EMPLOYEE_VIEW')
-authorization.canAll(['UI:EMPLOYEE_VIEW', 'UI:EMPLOYEE_EXPORT'])
+authorization.canAll(['UI:EMPLOYEE_VIEW', 'URL:EMPLOYEE_EXPORT'])
 authorization.canAny(['UI:EMPLOYEE_EDIT', 'UI:EMPLOYEE_APPROVE'])
 await authorization.refreshPermissions()
 ```
@@ -142,7 +147,7 @@ const { data, error } = await useAuthorizationFetch<Employee[]>('/api/employees'
 For unsafe methods, the manager initializes Spring's CSRF token lazily and uses the header name
 returned by the server. A 401 starts one shared refresh request, even when several application
 requests fail concurrently. Successful refresh retries each original request once and reloads one
-shared UI permission snapshot. Failed refresh clears permissions and throws
+shared current-user permission snapshot. Failed refresh clears permissions and throws
 `AuthenticationRequiredError`; it never starts an unexpected global redirect. Other non-success
 responses throw `AuthorizationRequestError` with `statusCode` and response `data`.
 Both error classes and the public state/configuration types are exported from

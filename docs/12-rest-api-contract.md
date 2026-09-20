@@ -111,9 +111,11 @@ Do not silently allow deleting an `IDENTITY_SYNC` assignment as if it were manua
 
 `GET /resource-inventory/urls` returns the standard page envelope. Each item contains the canonical
 `METHOD:/path`, separate `method` and `path` fields, `coverageStatus`, the effective `accessMode`,
-matched rule code/priority, decision reason, handler origins, and handler names. Coverage statuses
-are `MATCHED`, `UNMATCHED`, and `INDETERMINATE`; unmatched items have no rule/access mode and are
-denied by default.
+matched rule code/priority, decision reason, `enforcementSource`, matched security-policy code and
+decision, handler origins, and handler names. Enforcement sources are `SECURITY_FILTER_CHAIN`,
+`RESOURCE_RULE`, and `UNKNOWN`. Coverage statuses are `MATCHED`, `UNMATCHED`, and `INDETERMINATE`.
+An unmatched item is a route delegated to resource rules with no matching rule and is denied by
+default; missing filter-chain metadata is instead indeterminate with an unknown enforcement source.
 
 ## Current-user DTO
 

@@ -56,7 +56,9 @@ API and UI base paths are normalized independently when the admin seed is built.
 
 The UI entry, runtime configuration, assets, and admin API all pass through the consuming application's Spring Security authorization pipeline. There is no UI-only hardcoded role check. The framework still assigns no user to its administration roles.
 
-A consuming application must define the applicable UI resource rule. The demo supplies an `AUTHORIZED` rule for `*:/authorization-admin/**` and assigns `AUTHZ_SYSTEM_ADMIN` only through seed data.
+The admin module contributes configurable `AUTHORIZED` resource rules for its API and UI base paths.
+The consuming application assigns `AUTHZ_SYSTEM_ADMIN` only through its own seed data or an external
+authority mapping; the module never assigns an administrator.
 
 ## Demo
 

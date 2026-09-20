@@ -320,7 +320,7 @@ Inside `authorization-ldap`:
 
 # Phase 8 — Nuxt/Nitro client integration
 
-- [x] authenticated current-user UI permission endpoint in core
+- [x] authenticated current-user permission endpoint in core
 - [x] source-only Nuxt 3/4 module and Nitro same-origin proxy
 - [x] fail-closed component, directive, composable, and route middleware
 - [x] CSRF-aware authorized fetch and serialized refresh-token recovery
@@ -337,6 +337,7 @@ Inside `authorization-ldap`:
 # Phase 9 — Admin resource coverage inventory
 
 - [x] discover Spring MVC method/path mappings in the active application context
+- [x] include declared Spring Security filter-chain policies in effective URL access
 - [x] evaluate effective resource-rule coverage with default-deny and conflict states
 - [x] paginated/filterable URL inventory admin API
 - [x] dedicated framework viewer permission for route metadata

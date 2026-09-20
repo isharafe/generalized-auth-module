@@ -60,13 +60,14 @@ Frontend code often repeats the same broad role assumption:
 ```
 
 This framework lets the application describe the actual capability instead—such as
-`URL:EMPLOYEE_EDIT` for the protected operation and `UI:EMPLOYEE_EDIT` for its presentation—and
-assign those permissions through reusable permission groups and roles. Backend URL rules are
-enforced centrally by `AuthorizationManager`; the UI integration can then express the matching
-intent without depending on an identity-provider role name:
+`URL:EMPLOYEE_EDIT` for the protected operation—and assign it through reusable permission groups
+and roles. Backend URL rules are enforced centrally by `AuthorizationManager`; the UI integration
+can reuse that permission for the corresponding control without depending on an identity-provider
+role name. A separate `UI:*` permission remains available when presentation access has independent
+meaning:
 
 ```vue
-<Authorized permission="UI:EMPLOYEE_EDIT">
+<Authorized permission="URL:EMPLOYEE_EDIT">
   <button>Edit employee</button>
 </Authorized>
 ```
@@ -130,10 +131,12 @@ refresh support for the admin SPA, and local or provider logout. When this mode 
 application must declare its own `SecurityFilterChain`. Declaring any chain also makes the default
 core chains back off, so applications retain a complete override.
 
-Core also exposes the authenticated user's enabled `UI:*` permission codes at
-`/authorization/ui/permissions`. The response is marked `no-store`, contains the entitlement
-version, and never includes URL/API permissions. Set `authorization.ui-api.enabled=false` when the
-application does not need a browser permission snapshot.
+Core also exposes all enabled permission codes for the authenticated user at
+`/authorization/user/permissions`. The response is sorted, marked `no-store`, and includes the
+entitlement version. A browser can therefore reuse an existing `URL:*` permission for related UI
+behavior or use a separate `UI:*` permission when presentation access is intentionally distinct.
+Set `authorization.permissions-api.enabled=false` when the application does not need this browser
+permission snapshot.
 
 ## Nuxt/Nitro integration
 
@@ -141,7 +144,7 @@ The source package in `integrations/authorization-nuxt` provides `<Authorized>`,
 `v-authorization`, `useAuthorization()`, protected route middleware, and an authorized fetch client.
 Its Nitro proxy keeps OAuth tokens in Spring-managed HttpOnly cookies, lazily attaches CSRF headers
 to unsafe requests, serializes access-token refresh, retries a rejected request once, and reloads
-the UI permission snapshot after refresh.
+the current-user permission snapshot after refresh.
 
 ```ts
 export default defineNuxtConfig({
@@ -168,7 +171,15 @@ backend operation. See [the Nuxt/Nitro integration guide](docs/23-nuxt-integrati
 
 ## Seed data
 
-YAML and Java `AuthorizationSeedContributor` inputs are combined, fully validated, and then merged transactionally. Repeated identical seeds are skipped using their checksum. Seeds reference stable logical codes rather than database IDs or SQL. Permission codes are type-qualified as `<RESOURCE_TYPE>:<LOCAL_CODE>`, so `URL:VIEW` and `UI:VIEW` are distinct keys. For a supplied permission group or role, its membership list replaces the stored membership; omitting a top-level object does not delete that object. URL permissions and resource rules store the HTTP method and path together as `METHOD:/path`. UI patterns are opaque identifiers matched exactly.
+Packaged module seed resources, application YAML files, and Java `AuthorizationSeedContributor`
+inputs are combined, fully validated, and then merged transactionally. Modules register packaged
+YAML through `AuthorizationSeedResourceContributor`; application YAML and Java contributors may
+override module defaults by logical key. Repeated identical seeds are skipped using their checksum.
+Seeds reference stable logical codes rather than database IDs or SQL. Permission codes are
+type-qualified as `<RESOURCE_TYPE>:<LOCAL_CODE>`, so `URL:VIEW` and `UI:VIEW` are distinct keys. For
+a supplied permission group or role, its membership list replaces the stored membership; omitting a
+top-level object does not delete that object. URL permissions and resource rules store the HTTP
+method and path together as `METHOD:/path`. UI patterns are opaque identifiers matched exactly.
 
 ```yaml
 authorization:
@@ -236,16 +247,19 @@ The module owns the management REST controllers, DTOs, transactional services, f
 
 The SPA is served at `/authorization-admin/` by default and discovers both configured base paths
 from its protected runtime configuration endpoint. The API may run without the UI, but the UI
-requires the API to be enabled. The module seeds exact UI entry/config/asset permissions and
-operation-specific API permissions into framework viewer/admin groups, but never assigns a user.
-UI permissions deliberately do not overlap the `/authorization-admin/api/**` namespace. The
-consuming application remains responsible for applicable `AUTHORIZED` resource rules and an
-appropriate admin assignment.
+requires the API to be enabled. The module seeds exact UI entry/config/asset permissions,
+operation-specific API permissions, and `AUTHORIZED` rules for its configured API and UI base
+paths into framework viewer/admin groups, but never assigns a user. UI delivery permissions
+deliberately do not overlap the `/authorization-admin/api/**` namespace. The consuming application
+only needs to assign an appropriate framework role to a trusted user or external authority.
 
-The Resources workspace compares registered Spring MVC URL mappings with their effective resource
-rules. It distinguishes public, authenticated, permission-controlled, explicitly denied, default
-denied, and conflicting mappings, and can prefill a new rule from an uncovered route. Resource-type
-tabs keep URL and opaque UI rules together while leaving room for future types such as entities.
+The Resources workspace compares registered Spring MVC URL mappings with their effective Spring
+Security policy and, where that policy delegates to the framework, their effective resource rule.
+It distinguishes public, authenticated, permission-controlled, explicitly denied, default denied,
+conflicting, and unknown mappings, and can prefill a new rule from an uncovered route. Core reports
+metadata for its default filter chains; applications that supply custom chains can publish matching
+metadata with `UrlSecurityPolicyContributor`. Resource-type tabs keep URL and opaque UI rules
+together while leaving room for future framework-defined types such as entities.
 
 The Data transfer page exports a versioned JSON snapshot containing all permissions, permission
 groups, roles, relationships, resource rules, users, user assignments, pending assignments, and

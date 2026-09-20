@@ -37,9 +37,9 @@ authorization:
   identity-events:
     processing-timeout: 5m
 
-  ui-api:
+  permissions-api:
     enabled: true
-    endpoint: /authorization/ui/permissions
+    endpoint: /authorization/user/permissions
 
   distributed-invalidation:
     enabled: false
@@ -59,10 +59,11 @@ must exceed the longest expected instance outage when retained invalidations nee
 Micrometer collection activates automatically when the application provides a `MeterRegistry`.
 Spring Boot Actuator plus the selected registry implementation controls how the metrics are exposed.
 
-The UI API returns only enabled permissions whose resource type is `UI`, together with the current
-entitlement version. It requires authentication when core supplies the cookie OAuth2 security
-chain, sends `Cache-Control: no-store`, returns 401 without an authenticated stable identity, and
-returns 503 when entitlement infrastructure is unavailable. Applications that provide their own
+The permissions API returns all enabled effective permission codes for the current user, including
+`URL`, `UI`, and any future framework-defined resource types, together with the current entitlement
+version. It requires authentication when core supplies the cookie OAuth2 security chain, sends
+`Cache-Control: no-store`, returns 401 without an authenticated stable identity, and returns 503
+when entitlement infrastructure is unavailable. Applications that provide their own
 `SecurityFilterChain` must require authentication for the configured endpoint themselves.
 
 ## Keycloak source
