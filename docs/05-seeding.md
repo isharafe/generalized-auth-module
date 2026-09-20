@@ -4,12 +4,13 @@
 
 Consuming applications define logical authorization seed data without knowing SQL/table structure.
 
-Support two input mechanisms:
+Support three input mechanisms:
 
-1. YAML/JSON resource files
-2. Java `AuthorizationSeedContributor`
+1. module-owned YAML resources registered through `AuthorizationSeedResourceContributor`
+2. application YAML/JSON resource files configured under `authorization.seed.locations`
+3. application Java `AuthorizationSeedContributor`
 
-Both feed the same internal `AuthorizationSeedDefinition`.
+All three feed the same internal `AuthorizationSeedDefinition`.
 
 ## YAML example
 
@@ -81,14 +82,33 @@ mappings, users, and initial role/group assignments through logical codes. Permi
 Permission codes must use `<RESOURCE_TYPE>:<LOCAL_CODE>` and group references use that complete
 code; for example, `URL:EMPLOYEE_VIEW` and `UI:EMPLOYEE_VIEW` are independent permissions.
 
+## Module-owned resources
+
+Optional framework modules register their packaged YAML explicitly:
+
+```java
+public interface AuthorizationSeedResourceContributor {
+    Collection<AuthorizationSeedResource> seedResources();
+}
+```
+
+Each `AuthorizationSeedResource` supplies a stable source name, a classpath location, and optional
+template variables. Text values in that resource may reference variables as `{{variableName}}`;
+startup fails if a referenced variable was not supplied. This explicit bean contract avoids relying
+on every module to follow an implicit classpath filename convention.
+
+Module resources are loaded before application inputs. Two modules cannot own the same logical
+permission, group, role, rule, mapping, user, or assignment. Application YAML locations and Java
+contributors may intentionally override a module default by the same logical key.
+
 ## Merge process
 
 ```text
-framework seed
+module seed resource contributors
 +
-application YAML files
+configured application YAML files
 +
-Java contributors
+application Java contributors
     |
     v
 AuthorizationSeedDefinition
@@ -168,7 +188,10 @@ AUTHZ_SYSTEM_VIEWER
 AUTHZ_SYSTEM_ADMIN
 ```
 
-Never hardcode a user into these roles. The consuming app assigns an initial administrator through seed configuration.
+It also contributes `AUTHORIZED` resource rules for the configured admin API and UI base paths.
+Application seed inputs may override these defaults by logical code. Never hardcode a user into the
+framework roles; the consuming app assigns an initial administrator through seed configuration or
+an external-authority mapping.
 
 ## Pending user assignment
 

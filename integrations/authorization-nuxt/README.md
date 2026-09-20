@@ -54,6 +54,11 @@ authorization.can('UI:EMPLOYEE_EDIT')
 await authorization.refreshPermissions()
 ```
 
+The default `/authorization/user/permissions` endpoint returns every enabled permission for the
+current user. A control may therefore check an existing `URL:*` permission when it represents the
+same backend capability, or a purpose-specific `UI:*` permission when presentation access is
+separate. Browser checks remain presentation-only.
+
 ## Call protected APIs
 
 ```ts
@@ -62,8 +67,8 @@ const { data, error } = await useAuthorizationFetch('/api/employees')
 ```
 
 Unsafe requests obtain and send Spring's CSRF token. Concurrent 401 responses share one refresh
-request, retry once, and reload the UI permission snapshot. Failed refresh clears permission state
-and raises `AuthenticationRequiredError`.
+request, retry once, and reload the current-user permission snapshot. Failed refresh clears
+permission state and raises `AuthenticationRequiredError`.
 
 Application calls use the fixed `/api/_authorization/backend` proxy. Absolute URLs and traversal
 attempts are rejected. Tokens are never returned to JavaScript.

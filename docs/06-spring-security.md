@@ -75,7 +75,8 @@ method being authorized.
 
 `DefaultPermissionMatcher` selects a `ResourcePatternMatcher` strategy by `ResourceType`. URL uses
 Spring `PathPattern`/`PathPatternParser`; UI uses exact opaque-identifier matching. Applications may
-supply a strategy bean to override the matcher for a resource type.
+supply a strategy bean to override the matcher for either existing resource type. Adding a new type
+requires a corresponding value in the core `ResourceType` enum as well as its matcher.
 
 Do not implement wildcard -> regex manually.
 
@@ -150,6 +151,17 @@ request. HTML requests receive an OAuth2 login redirect when unauthenticated; AP
 receive 401. Authenticated denials remain 403 and unavailable authorization infrastructure remains
 503.
 
+The application chain protects the configurable current-user permission endpoint directly as
+`AUTHENTICATED`, before its final resource-rule authorization matcher. By default this endpoint is:
+
+```text
+GET /authorization/user/permissions
+```
+
+It returns all enabled effective permission codes, not only `UI` permissions, together with the
+entitlement version and `Cache-Control: no-store`. A custom application chain must protect the
+configured `authorization.permissions-api.endpoint` itself.
+
 The built-in endpoints are:
 
 ```text
@@ -157,6 +169,13 @@ GET  /authorization/security/csrf
 POST /authorization/security/token/refresh
 POST /authorization/security/logout
 ```
+
+The default chains publish their first-match URL decisions through
+`UrlSecurityPolicyContributor`, including OAuth/login paths, the permissions endpoint, security
+endpoints, and the final resource-rule fallback. This metadata does not enforce access; it lets the
+optional admin inventory explain which layer enforces each MVC route. An application that replaces
+the chains should publish policies in the same chain/matcher order. Routes without policy metadata
+are reported as `UNKNOWN`, rather than being assumed to use resource rules.
 
 Unsafe cookie-authenticated requests require CSRF. The CSRF endpoint returns the token plus its
 header and parameter names and sets the readable same-origin CSRF cookie. Access, refresh, and ID

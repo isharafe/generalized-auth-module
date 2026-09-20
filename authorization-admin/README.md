@@ -50,6 +50,11 @@ The module uses the entities, repositories, authorization engine, providers, cac
 and auditing infrastructure from `authorization-core`. It does not contain JPA entities or Flyway
 migrations and does not contain Keycloak- or LDAP-specific integration.
 
+Core automatically publishes policy metadata for its default security chains. If an application
+supplies its own `SecurityFilterChain`, it should also supply a `UrlSecurityPolicyContributor` that
+describes the chain's ordered URL decisions. Without that metadata, discovered MVC routes are shown
+with an `UNKNOWN` enforcement source instead of being incorrectly labeled as default denied.
+
 ## Module-owned seed data
 
 The module automatically contributes its packaged seed when authorization seeding is enabled. The

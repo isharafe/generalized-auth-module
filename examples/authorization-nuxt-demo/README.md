@@ -79,8 +79,9 @@ and enforcement permissions:
 
 Nitro proxies OAuth callbacks, security endpoints, application API requests, and
 `/authorization-admin/**` to Spring. Unsafe requests obtain a CSRF token. Concurrent 401 responses
-share one refresh operation, retry once, and reload the UI permission snapshot. UI checks fail
-closed, but they never replace backend authorization.
+share one refresh operation, retry once, and reload the current-user permission snapshot. The
+snapshot contains both the demo's `UI:*` presentation permissions and its `URL:*` backend
+permissions. UI checks fail closed, but they never replace backend authorization.
 
 See the [Nuxt integration guide](../../docs/23-nuxt-integration.md) for configuration and lifecycle
 details, or the [integration package README](../../integrations/authorization-nuxt/README.md) for

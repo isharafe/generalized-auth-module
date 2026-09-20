@@ -104,17 +104,27 @@ DELETE /resource-rules/{code}
 Server validates conflicts.
 
 The collection endpoint also accepts an optional `resourceType` filter. The URL inventory endpoint
-shows the Spring MVC routes registered in the current application context and the effective enabled
-rule selected for each declared method/path mapping:
+shows the Spring MVC routes registered in the current application context and combines ordered
+Spring Security policy metadata with the effective enabled resource rule for each declared
+method/path mapping:
 
 ```text
 GET /resource-inventory/urls
 ```
 
-It supports the common pagination/search parameters plus `coverage`, `accessMode`, and `origin`
-filters. `MATCHED` returns the winning rule and access mode, `UNMATCHED` means the route is denied by
-the framework default, and `INDETERMINATE` identifies a rule conflict. Route metadata is protected
-by the dedicated `URL:AUTHZ_RESOURCE_INVENTORY_VIEW` permission.
+It supports the common pagination/search parameters plus `coverage`, `accessMode`, `origin`, and
+`enforcementSource` filters. A direct filter-chain decision is `MATCHED` and reports
+`SECURITY_FILTER_CHAIN`, its policy code, and its decision. A policy that delegates to
+`RESOURCE_RULES` reports the winning rule, or `UNMATCHED` and default denial when no rule matches.
+Rule conflicts and routes without any declared security-policy metadata are `INDETERMINATE`; the
+latter use the `UNKNOWN` enforcement source rather than being mislabeled as default denied.
+
+Core contributes metadata for its default security chains. An application-defined
+`SecurityFilterChain` is a complete override, so an application using the inventory should also
+provide an ordered `UrlSecurityPolicyContributor` that mirrors its chain and matcher decisions.
+The contributor is descriptive metadata only; Spring Security and the authorization manager remain
+the enforcement mechanisms. Route metadata is protected by the dedicated
+`URL:AUTHZ_RESOURCE_INVENTORY_VIEW` permission.
 
 ## Users
 

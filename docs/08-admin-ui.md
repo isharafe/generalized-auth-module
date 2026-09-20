@@ -108,13 +108,18 @@ without introducing unrelated top-level navigation. URL resources provide Covera
 UI resources currently provide the Rules view because opaque UI identifiers are not discoverable.
 
 URL Coverage lists registered Spring MVC controller mappings, their application/framework origin,
-the effective access mode, and the winning rule. A route with no matching rule is shown as
-`Default denied`, not as public. From an uncovered route, an administrator can open the rule editor
-with its method/path and safe `AUTHORIZED` defaults prefilled; saving remains explicit.
+effective access mode, enforcement source, and the winning security policy or resource rule.
+Direct filter-chain decisions are distinguished from paths delegated to resource rules. A delegated
+route with no matching rule is shown as `Default denied`, not as public; a route with no published
+filter-chain metadata is shown as indeterminate/unknown. From an uncovered delegated route, an
+administrator can open the rule editor with its method/path and safe `AUTHORIZED` defaults
+prefilled; saving remains explicit.
 
 The inventory covers `RequestMappingInfo` handler mappings in the current application context. It
 does not claim static-resource handlers, arbitrary servlet registrations, functional router
-predicates, or a separate management application context.
+predicates, or a separate management application context. Core describes its default security
+chains automatically. Applications with custom chains must provide a `UrlSecurityPolicyContributor`
+if they want the inventory to classify those chain decisions.
 
 ### Resource Rules
 

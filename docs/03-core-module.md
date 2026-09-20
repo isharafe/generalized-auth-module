@@ -44,6 +44,7 @@ EntitlementProvider
 ResourceRuleProvider
 PermissionMatcher
 ResourcePatternMatcher
+UrlSecurityPolicyContributor
 IdentitySynchronizationProvider
 IdentityChangeEventProcessor
 ExternalAuthorityMapper
@@ -92,6 +93,20 @@ Auto-configure when applicable:
 - optional database-backed cross-instance cache invalidation
 
 Back off when the application supplies its own SPI bean.
+
+The default cookie-OAuth2 security chains also publish ordered `UrlSecurityPolicy` metadata through
+`UrlSecurityPolicyContributor`. The admin URL inventory uses that metadata to distinguish paths
+handled directly by Spring Security from paths delegated to resource rules. Applications that
+replace the default `SecurityFilterChain` should publish equivalent metadata if they use the admin
+inventory.
+
+## Seed extension contracts
+
+`AuthorizationSeedContributor` builds application seed data in Java.
+`AuthorizationSeedResourceContributor` lets a module explicitly register packaged YAML resources,
+including a stable source name and optional template variables. Explicit contributors avoid
+classpath naming conventions and let modules derive values such as configured base paths before the
+seed is loaded.
 
 ## Source selection
 
