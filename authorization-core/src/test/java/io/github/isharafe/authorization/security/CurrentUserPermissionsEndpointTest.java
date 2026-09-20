@@ -17,18 +17,18 @@ import org.springframework.http.CacheControl;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.server.ResponseStatusException;
 
-class CurrentUserUiPermissionsEndpointTest {
+class CurrentUserPermissionsEndpointTest {
   private final SpringAuthenticationIdentityResolver identities =
       mock(SpringAuthenticationIdentityResolver.class);
   private final EntitlementProvider entitlements = mock(EntitlementProvider.class);
-  private final CurrentUserUiPermissionsEndpoint endpoint =
-      new CurrentUserUiPermissionsEndpoint(identities, entitlements);
+  private final CurrentUserPermissionsEndpoint endpoint =
+      new CurrentUserPermissionsEndpoint(identities, entitlements);
   private final Authentication authentication = mock(Authentication.class);
   private final AuthenticatedIdentity identity =
       new AuthenticatedIdentity("issuer", "subject", "viewer");
 
   @Test
-  void returnsOnlyEnabledUiPermissionCodesInStableOrder() {
+  void returnsAllEnabledPermissionCodesInStableOrder() {
     when(identities.resolve(authentication)).thenReturn(identity);
     when(entitlements.load(identity))
         .thenReturn(
@@ -46,7 +46,9 @@ class CurrentUserUiPermissionsEndpointTest {
 
     var response = endpoint.permissions(authentication);
 
-    assertThat(response.getBody().permissions()).containsExactly("UI:A_FIRST", "UI:Z_LAST");
+    assertThat(response.getBody()).isNotNull();
+    assertThat(response.getBody().permissions())
+        .containsExactly("UI:A_FIRST", "UI:Z_LAST", "URL:EMPLOYEES");
     assertThat(response.getBody().entitlementVersion()).isEqualTo(7);
     assertThat(response.getHeaders().getCacheControl())
         .isEqualTo(CacheControl.noStore().getHeaderValue());

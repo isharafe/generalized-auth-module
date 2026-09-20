@@ -1,7 +1,6 @@
 package io.github.isharafe.authorization.security;
 
 import io.github.isharafe.authorization.domain.AuthenticatedIdentity;
-import io.github.isharafe.authorization.domain.ResourceType;
 import io.github.isharafe.authorization.domain.UserEntitlements;
 import io.github.isharafe.authorization.spi.EntitlementProvider;
 import java.util.List;
@@ -13,20 +12,20 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
-/** Exposes the authenticated user's UI permission codes to browser applications. */
+/** Exposes the authenticated user's enabled permission codes to browser applications. */
 @RestController
-public final class CurrentUserUiPermissionsEndpoint {
+public final class CurrentUserPermissionsEndpoint {
   private final SpringAuthenticationIdentityResolver identities;
   private final EntitlementProvider entitlements;
 
-  public CurrentUserUiPermissionsEndpoint(
+  public CurrentUserPermissionsEndpoint(
       SpringAuthenticationIdentityResolver identities, EntitlementProvider entitlements) {
     this.identities = identities;
     this.entitlements = entitlements;
   }
 
-  @GetMapping("${authorization.ui-api.endpoint:/authorization/ui/permissions}")
-  public ResponseEntity<UiPermissionsResponse> permissions(Authentication authentication) {
+  @GetMapping("${authorization.permissions-api.endpoint:/authorization/user/permissions}")
+  public ResponseEntity<PermissionsResponse> permissions(Authentication authentication) {
     AuthenticatedIdentity identity = identities.resolve(authentication);
     if (identity == null) {
       throw new ResponseStatusException(
@@ -45,17 +44,17 @@ public final class CurrentUserUiPermissionsEndpoint {
 
     List<String> permissions =
         loaded.permissions().stream()
-            .filter(permission -> permission.enabled() && permission.resourceType() == ResourceType.UI)
+            .filter(permission -> permission.enabled())
             .map(permission -> permission.code())
             .sorted()
             .toList();
     return ResponseEntity.ok()
         .cacheControl(CacheControl.noStore())
-        .body(new UiPermissionsResponse(permissions, loaded.version()));
+        .body(new PermissionsResponse(permissions, loaded.version()));
   }
 
-  public record UiPermissionsResponse(List<String> permissions, long entitlementVersion) {
-    public UiPermissionsResponse {
+  public record PermissionsResponse(List<String> permissions, long entitlementVersion) {
+    public PermissionsResponse {
       permissions = List.copyOf(permissions);
     }
   }

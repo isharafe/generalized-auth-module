@@ -357,13 +357,13 @@ describe("Authorization admin UI", () => {
           externalAuthorityMapping: true, syncProvider: null });
       if (url.includes("/resource-inventory/urls"))
         return response(page([{ resourceType: "URL", method: "GET",
-          path: "/authorization/ui/permissions",
-          pattern: "GET:/authorization/ui/permissions", coverageStatus: "MATCHED",
+          path: "/authorization/user/permissions",
+          pattern: "GET:/authorization/user/permissions", coverageStatus: "MATCHED",
           accessMode: "AUTHENTICATED", matchedRule: null, priority: null, reason: null,
           enforcementSource: "SECURITY_FILTER_CHAIN",
-          matchedSecurityPolicy: "AUTHORIZATION_UI_PERMISSIONS",
+          matchedSecurityPolicy: "AUTHORIZATION_USER_PERMISSIONS",
           securityDecision: "AUTHENTICATED", origins: ["AUTHORIZATION_FRAMEWORK"],
-          handlers: ["CurrentUserUiPermissionsEndpoint#current"] }]));
+          handlers: ["CurrentUserPermissionsEndpoint#permissions"] }]));
       throw new Error(`Unexpected request ${url}`);
     }));
 
@@ -371,7 +371,7 @@ describe("Authorization admin UI", () => {
 
     expect(await screen.findByText("Sign-in required")).toBeVisible();
     expect(screen.getByText("SECURITY FILTER CHAIN")).toBeVisible();
-    expect(screen.getByText("AUTHORIZATION_UI_PERMISSIONS")).toBeVisible();
+    expect(screen.getByText("AUTHORIZATION_USER_PERMISSIONS")).toBeVisible();
     expect(screen.queryByRole("button", { name: "Create rule" })).not.toBeInTheDocument();
   });
 

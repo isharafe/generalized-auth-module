@@ -21,7 +21,7 @@ public class AuthorizationProperties {
   private final IdentityEvents identityEvents = new IdentityEvents();
   private final DistributedInvalidation distributedInvalidation = new DistributedInvalidation();
   private final Security security = new Security();
-  private final UiApi uiApi = new UiApi();
+  private final PermissionsApi permissionsApi = new PermissionsApi();
 
   @Getter
   public static class Database {
@@ -85,9 +85,9 @@ public class AuthorizationProperties {
 
   @Getter
   @Setter
-  public static class UiApi {
+  public static class PermissionsApi {
     private boolean enabled = true;
-    private String endpoint = "/authorization/ui/permissions";
+    private String endpoint = "/authorization/user/permissions";
   }
 
   @Getter

@@ -15,7 +15,7 @@ export interface PermissionRequirement {
   match?: PermissionMatch;
 }
 
-export interface UiPermissionsResponse {
+export interface PermissionsResponse {
   permissions: string[];
   entitlementVersion: number;
 }

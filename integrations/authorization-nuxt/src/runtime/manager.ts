@@ -9,7 +9,7 @@ import {
   type AuthorizationState,
   type CsrfResponse,
   type PermissionRequirement,
-  type UiPermissionsResponse
+  type PermissionsResponse
 } from "./types";
 
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS", "TRACE"]);
@@ -86,9 +86,9 @@ export function createAuthorizationManager(
 
   const performLoadPermissions = async (allowRefresh: boolean): Promise<void> => {
     state.value = { ...state.value, status: "loading", error: null };
-    let response = await performRaw<UiPermissionsResponse>(config.permissionsEndpoint);
+    let response = await performRaw<PermissionsResponse>(config.permissionsEndpoint);
     if (response.status === 401 && allowRefresh && await refreshAuthentication()) {
-      response = await performRaw<UiPermissionsResponse>(config.permissionsEndpoint);
+      response = await performRaw<PermissionsResponse>(config.permissionsEndpoint);
     }
     if (response.status === 401) {
       clearPermissions();
@@ -111,7 +111,7 @@ export function createAuthorizationManager(
         permissions: [],
         entitlementVersion: 0,
         status: "error",
-        error: "Invalid UI permissions response"
+        error: "Invalid permissions response"
       };
       return;
     }
@@ -127,7 +127,7 @@ export function createAuthorizationManager(
         permissions: [],
         entitlementVersion: 0,
         status: "error",
-        error: failure instanceof Error ? failure.message : "Invalid UI permissions response"
+        error: failure instanceof Error ? failure.message : "Invalid permissions response"
       };
     }
   };
